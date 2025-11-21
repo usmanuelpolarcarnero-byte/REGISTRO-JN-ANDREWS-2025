@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro Auxiliar v4.9.2 - Sistema Blindado</title>
+    <title>Registro Auxiliar v4.9.5 - Sistema Blindado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -100,7 +100,7 @@
         <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
-                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.2 (Sistema Blindado)</p>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.5 (Sistema Blindado)</p>
             </div>
             <div class="text-right mt-2 md:mt-0 flex flex-col items-end">
                 <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
@@ -112,6 +112,7 @@
                         🔑 Configurar IA
                     </button>
                 </div>
+                <div id="user-id-display" class="text-[9px] text-slate-400 mt-1 font-mono">ID: PROFESOR_MANUEL</div>
             </div>
         </header>
         
@@ -196,7 +197,6 @@
                 <span> 📄 </span> Sábana de Notas
             </button>
             
-            <!-- FIX: Contenedor mejorado para el selector de alumno -->
             <div class="flex-[2] flex flex-col sm:flex-row gap-2 min-w-[300px]">
                 <select id="select-reporte-alumno" class="w-full sm:flex-1 border-slate-300 border rounded-lg text-sm px-3 py-2" disabled>
                     <option>Seleccione Alumno...</option>
@@ -234,7 +234,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // CREDENCIALES FIREBASE
         const firebaseConfig = {
           apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
           authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
@@ -255,10 +254,9 @@
         let tempGestionList = []; 
 
         // --- CONFIGURACIÓN API KEY DE IA ---
-        // Se guarda en localStorage para que el usuario solo tenga que ponerla una vez
         window.configurarIA = () => {
             const currentKey = localStorage.getItem('gemini_api_key') || "";
-            const newKey = prompt("Ingresa tu API Key de Google Gemini (Obtenla gratis en aistudio.google.com/app/apikey):", currentKey);
+            const newKey = prompt("Ingresa tu API Key de Google Gemini:", currentKey);
             if(newKey !== null) {
                 localStorage.setItem('gemini_api_key', newKey.trim());
                 showToast(newKey ? "✅ Llave IA Guardada" : "🗑️ Llave IA Borrada");
@@ -280,7 +278,6 @@
             "ept": { label: "EPT", competencias: [ { id: "C1", nombre: "Gestiona proyectos...", criterios: ["Propone", "Habilidades", "Trabaja Coop.", "Evalúa"] } ] }
         };
         
-        // --- HELPER: Obtener lista de alumnos ---
         function getStudentsList(n, g) {
             const key = `${n}-${g}`;
             if (customLists[key] && Array.isArray(customLists[key]) && customLists[key].length > 0) {
@@ -289,37 +286,75 @@
             return database[n] && database[n][g] ? [...database[n][g]] : [];
         }
 
-        // --- INIT APP (MODO NUBE ESTRICTO) ---
         async function initApp() { 
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Autenticación anónima en Firebase
                 if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
                 
                 onAuthStateChanged(auth, async (u) => {
                     if(u) { 
-                        userId = u.uid; 
+                        userId = "PROFESOR_MANUEL"; // IDENTIDAD UNIFICADA
                         updateStatus(" 🟢  Conectado (Nube Privada)");
+                        
                         await loadCustomListsCloud();
+                        restoreFilters();
                         cargarListaSesiones();
                     } else {
                         updateStatus(" 🔴  Error de Autenticación");
-                        alert("No se pudo conectar a la base de datos.");
                     }
                 });
             } catch(e) { 
                 console.error(e);
                 updateStatus(" 🔴  Error de Conexión");
-                alert("Error crítico: " + e.message);
             }
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
         }
         
-        // --- PERSISTENCIA LISTAS ---
+        function restoreFilters() {
+            const savedFilters = JSON.parse(localStorage.getItem('filters_state') || '{}');
+            if(savedFilters.bimestre) document.getElementById('select-bimestre').value = savedFilters.bimestre;
+            
+            if(savedFilters.nivel) {
+                const n = document.getElementById('select-nivel');
+                n.value = savedFilters.nivel;
+                n.disabled = false;
+                const g = document.getElementById('select-grado');
+                g.innerHTML='<option value="">...</option>';
+                const max = savedFilters.nivel==='primaria'?6:5; 
+                for(let i=1;i<=max;i++) g.add(new Option(i+'°', i));
+                g.disabled = false;
+            }
+            
+            if(savedFilters.grado) {
+                document.getElementById('select-grado').value = savedFilters.grado;
+                const ar = document.getElementById('select-area');
+                ar.innerHTML='<option value="arte">Arte</option><option value="dpcc">DPCC</option><option value="ept">EPT</option>';
+                ar.disabled = false;
+                document.getElementById('btn-gestion-alumnos').disabled = false;
+            }
+            
+            if(savedFilters.area) document.getElementById('select-area').value = savedFilters.area;
+            
+            if(savedFilters.bimestre && savedFilters.nivel && savedFilters.grado && savedFilters.area) {
+                renderTable();
+                cargarListaSesiones();
+            }
+        }
+
+        function saveFilters() {
+            const filters = {
+                bimestre: document.getElementById('select-bimestre').value,
+                nivel: document.getElementById('select-nivel').value,
+                grado: document.getElementById('select-grado').value,
+                area: document.getElementById('select-area').value
+            };
+            localStorage.setItem('filters_state', JSON.stringify(filters));
+        }
+
         async function loadCustomListsCloud() {
             if(!db || !userId) return;
             try {
@@ -352,7 +387,6 @@
         }
         function getPath() { return `artifacts/${appId}/users/${userId}/registros_auxiliares`; }
         
-        // --- GESTIÓN DE SESIONES ---
         async function cargarListaSesiones() {
             const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             const listDiv = document.getElementById('lista-sesiones');
@@ -366,7 +400,6 @@
             let sessions = [];
             const prefix = `registro-${b}-${n}-${g}-${a}-`;
             
-            // Solo cargar de nube
             if (db && userId) {
                 try {
                    const q = query(collection(db, getPath()));
@@ -397,24 +430,18 @@
             countSpan.textContent = `${sessions.length} Sesiones`;
         }
         
-        // Exponer la función globalmente
         window.cargarListaSesiones = cargarListaSesiones;
         window.cargarSesion = (fecha) => {
             document.getElementById('fecha').value = fecha;
             renderTable(); 
         }
         
-        // Modal Borrado
         const modal = document.getElementById('custom-modal-ui');
         const confirmBtn = document.getElementById('modal-confirm-btn');
         const cancelBtn = document.getElementById('modal-cancel-btn');
-        const modalMsg = document.getElementById('modal-message');
-        const modalTitle = document.getElementById('modal-title');
         
         window.confirmarBorrado = (docId) => {
             sesionABorrar = docId;
-            modalTitle.innerText = "¿Borrar sesión?";
-            modalMsg.innerText = "Esta acción no se puede deshacer.";
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
@@ -442,17 +469,13 @@
             modal.classList.remove('flex');
         }
         
-        // --- GESTIÓN DE ALUMNOS (UI y Lógica) ---
         window.abrirGestionAlumnos = () => {
             const n = document.getElementById('select-nivel').value;
             const g = document.getElementById('select-grado').value;
             if (!n || !g) return showToast("Seleccione Nivel y Grado primero");
-            
             const modalGestion = document.getElementById('modal-gestion-alumnos');
             document.getElementById('gestion-contexto').textContent = `${g}° ${n.toUpperCase()}`;
-            
             tempGestionList = getStudentsList(n, g);
-            
             renderGestionList();
             modalGestion.classList.remove('hidden');
             modalGestion.classList.add('flex');
@@ -461,15 +484,12 @@
         window.renderGestionList = () => {
             const container = document.getElementById('lista-gestion-container');
             container.innerHTML = '';
-            
             tempGestionList.forEach((nombre, index) => {
                 const div = document.createElement('div');
                 div.className = 'flex justify-between items-center bg-white border border-slate-200 p-2 mb-2 rounded shadow-sm';
                 div.innerHTML = `
                     <span class="text-xs font-bold text-slate-700">${index + 1}. ${nombre}</span>
-                    <button onclick="eliminarAlumno(${index})" class="text-red-500 hover:bg-red-50 p-1 rounded">
-                        🗑️
-                    </button>
+                    <button onclick="eliminarAlumno(${index})" class="text-red-500 hover:bg-red-50 p-1 rounded">🗑️</button>
                 `;
                 container.appendChild(div);
             });
@@ -479,7 +499,6 @@
             const input = document.getElementById('input-nuevo-alumno');
             const val = input.value.trim().toUpperCase();
             if (!val) return showToast("Escriba un nombre");
-            
             tempGestionList.push(val);
             tempGestionList.sort(); 
             renderGestionList();
@@ -498,17 +517,13 @@
             const n = document.getElementById('select-nivel').value;
             const g = document.getElementById('select-grado').value;
             const key = `${n}-${g}`;
-            
             customLists[key] = [...tempGestionList];
             await saveCustomLists();
-            
             document.getElementById('modal-gestion-alumnos').classList.add('hidden');
             showToast("Lista actualizada");
-            
             renderTable();
         }
 
-        // --- RENDERIZADO ---
         function renderTable() {
             const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             if(!n||!g||!a) return;
@@ -566,7 +581,6 @@
             loadData();
         }
         
-        // --- DATA HANDLING ---
         window.handleInput = async function(el) {
             updateColor(el);
             calcProms();
@@ -581,7 +595,6 @@
             const d={ notas:{}, headers:currentHeaders, prompt:document.getElementById('ia-prompt').value };
             document.querySelectorAll('select').forEach(s => { if(s.id) d.notas[s.id]=s.value; });
             
-            // Solo guardar en nube
             if (db && userId) {
                 await setDoc(doc(db, getPath(), id), d).catch(e => console.error("Error nube", e));
             }
@@ -596,7 +609,6 @@
             document.querySelectorAll('.th-desempeno').forEach(el => { el.innerText = el.id.replace('header-', 'Cap. '); el.classList.remove('text-blue-700'); });
             let d = null;
             
-            // Solo cargar de nube
             if(db && userId) {
                 try {
                     const snap = await getDoc(doc(db, getPath(), id));
@@ -652,12 +664,10 @@
             });
         }
         
-        // --- IA FUNCIONES (CON API KEY DEL USUARIO) ---
         async function consultarIA() {
             const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value;
             if(!p||!a) return showToast("Faltan datos");
             
-            // CHECK: Validar si existe API Key
             let key = getAIKey();
             if(!key) {
                 alert("⚠️ Para usar la IA, primero debes configurar tu llave.\n\nHaz clic en el botón '🔑 Configurar IA' arriba a la derecha y pega tu llave de Google AI Studio.");
@@ -694,7 +704,6 @@
             } catch(e) { 
                 console.error(e); 
                 showToast("Error IA: Verifica tu API Key"); 
-                // Si falla por autenticación, sugerir cambiar la llave
                 if(confirm("Error al conectar con IA. ¿Quieres revisar tu API Key?")) window.configurarIA();
             }
             finally { ui.spin.classList.add('hidden'); }
@@ -786,33 +795,28 @@
             } catch(e){ div.innerHTML="Error al conectar con IA."; }
         }
         
-        // 4. Reportes (Sábana y Ficha)
         async function reporteGeneral() {
             const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             if(!b||!n||!g||!a) return showToast("Faltan datos");
             
+            const win = window.open("", "_blank");
+            if (win) {
+                win.document.write('<html><head><title>Generando reporte...</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f0f9ff;color:#0369a1;}</style></head><body><h2>⏳ Generando Sábana de Notas...</h2></body></html>');
+            }
+
             let ses = [];
             const prefix = `registro-${b}-${n}-${g}-${a}-`;
             
-            if (!useLocalStorage && db && userId) {
+            if (db && userId) {
                 const q = query(collection(db, getPath()));
                 const snaps = await getDocs(q);
                 snaps.forEach(doc => {
                     if(doc.id.startsWith(prefix)) ses.push({f:doc.id.replace(prefix,''), t:doc.data().prompt, n:doc.data().notas, h:doc.data().headers});
                 });
-            } else {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if(key.startsWith(prefix)) {
-                        const d = JSON.parse(localStorage.getItem(key));
-                        ses.push({f:key.replace(prefix,''), t:d.prompt, n:d.notas, h:d.headers});
-                    }
-                }
             }
             
             ses.sort((x,y)=>x.f.localeCompare(y.f));
             
-            // Calcular columnas por sesión
             const curr = curriculum[a];
             let colsPerSession = 1; // Asistencia
             curr.competencias.forEach(c => colsPerSession += c.criterios.length + 1); // Criterios + Prom
@@ -835,14 +839,12 @@
             
             h += `<table><thead>`;
             
-            // Fila 1: Sesiones
             h += `<tr><th rowspan="3" style="width:20px">N°</th><th rowspan="3" style="width:150px">ESTUDIANTE</th>`;
             ses.forEach(s => {
                 h += `<th colspan="${colsPerSession}" class="session-header">${s.f} - ${s.t ? s.t.substring(0, 40) + '...' : 'Sin Tema'}</th>`;
             });
             h += `</tr>`;
             
-            // Fila 2: Competencias
             h += `<tr>`;
             ses.forEach(() => {
                 h += `<th rowspan="2" style="width:20px">As</th>`;
@@ -853,7 +855,6 @@
             });
             h += `</tr>`;
             
-            // Fila 3: Criterios (Desempeños)
             h += `<tr>`;
             ses.forEach(s => {
                 curr.competencias.forEach(c => {
@@ -867,13 +868,11 @@
             });
             h += `</tr></thead><tbody>`;
             
-            // Filas de Estudiantes
             getStudentsList(n,g).forEach((nm, i) => {
                 const parts = nm.split(',');
                 h += `<tr><td>${i+1}</td><td style="text-align:left;padding-left:4px"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
                 
                 ses.forEach(s => {
-                    // Asistencia
                     const asis = s.n[`asistencia-${i}`] || '-';
                     const asisColor = asis === 'F' ? 'color:red' : '';
                     h += `<td style="${asisColor}">${asis}</td>`;
@@ -887,7 +886,6 @@
                             const num = valMap[val] || 0;
                             if(num > 0) { sumComp += num; countComp++; }
                             
-                            // Color nota
                             let color = val==='C'?'red':(val==='AD'?'blue':(val==='A'?'green':'#b45309'));
                             if(val==='') color='black';
                             h += `<td style="color:${color}">${val}</td>`;
@@ -912,10 +910,16 @@
             });
             
             h += `</tbody></table></body></html>`;
-            window.open("","","width=1400,height=800").document.write(h);
+            
+            if (win) {
+                win.document.open();
+                win.document.write(h);
+                win.document.close();
+            } else {
+                showToast("⚠️ Ventana bloqueada. Permite pop-ups.");
+            }
         }
         
-        // --- FICHA INDIVIDUAL (MODIFICADO) ---
         async function fichaIndividual() {
             const i = document.getElementById('select-reporte-alumno').value;
             const b = document.getElementById('select-bimestre').value;
@@ -926,30 +930,25 @@
             if (i === 'Seleccione Alumno...') return showToast("Seleccione alumno");
             if(!b||!n||!g||!a) return showToast("Faltan datos del filtro");
 
+            const win = window.open("", "_blank");
+            if (win) {
+                win.document.write('<html><head><title>Generando ficha...</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fefce8;color:#854d0e;}</style></head><body><h2>⏳ Generando Ficha del Alumno...</h2></body></html>');
+            }
+
             const studentName = getStudentsList(n,g)[i];
             
-            // 1. Fetch History
             let ses = [];
             const prefix = `registro-${b}-${n}-${g}-${a}-`;
 
-            if (!useLocalStorage && db && userId) {
+            if (db && userId) {
                 const q = query(collection(db, getPath()));
                 const snaps = await getDocs(q);
                 snaps.forEach(doc => {
                     if(doc.id.startsWith(prefix)) ses.push({f:doc.id.replace(prefix,''), t:doc.data().prompt, n:doc.data().notas});
                 });
-            } else {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if(key.startsWith(prefix)) {
-                        const d = JSON.parse(localStorage.getItem(key));
-                        ses.push({f:key.replace(prefix,''), t:d.prompt, n:d.notas});
-                    }
-                }
             }
             ses.sort((x,y)=>x.f.localeCompare(y.f));
 
-            // 2. Process Data for Student
             let totalAsistencias = 0;
             let faltasDates = [];
             let historyRows = '';
@@ -957,17 +956,14 @@
             let countBimestral = 0;
 
             ses.forEach(s => {
-                // Attendance
                 const asis = s.n[`asistencia-${i}`] || '-';
                 if (asis === 'A') totalAsistencias++;
                 if (asis === 'F') faltasDates.push(s.f);
 
-                // Grades Calculation
                 let sumSession = 0;
                 let countSession = 0;
                 let gradesStr = '';
                 
-                // Need to iterate competencies to find grades for this student
                 const curr = curriculum[a];
                 curr.competencias.forEach(c => {
                     c.criterios.forEach((_, ci) => {
@@ -976,7 +972,6 @@
                         if (val > 0) {
                             sumSession += val;
                             countSession++;
-                            // Color coding for display
                             const color = valStr === 'C' ? 'red' : (valStr === 'B' ? 'orange' : (valStr === 'A' ? 'green' : 'blue'));
                             gradesStr += `<span style="color:${color};font-weight:bold;margin-right:4px">${valStr}</span> `;
                         }
@@ -1007,7 +1002,6 @@
             const promBimestralNum = countBimestral > 0 ? sumBimestral / countBimestral : 0;
             const promBimestralLabel = countBimestral > 0 ? toL(promBimestralNum) : '-';
 
-            // 3. Build HTML
             let h = `<html><head><style>
                 body { font-family: 'Arial', sans-serif; color: #333; padding: 20px; }
                 h2 { color: #1e3a8a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
@@ -1064,9 +1058,13 @@
                   
             h += `</body></html>`;
 
-            const win = window.open("", "_blank", "width=900,height=800");
-            win.document.write(h);
-            win.document.close();
+            if (win) {
+                win.document.open();
+                win.document.write(h);
+                win.document.close();
+            } else {
+                showToast("⚠️ Ventana bloqueada. Permite pop-ups.");
+            }
         }
         
         // --- Listeners ---
@@ -1079,6 +1077,7 @@
         
         ['select-bimestre','select-nivel','select-grado','select-area','fecha'].forEach(id => {
             document.getElementById(id).addEventListener('change', (e) => {
+                saveFilters(); // Guardar cambios
                 const nxt = { 'select-bimestre':'select-nivel', 'select-nivel':'select-grado', 'select-grado':'select-area' }[id];
                 if(nxt) document.getElementById(nxt).disabled = !e.target.value;
                 
