@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro Auxiliar v4.9.1 - Sistema Blindado</title>
+    <title>Registro Auxiliar v4.9.2 - Sistema Blindado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
         @media print {
             body { font-family: 'Arial', sans-serif; background: white; }
-            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar { display: none !important; }
+            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar, #modal-gestion-alumnos { display: none !important; }
             #tabla-registro { display: block !important; width: 100%; margin: 0; padding: 0; }
             table { width: 100%; border-collapse: collapse; font-size: 9px; }
             th, td { border: 1px solid #000; padding: 2px; text-align: center; }
@@ -38,8 +38,8 @@
         /* Headers Jerárquicos */
         .th-capacidad { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 600; line-height: 1.1; padding-bottom: 2px; border-bottom: 1px solid #e2e8f0; margin-bottom: 2px; height: 3em; overflow: hidden; }
         .th-desempeno { font-size: 10px; font-weight: 700; color: #1e3a8a; background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 3px; padding: 3px; min-height: 3.5em; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
-        /* Modal */
-        #custom-modal-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        /* Modal General */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
         
         /* Toast */
         #toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #333; color: white; border-radius: 5px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; }
@@ -47,8 +47,9 @@
 </head>
 <body class="bg-slate-100 p-4 md:p-6 text-slate-800">
     <div id="toast">Notificación</div>
-    <!-- Modal Confirmación -->
-    <div id="custom-modal-ui" class="hidden">
+    
+    <!-- Modal Confirmación Borrado Sesión -->
+    <div id="custom-modal-ui" class="modal-overlay hidden">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-200">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -61,32 +62,77 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Gestión Alumnos -->
+    <div id="modal-gestion-alumnos" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span>👥</span> Gestión de Alumnos
+                </h3>
+                <button onclick="document.getElementById('modal-gestion-alumnos').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-4 bg-blue-50 border-b border-blue-100">
+                <p class="text-xs text-blue-700 mb-2">Editando lista para: <strong id="gestion-contexto">...</strong></p>
+                <div class="flex gap-2">
+                    <input type="text" id="input-nuevo-alumno" placeholder="Apellidos y Nombres..." class="flex-1 p-2 rounded border border-blue-200 text-sm focus:ring-2 focus:ring-blue-500 uppercase">
+                    <button onclick="agregarAlumno()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold shadow-sm">Añadir</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-2 bg-slate-50" id="lista-gestion-container">
+                <!-- Lista dinámica -->
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3">
+                <button onclick="document.getElementById('modal-gestion-alumnos').classList.add('hidden')" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-3">Cancelar</button>
+                <button onclick="guardarCambiosAlumnos()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm font-bold shadow-md flex items-center gap-2">
+                    <span>💾</span> Guardar Lista
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-[1800px] mx-auto bg-white rounded-xl shadow-lg border border-slate-200 p-4 md:p-6">
         
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
-                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.1 (Sistema Blindado)</p>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.2 (Sistema Blindado)</p>
             </div>
-            <div class="text-right mt-2 md:mt-0">
+            <div class="text-right mt-2 md:mt-0 flex flex-col items-end">
                 <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
-                <div id="connection-status" class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded inline-flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span> Iniciando...
+                <div class="flex gap-2 mt-1">
+                    <div id="connection-status" class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded inline-flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span> Iniciando...
+                    </div>
+                    <button onclick="window.configurarIA()" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 hover:bg-purple-200 font-bold flex items-center gap-1" title="Configurar API Key">
+                        🔑 Configurar IA
+                    </button>
                 </div>
             </div>
         </header>
+        
         <!-- Controles -->
-        <section id="controles" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <section id="controles" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
             <select id="select-bimestre" class="p-2 rounded border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500"><option value="">Bimestre...</option><option value="B1">I Bimestre</option><option value="B2">II Bimestre</option><option value="B3">III Bimestre</option><option value="B4">IV Bimestre</option></select>
             <select id="select-nivel" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled><option value="">Nivel...</option><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select>
             <select id="select-grado" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled><option value="">Grado...</option></select>
             <select id="select-area" class="p-2 rounded border text-sm lg:col-span-1 disabled:opacity-50" disabled><option value="">Área...</option></select>
             <input type="date" id="fecha" class="p-2 rounded border border-slate-300 text-sm text-gray-600">
+            
+            <!-- Botón Gestión Alumnos -->
+            <button id="btn-gestion-alumnos" onclick="abrirGestionAlumnos()" class="bg-white text-slate-700 border border-slate-300 text-sm font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Configurar lista de estudiantes">
+                <span>👥</span> Alumnos
+            </button>
+
             <button onclick="window.print()" class="bg-slate-800 text-white text-sm font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2 shadow transition-all">
                 Imprimir
             </button>
         </section>
+
         <!-- Asistente IA & Gestión -->
         <section class="mb-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- Panel IA -->
@@ -188,7 +234,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // TUS CREDENCIALES
+        // CREDENCIALES FIREBASE
         const firebaseConfig = {
           apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
           authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
@@ -198,15 +244,31 @@
           appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        const apiKey = ""; 
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         let db, auth, userId;
         let currentHeaders = {}; 
         let sesionABorrar = null; 
-        let useLocalStorage = false; // Flag para modo fallback
-        
+        let useLocalStorage = false; 
+        let customLists = {}; 
+        let tempGestionList = []; 
+
+        // --- CONFIGURACIÓN API KEY DE IA ---
+        // Se guarda en localStorage para que el usuario solo tenga que ponerla una vez
+        window.configurarIA = () => {
+            const currentKey = localStorage.getItem('gemini_api_key') || "";
+            const newKey = prompt("Ingresa tu API Key de Google Gemini (Obtenla gratis en aistudio.google.com/app/apikey):", currentKey);
+            if(newKey !== null) {
+                localStorage.setItem('gemini_api_key', newKey.trim());
+                showToast(newKey ? "✅ Llave IA Guardada" : "🗑️ Llave IA Borrada");
+            }
+        };
+
+        function getAIKey() {
+            return localStorage.getItem('gemini_api_key');
+        }
+
         // --- DATOS ---
         const database = {
             primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí" ], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel" ], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías" ], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis" ], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan" ], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego" ] },
@@ -218,41 +280,71 @@
             "ept": { label: "EPT", competencias: [ { id: "C1", nombre: "Gestiona proyectos...", criterios: ["Propone", "Habilidades", "Trabaja Coop.", "Evalúa"] } ] }
         };
         
-        // --- INIT ---
+        // --- HELPER: Obtener lista de alumnos ---
+        function getStudentsList(n, g) {
+            const key = `${n}-${g}`;
+            if (customLists[key] && Array.isArray(customLists[key]) && customLists[key].length > 0) {
+                return customLists[key];
+            }
+            return database[n] && database[n][g] ? [...database[n][g]] : [];
+        }
+
+        // --- INIT APP (MODO NUBE ESTRICTO) ---
         async function initApp() { 
-            // Intentar conectar con credenciales reales primero
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
+                // Autenticación anónima en Firebase
                 if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
                 else await signInAnonymously(auth);
                 
-                onAuthStateChanged(auth, (u) => {
+                onAuthStateChanged(auth, async (u) => {
                     if(u) { 
                         userId = u.uid; 
                         updateStatus(" 🟢  Conectado (Nube Privada)");
+                        await loadCustomListsCloud();
                         cargarListaSesiones();
                     } else {
-                        // Fallback a local si falla auth
-                        useLocalStorage = true;
-                        updateStatus(" 🟠  Modo Local (Auth Falló)");
+                        updateStatus(" 🔴  Error de Autenticación");
+                        alert("No se pudo conectar a la base de datos.");
                     }
                 });
             } catch(e) { 
-                // Fallback a local si hay error de conexión o config
                 console.error(e);
-                useLocalStorage = true;
-                updateStatus(" 🔴  Modo Local (Error)");
+                updateStatus(" 🔴  Error de Conexión");
+                alert("Error crítico: " + e.message);
             }
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
         }
+        
+        // --- PERSISTENCIA LISTAS ---
+        async function loadCustomListsCloud() {
+            if(!db || !userId) return;
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/configuracion`, 'alumnos');
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    customLists = snap.data();
+                }
+            } catch (e) { console.error("Error cargando listas", e); }
+        }
+
+        async function saveCustomLists() {
+            if (db && userId) {
+                try {
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/configuracion`, 'alumnos');
+                    await setDoc(docRef, customLists);
+                } catch(e) { console.error("Error guardando listas", e); }
+            }
+        }
+
         function updateStatus(msg) {
             const st = document.getElementById('connection-status');
             st.textContent = msg;
             if(msg.includes("Conectado")) st.className = "text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded inline-block";
-            else st.className = "text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block";
+            else st.className = "text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded inline-block";
         }
         function getId() {
             const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value, f=document.getElementById('fecha').value;
@@ -273,7 +365,9 @@
             }
             let sessions = [];
             const prefix = `registro-${b}-${n}-${g}-${a}-`;
-            if (!useLocalStorage && db && userId) {
+            
+            // Solo cargar de nube
+            if (db && userId) {
                 try {
                    const q = query(collection(db, getPath()));
                    const snaps = await getDocs(q);
@@ -283,14 +377,8 @@
                        }
                    });
                 } catch (e) { console.error("Error fetch sessions", e); }
-            } else {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith(prefix)) {
-                         sessions.push({ id: key, fecha: key.replace(prefix, ''), data: JSON.parse(localStorage.getItem(key)) });
-                    }
-                }
             }
+            
             let html = '';
             sessions.forEach(s => {
                 html += `
@@ -305,7 +393,7 @@
                     <div class="text-[10px] text-slate-600 truncate" title="${s.data.prompt}">${s.data.prompt || 'Sin tema registrado'}</div>
                 </div>`;
             });
-            listDiv.innerHTML = sessions.length > 0 ? html : '<p class="text-xs text-gray-400 text-center p-2">No hay registros.</p>';
+            listDiv.innerHTML = sessions.length > 0 ? html : '<p class="text-xs text-gray-400 text-center p-2">No hay registros en la nube.</p>';
             countSpan.textContent = `${sessions.length} Sesiones`;
         }
         
@@ -330,7 +418,6 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
-            // Asegurar que el botón cancelar cierre el modal
             cancelBtn.onclick = () => {
                  modal.classList.add('hidden');
                  modal.classList.remove('flex');
@@ -341,11 +428,9 @@
         confirmBtn.onclick = async () => {
             if(!sesionABorrar) return;
             try {
-                if (!useLocalStorage && db) {
+                if (db) {
                     await deleteDoc(doc(db, getPath(), sesionABorrar));
                 }
-                localStorage.removeItem(sesionABorrar); 
-                
                 showToast("Sesión eliminada");
                 cargarListaSesiones();
                 if(getId() === sesionABorrar) {
@@ -357,13 +442,91 @@
             modal.classList.remove('flex');
         }
         
+        // --- GESTIÓN DE ALUMNOS (UI y Lógica) ---
+        window.abrirGestionAlumnos = () => {
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            if (!n || !g) return showToast("Seleccione Nivel y Grado primero");
+            
+            const modalGestion = document.getElementById('modal-gestion-alumnos');
+            document.getElementById('gestion-contexto').textContent = `${g}° ${n.toUpperCase()}`;
+            
+            tempGestionList = getStudentsList(n, g);
+            
+            renderGestionList();
+            modalGestion.classList.remove('hidden');
+            modalGestion.classList.add('flex');
+        }
+
+        window.renderGestionList = () => {
+            const container = document.getElementById('lista-gestion-container');
+            container.innerHTML = '';
+            
+            tempGestionList.forEach((nombre, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center bg-white border border-slate-200 p-2 mb-2 rounded shadow-sm';
+                div.innerHTML = `
+                    <span class="text-xs font-bold text-slate-700">${index + 1}. ${nombre}</span>
+                    <button onclick="eliminarAlumno(${index})" class="text-red-500 hover:bg-red-50 p-1 rounded">
+                        🗑️
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.agregarAlumno = () => {
+            const input = document.getElementById('input-nuevo-alumno');
+            const val = input.value.trim().toUpperCase();
+            if (!val) return showToast("Escriba un nombre");
+            
+            tempGestionList.push(val);
+            tempGestionList.sort(); 
+            renderGestionList();
+            input.value = '';
+            input.focus();
+        }
+
+        window.eliminarAlumno = (index) => {
+            if (confirm("¿Eliminar de la lista?")) {
+                tempGestionList.splice(index, 1);
+                renderGestionList();
+            }
+        }
+
+        window.guardarCambiosAlumnos = async () => {
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const key = `${n}-${g}`;
+            
+            customLists[key] = [...tempGestionList];
+            await saveCustomLists();
+            
+            document.getElementById('modal-gestion-alumnos').classList.add('hidden');
+            showToast("Lista actualizada");
+            
+            renderTable();
+        }
+
         // --- RENDERIZADO ---
         function renderTable() {
             const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             if(!n||!g||!a) return;
             
-            const list=database[n][g], curr=curriculum[a];
-            if(!list||!curr) { document.getElementById('tabla-registro').innerHTML='<div class="p-10 text-center">Datos no disponibles</div>'; return; }
+            const list = getStudentsList(n, g);
+            const curr = curriculum[a];
+            
+            if(!list || list.length === 0) { 
+                document.getElementById('tabla-registro').innerHTML = `
+                    <div class="p-10 text-center flex flex-col items-center justify-center gap-4">
+                        <p class="text-slate-500">No hay alumnos registrados para este grado.</p>
+                        <button onclick="abrirGestionAlumnos()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200 text-sm font-bold">
+                            ➕ Añadir Alumnos
+                        </button>
+                    </div>`; 
+                return; 
+            }
+
             const sel = document.getElementById('select-reporte-alumno');
             sel.innerHTML = '<option>Seleccione Alumno...</option>'; sel.disabled = false;
             list.forEach((nm,i) => sel.add(new Option(nm, i)));
@@ -417,8 +580,9 @@
             const id=getId(); if(!id) return;
             const d={ notas:{}, headers:currentHeaders, prompt:document.getElementById('ia-prompt').value };
             document.querySelectorAll('select').forEach(s => { if(s.id) d.notas[s.id]=s.value; });
-            localStorage.setItem(id, JSON.stringify(d));
-            if (!useLocalStorage && db && userId) {
+            
+            // Solo guardar en nube
+            if (db && userId) {
                 await setDoc(doc(db, getPath(), id), d).catch(e => console.error("Error nube", e));
             }
             showToast("Guardado");
@@ -431,9 +595,9 @@
             
             document.querySelectorAll('.th-desempeno').forEach(el => { el.innerText = el.id.replace('header-', 'Cap. '); el.classList.remove('text-blue-700'); });
             let d = null;
-            const local = localStorage.getItem(id);
-            if(local) d = JSON.parse(local);
-            if(!d && !useLocalStorage && db && userId) {
+            
+            // Solo cargar de nube
+            if(db && userId) {
                 try {
                     const snap = await getDoc(doc(db, getPath(), id));
                     if(snap.exists()) d = snap.data();
@@ -465,7 +629,7 @@
         function calcProms() {
             const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             if(!n||!g||!a) return;
-            const st=database[n][g], cp=curriculum[a].competencias;
+            const st=getStudentsList(n, g), cp=curriculum[a].competencias;
             
             st.forEach((_, i) => {
                 let fs=0, fc=0;
@@ -488,11 +652,19 @@
             });
         }
         
-        // --- IA FUNCIONES ---
+        // --- IA FUNCIONES (CON API KEY DEL USUARIO) ---
         async function consultarIA() {
             const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value;
             if(!p||!a) return showToast("Faltan datos");
             
+            // CHECK: Validar si existe API Key
+            let key = getAIKey();
+            if(!key) {
+                alert("⚠️ Para usar la IA, primero debes configurar tu llave.\n\nHaz clic en el botón '🔑 Configurar IA' arriba a la derecha y pega tu llave de Google AI Studio.");
+                window.configurarIA();
+                return;
+            }
+
             const ui={spin:document.getElementById('ia-spinner'), ph:document.getElementById('ia-placeholder'), res:document.getElementById('ia-respuesta-container'), btn:document.getElementById('btn-sugerir-sesion')};
             ui.spin.classList.remove('hidden'); ui.ph.classList.add('hidden'); ui.res.classList.add('hidden'); ui.btn.classList.add('hidden');
             const ad=curriculum[a];
@@ -505,7 +677,10 @@
             Salida JSON: { "justificacion": "Texto que incluye la competencia...", "desempenos": { "header-ID": "Texto..." } } Criterios: ${JSON.stringify(ml)}`;
             
             try {
-                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                
+                if(!r.ok) throw new Error("API Error");
+                
                 const j=await r.json();
                 const res=JSON.parse(j.candidates[0].content.parts[0].text);
                 
@@ -514,14 +689,21 @@
                 Object.keys(currentHeaders).forEach(k=>{ const e=document.getElementById(k); if(e) {e.innerText=currentHeaders[k]; e.classList.add('text-blue-700');} });
                 
                 ui.res.classList.remove('hidden');
-                ui.btn.classList.remove('hidden'); // Mostrar botón de sesión sugerida
+                ui.btn.classList.remove('hidden'); 
                 saveData();
-            } catch(e) { console.error(e); showToast("Error IA"); }
+            } catch(e) { 
+                console.error(e); 
+                showToast("Error IA: Verifica tu API Key"); 
+                // Si falla por autenticación, sugerir cambiar la llave
+                if(confirm("Error al conectar con IA. ¿Quieres revisar tu API Key?")) window.configurarIA();
+            }
             finally { ui.spin.classList.add('hidden'); }
         }
         
-        // 2. Generar Sesión Sugerida
         async function sugerirSesion() {
+            let key = getAIKey();
+            if(!key) { window.configurarIA(); return; }
+
             const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value, g=document.getElementById('select-grado').value, n=document.getElementById('select-nivel').value;
             const box = document.getElementById('seccion-sesion-sugerida');
             const content = document.getElementById('contenido-sesion-sugerida');
@@ -545,20 +727,22 @@
             
             Responde solo con el HTML del contenido.`;
             try {
-                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
                 const j=await r.json();
                 content.innerHTML = j.candidates[0].content.parts[0].text;
             } catch(e) { content.innerHTML = "Error al generar la sesión."; }
         }
         
-        // 3. Conclusiones
         async function generarConclusiones() {
+            let key = getAIKey();
+            if(!key) { window.configurarIA(); return; }
+
             const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             const div=document.getElementById('conclusiones-ia-container');
             document.getElementById('seccion-conclusiones-ui').classList.remove('hidden');
             div.innerHTML='Cargando...';
             const lst=[];
-            database[n][g].forEach((nm,i)=>{
+            getStudentsList(n,g).forEach((nm,i)=>{
                 const nt=document.getElementById(`prom-final-${i}`).innerText;
                 if(nt!=='-') lst.push({nombre:nm, nota:nt});
             });
@@ -574,7 +758,7 @@
             JSON Array: [{nombre, nota, conclusion, actividad_recuperacion}]
             Alumnos: ${JSON.stringify(lst)}`;
             try {
-                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
                 const j=await r.json();
                 const res=JSON.parse(j.candidates[0].content.parts[0].text);
                 
@@ -684,7 +868,7 @@
             h += `</tr></thead><tbody>`;
             
             // Filas de Estudiantes
-            database[n][g].forEach((nm, i) => {
+            getStudentsList(n,g).forEach((nm, i) => {
                 const parts = nm.split(',');
                 h += `<tr><td>${i+1}</td><td style="text-align:left;padding-left:4px"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
                 
@@ -742,7 +926,7 @@
             if (i === 'Seleccione Alumno...') return showToast("Seleccione alumno");
             if(!b||!n||!g||!a) return showToast("Faltan datos del filtro");
 
-            const studentName = database[n][g][i];
+            const studentName = getStudentsList(n,g)[i];
             
             // 1. Fetch History
             let ses = [];
@@ -893,12 +1077,6 @@
         document.getElementById('btn-reporte-individual').onclick = fichaIndividual;
         document.getElementById('btn-generar-conclusiones').onclick = generarConclusiones;
         
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg; t.style.opacity = 1;
-            setTimeout(() => t.style.opacity = 0, 2000);
-        }
-        
         ['select-bimestre','select-nivel','select-grado','select-area','fecha'].forEach(id => {
             document.getElementById(id).addEventListener('change', (e) => {
                 const nxt = { 'select-bimestre':'select-nivel', 'select-nivel':'select-grado', 'select-grado':'select-area' }[id];
@@ -910,11 +1088,18 @@
                 }
                 if(id==='select-grado') {
                     const ar=document.getElementById('select-area'); ar.innerHTML='<option value="arte">Arte</option><option value="dpcc">DPCC</option><option value="ept">EPT</option>';
+                    document.getElementById('btn-gestion-alumnos').disabled = !e.target.value;
                 }
                 renderTable();
                 if(['select-bimestre','select-area'].includes(id)) cargarListaSesiones();
             });
         });
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 2000);
+        }
         
         initApp();
     </script>
