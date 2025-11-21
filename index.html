@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Auxiliar v4.9.1 - Sistema Blindado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        @media print {
+            body { font-family: 'Arial', sans-serif; background: white; }
+            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar { display: none !important; }
+            #tabla-registro { display: block !important; width: 100%; margin: 0; padding: 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 9px; }
+            th, td { border: 1px solid #000; padding: 2px; text-align: center; }
+            select { display: none; }
+            .print-value { display: inline !important; font-size: 10px; color: #000; }
+            th { -webkit-print-color-adjust: exact; }
+            .th-capacidad { height: auto !important; font-size: 8px !important; border-bottom: 1px solid #000 !important; }
+            .th-desempeno { min-height: 2em !important; font-size: 8px !important; border: none !important; background: none !important; font-style: italic; }
+        }
+        .print-value { display: none; }
+        /* Selectores */
+        select.nota-cuali { font-weight: bold; border: 1px solid transparent; border-radius: 4px; padding: 2px; width: 100%; min-width: 40px; text-align: center; cursor: pointer; }
+        select.nota-cuali:focus { outline: 2px solid #2563eb; }
+        .ad { background: #dbeafe; color: #1e3a8a; } .a { background: #dcfce7; color: #166534; }
+        .b { background: #fef9c3; color: #854d0e; } .c { background: #fee2e2; color: #991b1b; }
+        .empty { background: #f3f4f6; color: #6b7280; }
+        
+        .nota-asistencia { font-weight: bold; border-radius: 4px; width: 100%; min-width: 35px; text-align: center; }
+        
+        /* Sticky */
+        .sticky-col { position: sticky; z-index: 10; background: white; }
+        .sticky-col.nro { left: 0; width: 2rem; }
+        .sticky-col.nombre { left: 2rem; width: 14rem; }
+        .sticky-col.asistencia { left: 16rem; width: 3.5rem; }
+        /* Headers Jerárquicos */
+        .th-capacidad { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 600; line-height: 1.1; padding-bottom: 2px; border-bottom: 1px solid #e2e8f0; margin-bottom: 2px; height: 3em; overflow: hidden; }
+        .th-desempeno { font-size: 10px; font-weight: 700; color: #1e3a8a; background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 3px; padding: 3px; min-height: 3.5em; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
+        /* Modal */
+        #custom-modal-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        
+        /* Toast */
+        #toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #333; color: white; border-radius: 5px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; }
+    </style>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 text-slate-800">
+    <div id="toast">Notificación</div>
+    <!-- Modal Confirmación -->
+    <div id="custom-modal-ui" class="hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-200">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-2">¿Estás seguro?</h3>
+            <p id="modal-message" class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer.</p>
+            <div class="flex justify-center gap-3">
+                <button id="modal-cancel-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 font-medium">Cancelar</button>
+                <button id="modal-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold">Sí, Eliminar</button>
+            </div>
+        </div>
+    </div>
+    <div class="max-w-[1800px] mx-auto bg-white rounded-xl shadow-lg border border-slate-200 p-4 md:p-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.1 (Sistema Blindado)</p>
+            </div>
+            <div class="text-right mt-2 md:mt-0">
+                <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
+                <div id="connection-status" class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded inline-flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span> Iniciando...
+                </div>
+            </div>
+        </header>
+        <!-- Controles -->
+        <section id="controles" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <select id="select-bimestre" class="p-2 rounded border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500"><option value="">Bimestre...</option><option value="B1">I Bimestre</option><option value="B2">II Bimestre</option><option value="B3">III Bimestre</option><option value="B4">IV Bimestre</option></select>
+            <select id="select-nivel" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled><option value="">Nivel...</option><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select>
+            <select id="select-grado" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled><option value="">Grado...</option></select>
+            <select id="select-area" class="p-2 rounded border text-sm lg:col-span-1 disabled:opacity-50" disabled><option value="">Área...</option></select>
+            <input type="date" id="fecha" class="p-2 rounded border border-slate-300 text-sm text-gray-600">
+            <button onclick="window.print()" class="bg-slate-800 text-white text-sm font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2 shadow transition-all">
+                Imprimir
+            </button>
+        </section>
+        <!-- Asistente IA & Gestión -->
+        <section class="mb-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Panel IA -->
+            <div id="seccion-ia" class="lg:col-span-8 bg-blue-50 p-5 rounded-lg border border-blue-100 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-blue-800 uppercase flex items-center gap-2"><span> ✨ </span> Planificación de Sesión</h2>
+                    <span class="text-xs text-blue-600 bg-white px-2 py-1 rounded border border-blue-200">IA Activa</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Actividad / Tema del día:</label>
+                        <textarea id="ia-prompt" rows="3" class="w-full p-3 rounded border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 transition-all resize-none" placeholder="Ej: Elaboración de un afiche sobre el cuidado del agua..."></textarea>
+                        <button id="btn-consultar-ia" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm shadow transition-colors flex items-center justify-center gap-2">
+                            <span>⚡</span> Definir Desempeños
+                        </button>
+                    </div>
+                    
+                    <div class="relative bg-white rounded border border-slate-200 p-3">
+                        <div id="ia-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs p-4 text-center">
+                            <p>La IA sugerirá aquí los desempeños precisados.</p>
+                        </div>
+                        <div id="ia-spinner" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
+                            <div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-6 h-6 animate-spin mb-2"></div>
+                            <p class="text-xs text-blue-600 font-bold">Analizando...</p>
+                        </div>
+                        <div id="ia-respuesta-container" class="hidden h-full overflow-y-auto text-xs leading-relaxed">
+                            <div class="font-bold text-green-700 mb-1"> ✅  Análisis Pedagógico:</div>
+                            <div id="ia-respuesta-texto" class="text-slate-700"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Panel Gestión -->
+            <div class="lg:col-span-4 bg-slate-50 p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col">
+                <h2 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
+                    <span> 📂 </span> Historial y Gestión
+                </h2>
+                
+                <div class="flex-1 bg-white rounded border border-slate-300 overflow-hidden flex flex-col">
+                    <div class="bg-slate-100 p-2 border-b border-slate-200 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-600" id="contador-sesiones">0 Sesiones</span>
+                        <button id="btn-mostrar-sesiones" class="text-xs text-blue-600 hover:underline font-medium"> 🔄  Actualizar</button>
+                    </div>
+                    <div id="lista-sesiones" class="flex-1 overflow-y-auto p-2 space-y-2 max-h-40">
+                        <p class="text-xs text-gray-400 text-center py-4">Seleccione los filtros para ver historial.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Botón Guía -->
+        <div id="seccion-sesion-sugerida" class="hidden mb-6 bg-purple-50 border border-purple-200 rounded-lg p-4 animate-fade-in relative">
+            <button onclick="this.parentElement.classList.add('hidden')" class="absolute top-2 right-2 text-purple-400 hover:text-purple-700 font-bold">✕</button>
+            <h3 class="font-bold text-purple-900 text-sm mb-2"> 🍎  Guía de Sesión Sugerida (IA)</h3>
+            <div id="contenido-sesion-sugerida" class="prose prose-sm max-w-none text-slate-700 bg-white p-3 rounded border border-purple-100 shadow-sm text-xs"></div>
+        </div>
+        <!-- Botones Acción -->
+        <section class="flex flex-wrap gap-3 mb-6">
+            <button id="btn-reporte-general" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 whitespace-nowrap">
+                <span> 📄 </span> Sábana de Notas
+            </button>
+            
+            <!-- FIX: Contenedor mejorado para el selector de alumno -->
+            <div class="flex-[2] flex flex-col sm:flex-row gap-2 min-w-[300px]">
+                <select id="select-reporte-alumno" class="w-full sm:flex-1 border-slate-300 border rounded-lg text-sm px-3 py-2" disabled>
+                    <option>Seleccione Alumno...</option>
+                </select>
+                <button id="btn-reporte-individual" class="sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-6 py-2 rounded-lg text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2"> 
+                    👤 Ficha
+                </button>
+            </div>
+
+            <button id="btn-generar-conclusiones" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap" disabled>
+                <span> 🤖 </span> Conclusiones IA
+            </button>
+            <button id="btn-sugerir-sesion" class="hidden flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm transition-colors whitespace-nowrap">
+                <span> 🍎 </span> Ver Guía Docente
+            </button>
+        </section>
+        <!-- Conclusiones UI -->
+        <section id="seccion-conclusiones-ui" class="hidden mb-6 bg-white border border-slate-200 rounded-lg p-5 shadow-lg">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-slate-800 text-lg"> 📊  Conclusiones Descriptivas</h3>
+                <button onclick="this.closest('section').classList.add('hidden')" class="text-slate-400 hover:text-red-500 text-xl font-bold">&times;</button>
+            </div>
+            <div id="conclusiones-metadata" class="text-xs text-slate-500 mb-4 font-medium"></div>
+            <div id="conclusiones-ia-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2"></div>
+        </section>
+        <!-- Tabla -->
+        <section id="tabla-registro" class="overflow-x-auto border rounded-lg shadow-sm bg-white min-h-[200px]">
+            <div class="p-12 text-center text-slate-400 flex flex-col items-center justify-center h-full">
+                <p class="text-sm font-medium">Seleccione los filtros superiores para cargar el registro.</p>
+            </div>
+        </section>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // TUS CREDENCIALES
+        const firebaseConfig = {
+          apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
+          authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
+          projectId: "registro-jn-andrews-mpc",
+          storageBucket: "registro-jn-andrews-mpc.firebasestorage.app",
+          messagingSenderId: "701752375464",
+          appId: "1:701752375464:web:eaab256668b869d026aa9d"
+        };
+        
+        const apiKey = ""; 
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        let db, auth, userId;
+        let currentHeaders = {}; 
+        let sesionABorrar = null; 
+        let useLocalStorage = false; // Flag para modo fallback
+        
+        // --- DATOS ---
+        const database = {
+            primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí" ], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel" ], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías" ], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis" ], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan" ], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego" ] },
+            secundaria: { "1": ["ARUCUTIPA CALISAYA Yuliet Luanna", "CISA SAHUAYANAY Miguel Ángel", "COLQUE CHAMBI Jhems Kevin", "CRUZ ROJAS Jhon Alex", "CUYO CHOQUE Will Adriano", "GALLEGOS ZEA, James Jamir", "GUETTI RUIZ Johana Nicol", "GUTIERREZ OSORIO, Rony Alex", "GUTIERREZ ZAMATA, Gianela Ninel", "MENDOZA MAMANI, Víctor Manuel", "MONTEZA RIVAS Yair Alexander", "SANGUINO MARQUEZ Carlos Santiago", "TICONA CONDORI Heidy Milena", "VIÑA HUAMAN Esteban Andreus Caleb", "ZEVALLOS MAMANI Alisom Kimberly" ], "2": ["AGUILAR TILCA, Midwad Harison", "ARMAS PEÑA, Moisés Jubal", "ARUCUTIPA CALISAYA, Emerson garry", "BELÓN AQUINO, Dayiro Andree", "CALDERON LEANDRO, Yhong Puyol.", "CALLOAPAZA CONDORCAHUANA Jhamile Sadira", "CCANCHILLO TORRES, Yulissam Priyanka", "CHOQUE LIZARRAGA, Piero Valentino", "CHOQUEHUANCA CARI, Nicole Mia Marey", "COAQUIRA CONDO, Llandhel Roberth", "CONDORI QUISPE, Mayli Yasu", "CORIMANYA ARISACA, Branco Adriano", "DIAZ CAPACOILA, Anely Yesica", "HUAYHUA HUITTOCCOLLO Alonso Delbir", "LUNA QUISPE, Jimmy Noé", "LUQUE VILCAPAZA, Eva Luz", "MANCHA COAQUIRA, George Luis", "PEREIRA VILCA Neymar Piero", "PEREZ LUPO, Gerald Abdías", "PHALA TORRES, Benjamín Franco", "QUISPE CAMALA, José Daniel", "QUISPE GUTIERREZ, Ana Cristina", "QUISPE QUISPE, Thalía Úrsula", "RIVEROS SUPA, Mathias Leonardo", "VILCA GUTIERREZ, Jandy Betzabe" ], "3": ["AMANQUI YANARICO, Jean Paul", "ANCCALLE MERMA, Danna Magdiell", "APAZA MAMANI, Eduardo Nicolás", "AROCUTIPA ROMERO, Zamir Yhonncy", "BELÓN AQUINO, Fabrizio André", "CHOQUEHUANCA CARI, David Yair", "FALCON PUMA, Enoc Elías", "GARCIA CISA SANTIAGO BENJAMIN", "GARCIA TICONA Emanuel Matías", "HANAMPA QUISPE, Erick Jonathan", "MACHUCA CRUZ Baurulet", "MALPARTIDA ALE Alvaro Joaquín", "MAMANI ANAYA Sebastián Mateo", "MARQUEZ TACURI, Jesús", "MERMA MENDOZA, Roberto Maradona", "MIRAMIRA GUTIERREZ, Josías Daniel", "ORTEGA BENAVENTE, Nill Antony", "OSORIO CCACCA Marisol", "ROQUE HUARCA, Dianeth Nicol", "TOTORA CUCHO Yuliana Nery", "VALDEZ SUNI, Luz Maricielo", "VARGAS CARI Marylin Elena Josenit" ], "4": ["BRINGAS JUAREZ Brandon", "CANAZA QUISPE Luis Eduardo", "CARDENAS CARDENAS Vivian Maryel", "CONDORI QUISPE Abel Benjamín", "GARCIA TICONA Angie Ruth", "GUTIERREZ ALVAREZ Lisandro", "JANAMPA LIMA Jeff Dacio", "LLANQUE ALMIRON Yader Jocsan", "MOLLEAPAZA VALERIANO Yesybell Analia", "SALAZAR PEREZ Juan Hersy", "SANGUINO MARQUEZ Daylen", "VILCA ALVAREZ Rodrigo Alejandro", "VIÑA HUAMAN Brayan Andrés" ], "5": ["APAZA GAMARRA German Enrique", "AYALA PEÑAFIEL Diego Gabriel", "CALCINA QUISPE Lizeth Sheyla", "CAMI VILLAVICENCIO Olger Eliel", "CONDORI ANAHUA Abigail Dorkas", "CONDORI ANAHUA Jetzabe María del Pilar", "CORDOVA OVADA Gabriel Gedeón", "CUTIMBO TACUMA David Alexander", "HANAMPA QUISPE Rubí Alejandra", "HUAMAN CANAHUIRI, Frank Antony", "HUARCAYA COILA STEFANY", "MARIN CHOQUE Fredy Erick", "ORCOAPAZA MAMANI Johan Joel", "PALO AGUILAR Yanira Brendaly", "QUISPE CAMALA Kevin Andi", "QUISPE CHOQUE Oliver Omar", "SANCHEZ PEROZO Oriana Valentina", "SANO MAMANI Jenny Abigail", "SUPANTA HUACHANI Angely", "VARGAS ALANOCA Maryori Nayomi" ] }
+        };
+        const curriculum = {
+            "arte": { label: "Arte y Cultura", competencias: [ { id: "C1", nombre: "Aprecia de manera crítica...", criterios: ["Percibe", "Contextualiza", "Reflexiona"] }, { id: "C2", nombre: "Crea proyectos...", criterios: ["Explora", "Aplica", "Evalúa"] } ] },
+            "dpcc": { label: "DPCC", competencias: [ { id: "C1", nombre: "Construye su identidad", criterios: ["Se valora", "Autorregula", "Reflexiona", "Vive sex."] }, { id: "C2", nombre: "Convive y participa...", criterios: ["Interactúa", "Normas", "Delibera", "Acciones"] } ] },
+            "ept": { label: "EPT", competencias: [ { id: "C1", nombre: "Gestiona proyectos...", criterios: ["Propone", "Habilidades", "Trabaja Coop.", "Evalúa"] } ] }
+        };
+        
+        // --- INIT ---
+        async function initApp() { 
+            // Intentar conectar con credenciales reales primero
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                else await signInAnonymously(auth);
+                
+                onAuthStateChanged(auth, (u) => {
+                    if(u) { 
+                        userId = u.uid; 
+                        updateStatus(" 🟢  Conectado (Nube Privada)");
+                        cargarListaSesiones();
+                    } else {
+                        // Fallback a local si falla auth
+                        useLocalStorage = true;
+                        updateStatus(" 🟠  Modo Local (Auth Falló)");
+                    }
+                });
+            } catch(e) { 
+                // Fallback a local si hay error de conexión o config
+                console.error(e);
+                useLocalStorage = true;
+                updateStatus(" 🔴  Modo Local (Error)");
+            }
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+        }
+        function updateStatus(msg) {
+            const st = document.getElementById('connection-status');
+            st.textContent = msg;
+            if(msg.includes("Conectado")) st.className = "text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded inline-block";
+            else st.className = "text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block";
+        }
+        function getId() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value, f=document.getElementById('fecha').value;
+            return (b&&n&&g&&a&&f) ? `registro-${b}-${n}-${g}-${a}-${f}` : null;
+        }
+        function getPath() { return `artifacts/${appId}/users/${userId}/registros_auxiliares`; }
+        
+        // --- GESTIÓN DE SESIONES ---
+        async function cargarListaSesiones() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            const listDiv = document.getElementById('lista-sesiones');
+            const countSpan = document.getElementById('contador-sesiones');
+            
+            if(!b||!n||!g||!a) {
+                listDiv.innerHTML = '<p class="text-xs text-gray-400 text-center p-2">Seleccione filtros...</p>';
+                countSpan.textContent = "0 Sesiones";
+                return;
+            }
+            let sessions = [];
+            const prefix = `registro-${b}-${n}-${g}-${a}-`;
+            if (!useLocalStorage && db && userId) {
+                try {
+                   const q = query(collection(db, getPath()));
+                   const snaps = await getDocs(q);
+                   snaps.forEach(doc => {
+                       if(doc.id.startsWith(prefix)) {
+                           sessions.push({ id: doc.id, fecha: doc.id.replace(prefix, ''), data: doc.data() });
+                       }
+                   });
+                } catch (e) { console.error("Error fetch sessions", e); }
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith(prefix)) {
+                         sessions.push({ id: key, fecha: key.replace(prefix, ''), data: JSON.parse(localStorage.getItem(key)) });
+                    }
+                }
+            }
+            let html = '';
+            sessions.forEach(s => {
+                html += `
+                <div class="bg-white border border-slate-200 rounded p-2 hover:bg-blue-50 transition-colors group relative">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-xs font-bold text-blue-800 bg-blue-100 px-1 rounded">${s.fecha}</span>
+                        <div class="flex gap-1">
+                            <button onclick="window.cargarSesion('${s.fecha}')" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 border border-green-200">Abrir</button>
+                            <button onclick="window.confirmarBorrado('${s.id}')" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded hover:bg-red-200 border border-red-200"> 🗑️ </button>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-slate-600 truncate" title="${s.data.prompt}">${s.data.prompt || 'Sin tema registrado'}</div>
+                </div>`;
+            });
+            listDiv.innerHTML = sessions.length > 0 ? html : '<p class="text-xs text-gray-400 text-center p-2">No hay registros.</p>';
+            countSpan.textContent = `${sessions.length} Sesiones`;
+        }
+        
+        // Exponer la función globalmente
+        window.cargarListaSesiones = cargarListaSesiones;
+        window.cargarSesion = (fecha) => {
+            document.getElementById('fecha').value = fecha;
+            renderTable(); 
+        }
+        
+        // Modal Borrado
+        const modal = document.getElementById('custom-modal-ui');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const modalMsg = document.getElementById('modal-message');
+        const modalTitle = document.getElementById('modal-title');
+        
+        window.confirmarBorrado = (docId) => {
+            sesionABorrar = docId;
+            modalTitle.innerText = "¿Borrar sesión?";
+            modalMsg.innerText = "Esta acción no se puede deshacer.";
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Asegurar que el botón cancelar cierre el modal
+            cancelBtn.onclick = () => {
+                 modal.classList.add('hidden');
+                 modal.classList.remove('flex');
+                 sesionABorrar = null;
+            };
+        }
+        
+        confirmBtn.onclick = async () => {
+            if(!sesionABorrar) return;
+            try {
+                if (!useLocalStorage && db) {
+                    await deleteDoc(doc(db, getPath(), sesionABorrar));
+                }
+                localStorage.removeItem(sesionABorrar); 
+                
+                showToast("Sesión eliminada");
+                cargarListaSesiones();
+                if(getId() === sesionABorrar) {
+                    document.getElementById('ia-prompt').value = "";
+                    renderTable();
+                }
+            } catch(e) { console.error(e); }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        // --- RENDERIZADO ---
+        function renderTable() {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            
+            const list=database[n][g], curr=curriculum[a];
+            if(!list||!curr) { document.getElementById('tabla-registro').innerHTML='<div class="p-10 text-center">Datos no disponibles</div>'; return; }
+            const sel = document.getElementById('select-reporte-alumno');
+            sel.innerHTML = '<option>Seleccione Alumno...</option>'; sel.disabled = false;
+            list.forEach((nm,i) => sel.add(new Option(nm, i)));
+            let html = `<table class="min-w-full border-collapse bg-white text-sm shadow-sm"><thead class="bg-slate-100 sticky top-0 z-20 shadow-sm"><tr><th rowspan="2" class="border p-2 sticky-col nro bg-slate-100">#</th><th rowspan="2" class="border p-2 sticky-col nombre bg-slate-100 text-left">Estudiante</th><th rowspan="2" class="border p-2 sticky-col asistencia text-center bg-slate-100">Asis</th>`;
+            
+            curr.competencias.forEach(c => html += `<th colspan="${c.criterios.length+1}" class="border p-2 bg-blue-50 text-blue-900 text-[10px] leading-tight">${c.nombre}</th>`);
+            html += `<th rowspan="2" class="border bg-indigo-100 w-10">FIN</th></tr><tr>`;
+            curr.competencias.forEach(c => {
+                c.criterios.forEach((crit, i) => {
+                    const hId = `header-${c.id}-${i}`;
+                    html += `<th class="border bg-white align-top p-0 min-w-[110px]">
+                        <div class="th-capacidad p-1 bg-slate-50 border-b" title="${crit}">${crit}</div>
+                        <div id="${hId}" class="th-desempeno" title="Desempeño precisado por IA">Cap. ${i+1}</div>
+                    </th>`;
+                });
+                html += `<th class="border bg-blue-100 w-10 text-[9px]">PROM</th>`;
+            });
+            html += `</tr></thead><tbody class="divide-y divide-slate-200">`;
+            list.forEach((est, i) => {
+                const names = est.split(',');
+                const displayName = `<span class="font-bold text-slate-800">${names[0]}</span> ${names[1] || ''}`;
+                
+                html += `<tr class="hover:bg-blue-50">
+                    <td class="border p-1 text-center sticky-col nro bg-white text-xs text-slate-400">${i+1}</td>
+                    <td class="border p-1 sticky-col nombre truncate text-xs pl-2" title="${est}">${displayName}</td>
+                    <td class="border p-1 sticky-col asistencia"><select id="asistencia-${i}" class="nota-asistencia a" onchange="handleInput(this)"><option value="A">A</option><option value="F" class="f">F</option><option value="J">J</option></select></td>`;
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => html += `<td class="border p-1"><select id="nota-${i}-${c.id}-${ci}" class="nota-cuali empty" onchange="handleInput(this)"><option value="">-</option><option value="AD" class="ad">AD</option><option value="A" class="a">A</option><option value="B" class="b">B</option><option value="C" class="c">C</option></select></td>`);
+                    html += `<td id="prom-${i}-${c.id}" class="border p-1 text-center font-bold bg-slate-50 text-xs text-slate-300">-</td>`;
+                });
+                html += `<td id="prom-final-${i}" class="border p-1 text-center font-bold bg-indigo-50 text-indigo-700">-</td></tr>`;
+            });
+            html += `</tbody></table>`;
+            document.getElementById('tabla-registro').innerHTML = html;
+            document.getElementById('btn-generar-conclusiones').disabled = false;
+            
+            loadData();
+        }
+        
+        // --- DATA HANDLING ---
+        window.handleInput = async function(el) {
+            updateColor(el);
+            calcProms();
+            await saveData();
+        }
+        function updateColor(el) {
+            if(el.classList.contains('nota-cuali')) el.className = `nota-cuali ${el.value.toLowerCase()||'empty'}`;
+            if(el.classList.contains('nota-asistencia')) el.className = `nota-asistencia ${el.value.toLowerCase()}`;
+        }
+        async function saveData() {
+            const id=getId(); if(!id) return;
+            const d={ notas:{}, headers:currentHeaders, prompt:document.getElementById('ia-prompt').value };
+            document.querySelectorAll('select').forEach(s => { if(s.id) d.notas[s.id]=s.value; });
+            localStorage.setItem(id, JSON.stringify(d));
+            if (!useLocalStorage && db && userId) {
+                await setDoc(doc(db, getPath(), id), d).catch(e => console.error("Error nube", e));
+            }
+            showToast("Guardado");
+            cargarListaSesiones();
+        }
+        async function loadData() {
+            const id=getId(); if(!id) return;
+            currentHeaders={}; document.getElementById('ia-prompt').value="";
+            document.getElementById('btn-sugerir-sesion').classList.add('hidden');
+            
+            document.querySelectorAll('.th-desempeno').forEach(el => { el.innerText = el.id.replace('header-', 'Cap. '); el.classList.remove('text-blue-700'); });
+            let d = null;
+            const local = localStorage.getItem(id);
+            if(local) d = JSON.parse(local);
+            if(!d && !useLocalStorage && db && userId) {
+                try {
+                    const snap = await getDoc(doc(db, getPath(), id));
+                    if(snap.exists()) d = snap.data();
+                } catch(e) { console.error(e); }
+            }
+            if(d) {
+                if(d.prompt) {
+                        document.getElementById('ia-prompt').value = d.prompt;
+                        document.getElementById('btn-sugerir-sesion').classList.remove('hidden');
+                }
+                if(d.headers) {
+                    currentHeaders = d.headers;
+                    Object.keys(d.headers).forEach(k => {
+                        const el = document.getElementById(k);
+                        if(el) { el.innerText = d.headers[k]; el.classList.add('text-blue-700'); }
+                    });
+                }
+                if(d.notas) Object.keys(d.notas).forEach(k => {
+                    const el = document.getElementById(k);
+                    if(el) { el.value = d.notas[k]; updateColor(el); }
+                });
+                calcProms();
+            }
+        }
+        
+        const valMap = { "AD": 4, "A": 3, "B": 2, "C": 1, "": 0 };
+        const toL = n => n>3.4?"AD":n>2.4?"A":n>1.4?"B":n>0?"C":"-";
+        
+        function calcProms() {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            const st=database[n][g], cp=curriculum[a].competencias;
+            
+            st.forEach((_, i) => {
+                let fs=0, fc=0;
+                cp.forEach(c => {
+                    let s=0, co=0;
+                    c.criterios.forEach((_, ci) => {
+                        const v = valMap[document.getElementById(`nota-${i}-${c.id}-${ci}`)?.value]||0;
+                        if(v>0){s+=v;co++}
+                    });
+                    const p=co>0?s/co:0;
+                    const el=document.getElementById(`prom-${i}-${c.id}`);
+                    el.innerText = toL(p);
+                    el.className=`border p-1 text-center font-bold text-xs bg-slate-50 ${p>3.4?'text-blue-700':p>2.4?'text-green-700':p>1.4?'text-yellow-600':'text-red-600'}`;
+                    if(p>0){fs+=p;fc++}
+                });
+                const fe=document.getElementById(`prom-final-${i}`);
+                const fp=fc>0?fs/fc:0;
+                fe.innerText=toL(fp);
+                fe.className=`border p-1 text-center font-bold text-xs bg-indigo-50 ${fp>3.4?'text-blue-700':fp>2.4?'text-green-700':fp>1.4?'text-yellow-600':'text-red-600'}`;
+            });
+        }
+        
+        // --- IA FUNCIONES ---
+        async function consultarIA() {
+            const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value;
+            if(!p||!a) return showToast("Faltan datos");
+            
+            const ui={spin:document.getElementById('ia-spinner'), ph:document.getElementById('ia-placeholder'), res:document.getElementById('ia-respuesta-container'), btn:document.getElementById('btn-sugerir-sesion')};
+            ui.spin.classList.remove('hidden'); ui.ph.classList.add('hidden'); ui.res.classList.add('hidden'); ui.btn.classList.add('hidden');
+            const ad=curriculum[a];
+            let ml=[]; ad.competencias.forEach(c=>c.criterios.forEach((cr,i)=>ml.push({id:`header-${c.id}-${i}`, c:cr})));
+            const pr=`Actividad: "${p}". Área: "${a}". 
+            1. Identifica con qué COMPETENCIA(S) se relaciona principalmente.
+            2. Redacta una Justificación Pedagógica breve que mencione estas competencias y describa brevemente de qué trata cada una.
+            3. Redacta un DESEMPEÑO PRECISADO (conducta observable, breve, max 8 palabras) para cada Criterio/Capacidad listada.
+            
+            Salida JSON: { "justificacion": "Texto que incluye la competencia...", "desempenos": { "header-ID": "Texto..." } } Criterios: ${JSON.stringify(ml)}`;
+            
+            try {
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                const j=await r.json();
+                const res=JSON.parse(j.candidates[0].content.parts[0].text);
+                
+                document.getElementById('ia-respuesta-texto').innerText = res.justificacion;
+                currentHeaders=res.desempenos;
+                Object.keys(currentHeaders).forEach(k=>{ const e=document.getElementById(k); if(e) {e.innerText=currentHeaders[k]; e.classList.add('text-blue-700');} });
+                
+                ui.res.classList.remove('hidden');
+                ui.btn.classList.remove('hidden'); // Mostrar botón de sesión sugerida
+                saveData();
+            } catch(e) { console.error(e); showToast("Error IA"); }
+            finally { ui.spin.classList.add('hidden'); }
+        }
+        
+        // 2. Generar Sesión Sugerida
+        async function sugerirSesion() {
+            const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value, g=document.getElementById('select-grado').value, n=document.getElementById('select-nivel').value;
+            const box = document.getElementById('seccion-sesion-sugerida');
+            const content = document.getElementById('contenido-sesion-sugerida');
+            
+            box.classList.remove('hidden');
+            content.innerHTML = '<div class="flex items-center gap-2 text-purple-600"><div class="spinner w-4 h-4 border-purple-600"></div> Redactando guía docente...</div>';
+            
+            let desList = Object.values(currentHeaders).join(", ");
+            const prompt = `Actúa como especialista pedagógico.
+            Crea una Guía de Sesión de Aprendizaje breve para el docente.
+            Tema: ${p}
+            Nivel: ${g}° ${n} - Área: ${a}
+            Desempeños a evaluar: ${desList}
+            Estructura HTML simple (usa <h4> para títulos y <ul> para listas):
+            1. Propósito de la sesión.
+            2. Secuencia Didáctica:
+               - Inicio (Motivación/Saberes previos)
+               - Desarrollo (Actividad central para evidenciar los desempeños)
+               - Cierre (Metacognición)
+            3. Instrumento de evaluación sugerido.
+            
+            Responde solo con el HTML del contenido.`;
+            try {
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+                const j=await r.json();
+                content.innerHTML = j.candidates[0].content.parts[0].text;
+            } catch(e) { content.innerHTML = "Error al generar la sesión."; }
+        }
+        
+        // 3. Conclusiones
+        async function generarConclusiones() {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            const div=document.getElementById('conclusiones-ia-container');
+            document.getElementById('seccion-conclusiones-ui').classList.remove('hidden');
+            div.innerHTML='Cargando...';
+            const lst=[];
+            database[n][g].forEach((nm,i)=>{
+                const nt=document.getElementById(`prom-final-${i}`).innerText;
+                if(nt!=='-') lst.push({nombre:nm, nota:nt});
+            });
+            if(!lst.length) { div.innerHTML="Faltan notas."; return; }
+            const pr=`Actúa como docente. Genera conclusiones descriptivas.
+            Área: ${a}.
+            Para cada alumno:
+            - Si es AD/A (VERDE): Describe el logro destacado.
+            - Si es B (NARANJA): Describe logro y qué falta.
+            - Si es C (ROJO): Describe la dificultad Y UNA "actividad_recuperacion" CONCRETA (ej: Hacer mapa conceptual, grabar video).
+            - Menciona la competencia evaluada brevemente en la conclusión.
+            
+            JSON Array: [{nombre, nota, conclusion, actividad_recuperacion}]
+            Alumnos: ${JSON.stringify(lst)}`;
+            try {
+                const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                const j=await r.json();
+                const res=JSON.parse(j.candidates[0].content.parts[0].text);
+                
+                div.innerHTML = res.map(r => {
+                    let colorClass = r.nota === 'C' ? 'bg-red-50 border-red-200' : (r.nota === 'B' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200');
+                    let icon = r.nota === 'C' ? ' 🔴 ' : (r.nota === 'B' ? ' 🟠 ' : ' 🟢 ');
+                    
+                    return `
+                    <div class="border p-3 rounded-lg shadow-sm ${colorClass} transition-all hover:shadow-md">
+                        <div class="flex justify-between items-center mb-2 border-b border-black/5 pb-1">
+                            <h4 class="font-bold text-sm text-slate-800 truncate" title="${r.nombre}">${r.nombre}</h4>
+                            <div class="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-white rounded border">
+                                <span>${icon}</span> <span>${r.nota}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed mb-2">${r.conclusion}</p>
+                        ${r.actividad_recuperacion ? `<div class="bg-white p-2 rounded border border-red-100 text-[10px] text-red-800">
+                            <strong class="block mb-0.5 uppercase tracking-wider text-red-600"> 🛠️  Plan Recuperación:</strong>
+                            ${r.actividad_recuperacion}
+                        </div>` : ''}
+                    </div>`;
+                }).join('');
+                
+                document.getElementById('conclusiones-metadata').textContent = `Análisis realizado para ${lst.length} estudiantes.`;
+            } catch(e){ div.innerHTML="Error al conectar con IA."; }
+        }
+        
+        // 4. Reportes (Sábana y Ficha)
+        async function reporteGeneral() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!b||!n||!g||!a) return showToast("Faltan datos");
+            
+            let ses = [];
+            const prefix = `registro-${b}-${n}-${g}-${a}-`;
+            
+            if (!useLocalStorage && db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) ses.push({f:doc.id.replace(prefix,''), t:doc.data().prompt, n:doc.data().notas, h:doc.data().headers});
+                });
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if(key.startsWith(prefix)) {
+                        const d = JSON.parse(localStorage.getItem(key));
+                        ses.push({f:key.replace(prefix,''), t:d.prompt, n:d.notas, h:d.headers});
+                    }
+                }
+            }
+            
+            ses.sort((x,y)=>x.f.localeCompare(y.f));
+            
+            // Calcular columnas por sesión
+            const curr = curriculum[a];
+            let colsPerSession = 1; // Asistencia
+            curr.competencias.forEach(c => colsPerSession += c.criterios.length + 1); // Criterios + Prom
+            colsPerSession += 1; // Prom Final
+            
+            let h = `<html><head><style>
+                body{font-family:Arial;font-size:9px} 
+                table{width:100%;border-collapse:collapse;margin-bottom:20px} 
+                th,td{border:1px solid #999;padding:2px;text-align:center;font-size:9px}
+                .session-header{background:#eee;font-size:10px;padding:5px;border-bottom:2px solid #666}
+                .comp-header{background:#e0e7ff;color:#1e3a8a;font-weight:bold}
+                .crit-header{background:#f8fafc;font-style:italic;color:#475569;font-size:8px;height:60px;vertical-align:bottom}
+                .vertical-text {writing-mode: vertical-rl; transform: rotate(180deg); max-height:100px; margin:0 auto; text-align:left;}
+                .prom-header{background:#f1f5f9;font-weight:bold;width:20px}
+                .final-header{background:#e0e7ff;font-weight:bold;width:25px}
+                .sticky-col{position:sticky;left:0;background:white;z-index:10}
+            </style></head><body>`;
+            
+            h += `<h3>REPORTE DETALLADO | ${b} | ${g}° ${n} | ${a}</h3>`;
+            
+            h += `<table><thead>`;
+            
+            // Fila 1: Sesiones
+            h += `<tr><th rowspan="3" style="width:20px">N°</th><th rowspan="3" style="width:150px">ESTUDIANTE</th>`;
+            ses.forEach(s => {
+                h += `<th colspan="${colsPerSession}" class="session-header">${s.f} - ${s.t ? s.t.substring(0, 40) + '...' : 'Sin Tema'}</th>`;
+            });
+            h += `</tr>`;
+            
+            // Fila 2: Competencias
+            h += `<tr>`;
+            ses.forEach(() => {
+                h += `<th rowspan="2" style="width:20px">As</th>`;
+                curr.competencias.forEach(c => {
+                    h += `<th colspan="${c.criterios.length + 1}" class="comp-header" title="${c.nombre}">${c.nombre.substring(0,15)}...</th>`;
+                });
+                h += `<th rowspan="2" class="final-header">PF</th>`;
+            });
+            h += `</tr>`;
+            
+            // Fila 3: Criterios (Desempeños)
+            h += `<tr>`;
+            ses.forEach(s => {
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((cr, ci) => {
+                        const hid = `header-${c.id}-${ci}`;
+                        const txt = (s.h && s.h[hid]) ? s.h[hid] : cr;
+                        h += `<th class="crit-header"><div class="vertical-text">${txt}</div></th>`;
+                    });
+                    h += `<th class="prom-header">P</th>`;
+                });
+            });
+            h += `</tr></thead><tbody>`;
+            
+            // Filas de Estudiantes
+            database[n][g].forEach((nm, i) => {
+                const parts = nm.split(',');
+                h += `<tr><td>${i+1}</td><td style="text-align:left;padding-left:4px"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
+                
+                ses.forEach(s => {
+                    // Asistencia
+                    const asis = s.n[`asistencia-${i}`] || '-';
+                    const asisColor = asis === 'F' ? 'color:red' : '';
+                    h += `<td style="${asisColor}">${asis}</td>`;
+                    
+                    let sumFinal = 0, countFinal = 0;
+                    
+                    curr.competencias.forEach(c => {
+                        let sumComp = 0, countComp = 0;
+                        c.criterios.forEach((_, ci) => {
+                            const val = s.n[`nota-${i}-${c.id}-${ci}`] || '';
+                            const num = valMap[val] || 0;
+                            if(num > 0) { sumComp += num; countComp++; }
+                            
+                            // Color nota
+                            let color = val==='C'?'red':(val==='AD'?'blue':(val==='A'?'green':'#b45309'));
+                            if(val==='') color='black';
+                            h += `<td style="color:${color}">${val}</td>`;
+                        });
+                        
+                        const prom = countComp > 0 ? sumComp/countComp : 0;
+                        const promTxt = toL(prom);
+                        if(prom > 0) { sumFinal += prom; countFinal++; }
+                        
+                        let pColor = promTxt==='C'?'red':(promTxt==='AD'?'blue':(promTxt==='A'?'green':'#b45309'));
+                        if(promTxt==='-') pColor='#ccc';
+                        h += `<td style="font-weight:bold;background:#f8fafc;color:${pColor}">${promTxt}</td>`;
+                    });
+                    
+                    const pf = countFinal > 0 ? sumFinal/countFinal : 0;
+                    const pfTxt = toL(pf);
+                    let fColor = pfTxt==='C'?'red':(pfTxt==='AD'?'blue':(pfTxt==='A'?'green':'#b45309'));
+                    if(pfTxt==='-') fColor='#ccc';
+                    h += `<td style="font-weight:bold;background:#e0e7ff;color:${fColor}">${pfTxt}</td>`;
+                });
+                h += `</tr>`;
+            });
+            
+            h += `</tbody></table></body></html>`;
+            window.open("","","width=1400,height=800").document.write(h);
+        }
+        
+        // --- FICHA INDIVIDUAL (MODIFICADO) ---
+        async function fichaIndividual() {
+            const i = document.getElementById('select-reporte-alumno').value;
+            const b = document.getElementById('select-bimestre').value;
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const a = document.getElementById('select-area').value;
+            
+            if (i === 'Seleccione Alumno...') return showToast("Seleccione alumno");
+            if(!b||!n||!g||!a) return showToast("Faltan datos del filtro");
+
+            const studentName = database[n][g][i];
+            
+            // 1. Fetch History
+            let ses = [];
+            const prefix = `registro-${b}-${n}-${g}-${a}-`;
+
+            if (!useLocalStorage && db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) ses.push({f:doc.id.replace(prefix,''), t:doc.data().prompt, n:doc.data().notas});
+                });
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if(key.startsWith(prefix)) {
+                        const d = JSON.parse(localStorage.getItem(key));
+                        ses.push({f:key.replace(prefix,''), t:d.prompt, n:d.notas});
+                    }
+                }
+            }
+            ses.sort((x,y)=>x.f.localeCompare(y.f));
+
+            // 2. Process Data for Student
+            let totalAsistencias = 0;
+            let faltasDates = [];
+            let historyRows = '';
+            let sumBimestral = 0;
+            let countBimestral = 0;
+
+            ses.forEach(s => {
+                // Attendance
+                const asis = s.n[`asistencia-${i}`] || '-';
+                if (asis === 'A') totalAsistencias++;
+                if (asis === 'F') faltasDates.push(s.f);
+
+                // Grades Calculation
+                let sumSession = 0;
+                let countSession = 0;
+                let gradesStr = '';
+                
+                // Need to iterate competencies to find grades for this student
+                const curr = curriculum[a];
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => {
+                        const valStr = s.n[`nota-${i}-${c.id}-${ci}`];
+                        const val = valMap[valStr] || 0;
+                        if (val > 0) {
+                            sumSession += val;
+                            countSession++;
+                            // Color coding for display
+                            const color = valStr === 'C' ? 'red' : (valStr === 'B' ? 'orange' : (valStr === 'A' ? 'green' : 'blue'));
+                            gradesStr += `<span style="color:${color};font-weight:bold;margin-right:4px">${valStr}</span> `;
+                        }
+                    });
+                });
+
+                const avgSession = countSession > 0 ? sumSession / countSession : 0;
+                const avgLabel = countSession > 0 ? toL(avgSession) : '-';
+                
+                if (countSession > 0) {
+                    sumBimestral += avgSession;
+                    countBimestral++;
+                }
+
+                const rowColor = asis === 'F' ? '#fee2e2' : '#fff';
+                
+                historyRows += `
+                    <tr style="background-color:${rowColor}">
+                        <td>${s.f}</td>
+                        <td style="text-align:left">${s.t || 'Sin descripción'}</td>
+                        <td>${asis}</td>
+                        <td>${gradesStr}</td>
+                        <td><b>${avgLabel}</b></td>
+                    </tr>
+                `;
+            });
+
+            const promBimestralNum = countBimestral > 0 ? sumBimestral / countBimestral : 0;
+            const promBimestralLabel = countBimestral > 0 ? toL(promBimestralNum) : '-';
+
+            // 3. Build HTML
+            let h = `<html><head><style>
+                body { font-family: 'Arial', sans-serif; color: #333; padding: 20px; }
+                h2 { color: #1e3a8a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                .info { margin-bottom: 20px; background: #f8fafc; p: 10px; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; }
+                .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+                .stat-box { background: #fff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+                .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: bold; }
+                .stat-val { font-size: 18px; font-weight: bold; color: #0f172a; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th { background: #1e3a8a; color: white; padding: 8px; text-align: center; }
+                td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+                .falta-list { color: #dc2626; font-weight: bold; font-size: 11px; }
+            </style></head><body>`;
+
+            h += `<h2>Ficha Acumulativa del Estudiante</h2>`;
+            h += `<div class="info">
+                    <h3 style="margin:0 0 5px 0; font-size:18px">${studentName}</h3>
+                    <p style="margin:0; font-size:12px; color:#666">${g}° ${n} | ${a.toUpperCase()} | ${b}</p>
+                  </div>`;
+                  
+            h += `<div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Asistencias</div>
+                        <div class="stat-val" style="color:green">${totalAsistencias}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Faltas</div>
+                        <div class="stat-val" style="color:red">${faltasDates.length}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Promedio Bimestral</div>
+                        <div class="stat-val" style="color:blue">${promBimestralLabel}</div>
+                    </div>
+                  </div>`;
+            
+            if (faltasDates.length > 0) {
+                h += `<p class="falta-list">⚠️ Fechas de Inasistencia: ${faltasDates.join(', ')}</p>`;
+            }
+
+            h += `<table>
+                    <thead>
+                        <tr>
+                            <th width="80">Fecha</th>
+                            <th>Actividad / Tema</th>
+                            <th width="40">Asis</th>
+                            <th>Notas Parciales</th>
+                            <th width="50">Prom</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRows}
+                    </tbody>
+                  </table>`;
+                  
+            h += `</body></html>`;
+
+            const win = window.open("", "_blank", "width=900,height=800");
+            win.document.write(h);
+            win.document.close();
+        }
+        
+        // --- Listeners ---
+        document.getElementById('btn-consultar-ia').onclick = consultarIA;
+        document.getElementById('btn-sugerir-sesion').onclick = sugerirSesion;
+        document.getElementById('btn-mostrar-sesiones').onclick = cargarListaSesiones;
+        document.getElementById('btn-reporte-general').onclick = reporteGeneral;
+        document.getElementById('btn-reporte-individual').onclick = fichaIndividual;
+        document.getElementById('btn-generar-conclusiones').onclick = generarConclusiones;
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 2000);
+        }
+        
+        ['select-bimestre','select-nivel','select-grado','select-area','fecha'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                const nxt = { 'select-bimestre':'select-nivel', 'select-nivel':'select-grado', 'select-grado':'select-area' }[id];
+                if(nxt) document.getElementById(nxt).disabled = !e.target.value;
+                
+                if(id==='select-nivel') {
+                    const g=document.getElementById('select-grado'); g.innerHTML='<option value="">...</option>';
+                    const max = e.target.value==='primaria'?6:5; for(let i=1;i<=max;i++) g.add(new Option(i+'°', i));
+                }
+                if(id==='select-grado') {
+                    const ar=document.getElementById('select-area'); ar.innerHTML='<option value="arte">Arte</option><option value="dpcc">DPCC</option><option value="ept">EPT</option>';
+                }
+                renderTable();
+                if(['select-bimestre','select-area'].includes(id)) cargarListaSesiones();
+            });
+        });
+        
+        initApp();
+    </script>
+</body>
+</html>
