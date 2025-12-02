@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro Auxiliar v4.9.5 - Sistema Blindado</title>
+    <title>Registro Auxiliar v4.9.18 - Sistema Blindado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -100,7 +100,7 @@
         <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
-                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.5 (Sistema Blindado)</p>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.18 (Sistema Blindado)</p>
             </div>
             <div class="text-right mt-2 md:mt-0 flex flex-col items-end">
                 <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
@@ -216,11 +216,33 @@
         <!-- Conclusiones UI -->
         <section id="seccion-conclusiones-ui" class="hidden mb-6 bg-white border border-slate-200 rounded-lg p-5 shadow-lg">
             <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                <h3 class="font-bold text-slate-800 text-lg"> 📊  Conclusiones Descriptivas</h3>
-                <button onclick="this.closest('section').classList.add('hidden')" class="text-slate-400 hover:text-red-500 text-xl font-bold">&times;</button>
+                <h3 class="font-bold text-slate-800 text-lg"> 📊  Consolidado Bimestral & Conclusiones</h3>
+                <div class="flex gap-2">
+                     <button onclick="imprimirConsolidado()" id="btn-print-consolidado" class="hidden bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded text-xs font-bold flex items-center gap-1">
+                        🖨️ Informe Bimestral Final
+                    </button>
+                    <button onclick="this.closest('section').classList.add('hidden')" class="text-slate-400 hover:text-red-500 text-xl font-bold">&times;</button>
+                </div>
             </div>
+            
+            <!-- Tabla Validación -->
+            <div class="mb-4 overflow-x-auto">
+                <table class="min-w-full text-xs border border-slate-300">
+                    <thead class="bg-slate-100 text-slate-700">
+                        <tr>
+                            <th class="border p-1">N°</th>
+                            <th class="border p-1 text-left">Estudiante</th>
+                            <th class="border p-1">Sesiones</th>
+                            <th class="border p-1">Promedio</th>
+                            <th class="border p-1">Trayectoria</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-consolidado-body"></tbody>
+                </table>
+            </div>
+
             <div id="conclusiones-metadata" class="text-xs text-slate-500 mb-4 font-medium"></div>
-            <div id="conclusiones-ia-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2"></div>
+            <div id="conclusiones-ia-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pr-2"></div>
         </section>
         <!-- Tabla -->
         <section id="tabla-registro" class="overflow-x-auto border rounded-lg shadow-sm bg-white min-h-[200px]">
@@ -252,6 +274,10 @@
         let useLocalStorage = false; 
         let customLists = {}; 
         let tempGestionList = []; 
+        
+        // VARIABLES PARA REPORTE CONSOLIDADO
+        let lastAnalysisResults = null;
+        let currentBimesterSessions = [];
 
         // --- CONFIGURACIÓN API KEY DE IA ---
         window.configurarIA = () => {
@@ -286,15 +312,14 @@
             return database[n] && database[n][g] ? [...database[n][g]] : [];
         }
 
+        // --- INIT APP (MODO NUBE ESTRICTO + FIX CONEXIÓN) ---
         async function initApp() { 
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                else await signInAnonymously(auth);
-                
+                // 1. Forzar listener primero para detectar estado
                 onAuthStateChanged(auth, async (u) => {
                     if(u) { 
                         userId = "PROFESOR_MANUEL"; // IDENTIDAD UNIFICADA
@@ -304,9 +329,21 @@
                         restoreFilters();
                         cargarListaSesiones();
                     } else {
-                        updateStatus(" 🔴  Error de Autenticación");
+                        // 2. Si no hay usuario, intentar login anónimo
+                        console.log("Intentando login anónimo...");
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (err) {
+                            console.error("Error Login:", err);
+                            // Manejo específico de error de dominio
+                            if(err.code === 'auth/unauthorized-domain') {
+                                alert("⚠️ ERROR DE DOMINIO: Esta página web no está autorizada en Firebase.\n\n1. Ve a console.firebase.google.com\n2. Authentication > Settings > Dominios Autorizados\n3. Agrega tu dominio de GitHub/Netlify.");
+                            }
+                            updateStatus(" 🔴  Error Acceso");
+                        }
                     }
                 });
+
             } catch(e) { 
                 console.error(e);
                 updateStatus(" 🔴  Error de Conexión");
@@ -594,8 +631,8 @@
             const id=getId(); if(!id) return;
             const d={ notas:{}, headers:currentHeaders, prompt:document.getElementById('ia-prompt').value };
             document.querySelectorAll('select').forEach(s => { if(s.id) d.notas[s.id]=s.value; });
-            
-            if (db && userId) {
+            localStorage.setItem(id, JSON.stringify(d));
+            if (!useLocalStorage && db && userId) {
                 await setDoc(doc(db, getPath(), id), d).catch(e => console.error("Error nube", e));
             }
             showToast("Guardado");
@@ -608,8 +645,9 @@
             
             document.querySelectorAll('.th-desempeno').forEach(el => { el.innerText = el.id.replace('header-', 'Cap. '); el.classList.remove('text-blue-700'); });
             let d = null;
-            
-            if(db && userId) {
+            const local = localStorage.getItem(id);
+            if(local) d = JSON.parse(local);
+            if(!d && !useLocalStorage && db && userId) {
                 try {
                     const snap = await getDoc(doc(db, getPath(), id));
                     if(snap.exists()) d = snap.data();
@@ -664,6 +702,7 @@
             });
         }
         
+        // --- IA FUNCIONES ---
         async function consultarIA() {
             const p=document.getElementById('ia-prompt').value, a=document.getElementById('select-area').value;
             if(!p||!a) return showToast("Faltan datos");
@@ -699,7 +738,7 @@
                 Object.keys(currentHeaders).forEach(k=>{ const e=document.getElementById(k); if(e) {e.innerText=currentHeaders[k]; e.classList.add('text-blue-700');} });
                 
                 ui.res.classList.remove('hidden');
-                ui.btn.classList.remove('hidden'); 
+                ui.btn.classList.remove('hidden'); // Mostrar botón de sesión sugerida
                 saveData();
             } catch(e) { 
                 console.error(e); 
@@ -709,6 +748,7 @@
             finally { ui.spin.classList.add('hidden'); }
         }
         
+        // 2. Generar Sesión Sugerida
         async function sugerirSesion() {
             let key = getAIKey();
             if(!key) { window.configurarIA(); return; }
@@ -742,59 +782,274 @@
             } catch(e) { content.innerHTML = "Error al generar la sesión."; }
         }
         
+        // 3. Conclusiones
+        // VARIABLES DUPLICADAS ELIMINADAS AQUÍ PARA EVITAR CRASH
+
         async function generarConclusiones() {
             let key = getAIKey();
             if(!key) { window.configurarIA(); return; }
 
             const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            const b=document.getElementById('select-bimestre').value;
+
+            if (!b || !n || !g || !a) return showToast("Seleccione filtros");
+
             const div=document.getElementById('conclusiones-ia-container');
-            document.getElementById('seccion-conclusiones-ui').classList.remove('hidden');
-            div.innerHTML='Cargando...';
-            const lst=[];
-            getStudentsList(n,g).forEach((nm,i)=>{
-                const nt=document.getElementById(`prom-final-${i}`).innerText;
-                if(nt!=='-') lst.push({nombre:nm, nota:nt});
-            });
-            if(!lst.length) { div.innerHTML="Faltan notas."; return; }
-            const pr=`Actúa como docente. Genera conclusiones descriptivas.
-            Área: ${a}.
-            Para cada alumno:
-            - Si es AD/A (VERDE): Describe el logro destacado.
-            - Si es B (NARANJA): Describe logro y qué falta.
-            - Si es C (ROJO): Describe la dificultad Y UNA "actividad_recuperacion" CONCRETA (ej: Hacer mapa conceptual, grabar video).
-            - Menciona la competencia evaluada brevemente en la conclusión.
+            const printBtn = document.getElementById('btn-print-consolidado');
             
-            JSON Array: [{nombre, nota, conclusion, actividad_recuperacion}]
-            Alumnos: ${JSON.stringify(lst)}`;
+            // Crear botón si no existe
+            if (!printBtn) {
+                const header = document.querySelector('#seccion-conclusiones-ui h3').parentElement;
+                const btn = document.createElement('button');
+                btn.id = 'btn-print-consolidado';
+                btn.className = 'hidden bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 ml-auto mr-2';
+                btn.innerHTML = '🖨️ Informe de Progreso';
+                btn.onclick = imprimirConsolidado;
+                header.insertBefore(btn, header.lastElementChild);
+            }
+            
+            document.getElementById('seccion-conclusiones-ui').classList.remove('hidden');
+            document.getElementById('btn-print-consolidado').classList.add('hidden'); 
+            div.innerHTML='<div class="text-center p-4 text-blue-600">⏳ Analizando historial bimestral...</div>';
+
+            // 1. FETCH HISTORIAL (Todas las sesiones del bimestre)
+            let ses = [];
+            const prefix = `registro-${b}-${n}-${g}-${a}-`;
+            
+            if (db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) ses.push({data: doc.data(), id: doc.id});
+                });
+            }
+            
+            // Ordenar cronológicamente
+            ses.sort((x, y) => {
+                const dateX = x.id.replace(prefix, '');
+                const dateY = y.id.replace(prefix, '');
+                return dateX.localeCompare(dateY);
+            });
+            
+            currentBimesterSessions = ses; 
+
+            if (ses.length === 0) {
+                 div.innerHTML='No hay sesiones registradas en este bimestre para analizar.';
+                 return;
+            }
+
+            // 2. CALCULAR PROMEDIOS POR ALUMNO
+            const students = getStudentsList(n,g);
+            const consolidatedData = [];
+            
+            // Helper para calcular promedio de sesión
+            const getSessionAvg = (sessionData, studentIndex, area) => {
+                let sum = 0;
+                let count = 0;
+                const curr = curriculum[area];
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => {
+                        const val = sessionData.notas[`nota-${studentIndex}-${c.id}-${ci}`];
+                        const num = valMap[val] || 0;
+                        if(num > 0) { sum += num; count++; }
+                    });
+                });
+                return count > 0 ? sum/count : 0;
+            };
+
+            students.forEach((nm, i) => {
+                let sumFinal = 0;
+                let countFinal = 0;
+                let gradeHistory = []; // Para el prompt
+                let sessionGrades = []; // Para el reporte
+
+                ses.forEach(s => {
+                    const sessionAvg = getSessionAvg(s.data, i, a);
+                    const sessionAvgTxt = sessionAvg > 0 ? toL(sessionAvg) : '-';
+                    
+                    sessionGrades.push(sessionAvgTxt);
+
+                    if(sessionAvg > 0) {
+                        sumFinal += sessionAvg;
+                        countFinal++;
+                        gradeHistory.push(sessionAvgTxt);
+                    }
+                });
+
+                const finalAvgNum = countFinal > 0 ? sumFinal/countFinal : 0;
+                const finalAvgTxt = toL(finalAvgNum);
+
+                if (countFinal > 0) { 
+                    consolidatedData.push({
+                        nombre: nm,
+                        promedio: finalAvgTxt,
+                        sesiones: countFinal,
+                        historial: gradeHistory.join(", "),
+                        sessionGrades: sessionGrades 
+                    });
+                }
+            });
+            
+            lastAnalysisResults = consolidatedData;
+
+            // 3. LLAMAR A IA CON PROMPT DE EVOLUCIÓN
+            const pr=`Actúa como docente. Genera conclusiones descriptivas BIMESTRALES.
+            Área: ${a}.
+            Datos: Lista de alumnos con su trayectoria de notas en las sesiones (orden cronológico) y promedio final.
+            
+            Instrucciones:
+            - Analiza la TRAYECTORIA (ej: C, B, A = mejora progresiva).
+            - Si es AD/A: "Muestra un desempeño sostenido/destacado..."
+            - Si es B: "Logra los aprendizajes pero requiere fortalecer..."
+            - Si es C: "Presenta dificultades recurrentes..."
+            - NO menciones "sesión 1, sesión 2". Habla del proceso bimestral.
+            
+            JSON Array: [{nombre, nota, conclusion, recomendacion}]
+            Alumnos: ${JSON.stringify(consolidatedData.map(d => ({nombre: d.nombre, nota: d.promedio, historial: d.historial})))}`;
+
             try {
                 const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:pr}]}], generationConfig:{responseMimeType:"application/json"}})});
+                
+                if(!r.ok) throw new Error("API Error");
+                
                 const j=await r.json();
                 const res=JSON.parse(j.candidates[0].content.parts[0].text);
                 
+                // Merge AI conclusion back into consolidatedData for printing
+                res.forEach(r => {
+                    const studentData = lastAnalysisResults.find(d => d.nombre === r.nombre);
+                    if(studentData) {
+                        studentData.conclusion = r.conclusion;
+                    }
+                });
+                
                 div.innerHTML = res.map(r => {
                     let colorClass = r.nota === 'C' ? 'bg-red-50 border-red-200' : (r.nota === 'B' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200');
-                    let icon = r.nota === 'C' ? ' 🔴 ' : (r.nota === 'B' ? ' 🟠 ' : ' 🟢 ');
-                    
                     return `
-                    <div class="border p-3 rounded-lg shadow-sm ${colorClass} transition-all hover:shadow-md">
-                        <div class="flex justify-between items-center mb-2 border-b border-black/5 pb-1">
-                            <h4 class="font-bold text-sm text-slate-800 truncate" title="${r.nombre}">${r.nombre}</h4>
-                            <div class="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-white rounded border">
-                                <span>${icon}</span> <span>${r.nota}</span>
-                            </div>
+                    <div class="border p-3 rounded-lg shadow-sm ${colorClass}">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-sm text-slate-800 truncate">${r.nombre}</h4>
+                            <span class="font-bold text-xs bg-white px-2 rounded border">${r.nota}</span>
                         </div>
-                        <p class="text-xs text-slate-700 leading-relaxed mb-2">${r.conclusion}</p>
-                        ${r.actividad_recuperacion ? `<div class="bg-white p-2 rounded border border-red-100 text-[10px] text-red-800">
-                            <strong class="block mb-0.5 uppercase tracking-wider text-red-600"> 🛠️  Plan Recuperación:</strong>
-                            ${r.actividad_recuperacion}
-                        </div>` : ''}
+                        <p class="text-xs text-slate-700 mb-1"><strong>Conclusión:</strong> ${r.conclusion}</p>
                     </div>`;
                 }).join('');
                 
-                document.getElementById('conclusiones-metadata').textContent = `Análisis realizado para ${lst.length} estudiantes.`;
-            } catch(e){ div.innerHTML="Error al conectar con IA."; }
+                document.getElementById('conclusiones-metadata').textContent = `Informe Bimestral generado para ${consolidatedData.length} estudiantes activos.`;
+                document.getElementById('btn-print-consolidado').classList.remove('hidden'); // Show print button
+
+            } catch(e){ 
+                console.error(e);
+                div.innerHTML="Error al conectar con IA."; 
+            }
         }
         
+        // --- NUEVO REPORTE: INFORME DE PROGRESO ---
+        window.imprimirConsolidado = () => {
+            if(!lastAnalysisResults || !currentBimesterSessions) return showToast("No hay datos para imprimir");
+
+            const b=document.getElementById('select-bimestre').value;
+            const n=document.getElementById('select-nivel').value;
+            const g=document.getElementById('select-grado').value;
+            const a=document.getElementById('select-area').value;
+            
+            // Prepare session headers (dates and prompts)
+            const sessionHeaders = currentBimesterSessions.map(s => {
+                 const prefix = `registro-${b}-${n}-${g}-${a}-`;
+                 const date = s.id.replace(prefix, '');
+                 return { date: date, prompt: s.data.prompt || "Sin tema" };
+            });
+
+            let h = `<html><head><style>
+                @page { size: A4 landscape; margin: 1cm; }
+                body { font-family: Arial, sans-serif; font-size: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+                th, td { border: 1px solid #666; padding: 4px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+                th { background-color: #eee; font-weight: bold; }
+                
+                /* TÍTULOS VERTICALES CORREGIDOS: DE ARRIBA HACIA ABAJO */
+                .vertical-header { 
+                    writing-mode: vertical-rl; 
+                    text-orientation: mixed; 
+                    white-space: normal; 
+                    height: 140px; 
+                    font-size: 9px;
+                    padding: 2px;
+                    line-height: 1.2;
+                }
+                
+                .left { text-align: left; padding-left: 5px; }
+                .conclusion { text-align: justify; font-size: 9px; padding: 5px; line-height: 1.2; }
+                .title { font-size: 14px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; text-align: center; }
+                .subtitle { font-size: 12px; margin-bottom: 15px; text-align: center; }
+                .grade-c { color: red; font-weight: bold; }
+                .grade-ad { color: blue; font-weight: bold; }
+                .grade-a { color: green; font-weight: bold; }
+                .grade-b { color: #d97706; font-weight: bold; }
+            </style></head><body>`;
+            
+            h += `<div class="title">INFORME DE PROGRESO BIMESTRAL - ${b}</div>`;
+            h += `<div class="subtitle"><strong>Nivel:</strong> ${n.toUpperCase()} | <strong>Grado:</strong> ${g}° | <strong>Área:</strong> ${a.toUpperCase()}</div>`;
+            
+            h += `<table>
+                    <colgroup>
+                        <col style="width: 3%">
+                        <col style="width: 25%">
+                        ${sessionHeaders.map(() => '<col style="width: 30px">').join('')}
+                        <col style="width: 40px">
+                        <col style="width: auto">
+                    </colgroup>
+                    <thead><tr>
+                    <th>N°</th>
+                    <th>ESTUDIANTE</th>`;
+            
+            // Session Headers with Date and Topic
+            sessionHeaders.forEach(s => {
+                const topic = s.prompt.length > 25 ? s.prompt.substring(0, 25) + '...' : s.prompt;
+                h += `<th class="vertical-header">${s.date} - ${topic}</th>`;
+            });
+            
+            h += `<th>PROM. FINAL</th>
+                  <th>CONCLUSIÓN DESCRIPTIVA</th>
+                  </tr></thead><tbody>`;
+                  
+            lastAnalysisResults.forEach((d, i) => {
+                h += `<tr>
+                        <td>${i+1}</td>
+                        <td class="left"><b>${d.nombre}</b></td>`;
+                
+                // Session Grades
+                d.sessionGrades.forEach(grade => {
+                    let cls = '';
+                    if(grade === 'C') cls = 'grade-c';
+                    else if(grade === 'B') cls = 'grade-b';
+                    else if(grade === 'A') cls = 'grade-a';
+                    else if(grade === 'AD') cls = 'grade-ad';
+                    h += `<td class="${cls}">${grade}</td>`;
+                });
+                
+                // Final Avg
+                let avgCls = '';
+                if(d.promedio === 'C') avgCls = 'grade-c';
+                else if(d.promedio === 'B') avgCls = 'grade-b';
+                else if(d.promedio === 'A') avgCls = 'grade-a';
+                else if(d.promedio === 'AD') avgCls = 'grade-ad';
+                
+                h += `<td class="${avgCls}" style="background:#f0f9ff">${d.promedio}</td>`;
+                
+                // Conclusion
+                h += `<td class="conclusion">${d.conclusion || '-'}</td>`;
+                h += `</tr>`;
+            });
+            
+            h += `</tbody></table></body></html>`;
+            
+            const win = window.open("", "_blank");
+            win.document.write(h);
+            win.document.close();
+        }
+
+        // 4. Reportes (Sábana y Ficha)
         async function reporteGeneral() {
             const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
             if(!b||!n||!g||!a) return showToast("Faltan datos");
@@ -818,102 +1073,162 @@
             ses.sort((x,y)=>x.f.localeCompare(y.f));
             
             const curr = curriculum[a];
-            let colsPerSession = 1; // Asistencia
-            curr.competencias.forEach(c => colsPerSession += c.criterios.length + 1); // Criterios + Prom
-            colsPerSession += 1; // Prom Final
             
-            let h = `<html><head><style>
-                body{font-family:Arial;font-size:9px} 
-                table{width:100%;border-collapse:collapse;margin-bottom:20px} 
-                th,td{border:1px solid #999;padding:2px;text-align:center;font-size:9px}
-                .session-header{background:#eee;font-size:10px;padding:5px;border-bottom:2px solid #666}
-                .comp-header{background:#e0e7ff;color:#1e3a8a;font-weight:bold}
-                .crit-header{background:#f8fafc;font-style:italic;color:#475569;font-size:8px;height:60px;vertical-align:bottom}
-                .vertical-text {writing-mode: vertical-rl; transform: rotate(180deg); max-height:100px; margin:0 auto; text-align:left;}
-                .prom-header{background:#f1f5f9;font-weight:bold;width:20px}
-                .final-header{background:#e0e7ff;font-weight:bold;width:25px}
-                .sticky-col{position:sticky;left:0;background:white;z-index:10}
-            </style></head><body>`;
-            
-            h += `<h3>REPORTE DETALLADO | ${b} | ${g}° ${n} | ${a}</h3>`;
-            
-            h += `<table><thead>`;
-            
-            h += `<tr><th rowspan="3" style="width:20px">N°</th><th rowspan="3" style="width:150px">ESTUDIANTE</th>`;
-            ses.forEach(s => {
-                h += `<th colspan="${colsPerSession}" class="session-header">${s.f} - ${s.t ? s.t.substring(0, 40) + '...' : 'Sin Tema'}</th>`;
-            });
-            h += `</tr>`;
-            
-            h += `<tr>`;
-            ses.forEach(() => {
-                h += `<th rowspan="2" style="width:20px">As</th>`;
-                curr.competencias.forEach(c => {
-                    h += `<th colspan="${c.criterios.length + 1}" class="comp-header" title="${c.nombre}">${c.nombre.substring(0,15)}...</th>`;
-                });
-                h += `<th rowspan="2" class="final-header">PF</th>`;
-            });
-            h += `</tr>`;
-            
-            h += `<tr>`;
-            ses.forEach(s => {
-                curr.competencias.forEach(c => {
-                    c.criterios.forEach((cr, ci) => {
-                        const hid = `header-${c.id}-${ci}`;
-                        const txt = (s.h && s.h[hid]) ? s.h[hid] : cr;
-                        h += `<th class="crit-header"><div class="vertical-text">${txt}</div></th>`;
-                    });
-                    h += `<th class="prom-header">P</th>`;
-                });
-            });
-            h += `</tr></thead><tbody>`;
-            
-            getStudentsList(n,g).forEach((nm, i) => {
-                const parts = nm.split(',');
-                h += `<tr><td>${i+1}</td><td style="text-align:left;padding-left:4px"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
+            // PAGINACIÓN: 2 SESIONES POR PÁGINA (SOLICITADO)
+            const sessionsPerPage = 2;
+            let fullHtml = `<html><head><style>
+                @page { size: A4 landscape; margin: 0.5cm; } /* Margen reducido */
+                body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; }
+                table { width: 100%; border-collapse: collapse; table-layout: fixed; } /* Fixed layout crucial */
+                th, td { border: 1px solid #475569; padding: 2px; text-align: center; vertical-align: middle; white-space: nowrap; overflow: hidden; }
                 
-                ses.forEach(s => {
-                    const asis = s.n[`asistencia-${i}`] || '-';
-                    const asisColor = asis === 'F' ? 'color:red' : '';
-                    h += `<td style="${asisColor}">${asis}</td>`;
-                    
-                    let sumFinal = 0, countFinal = 0;
-                    
+                /* Column Widths */
+                .w-nro { width: 25px; background: #f1f5f9; }
+                .w-alumno { width: 220px; text-align: left; padding-left: 5px; background: #f8fafc; }
+                .w-asis { width: 25px; }
+                .w-crit { width: 25px; }
+                .w-prom { width: 25px; background: #f1f5f9; font-weight: bold; }
+                .w-pf { width: 30px; background: #dbeafe; font-weight: bold; }
+
+                /* Headers */
+                .session-header { background: #cbd5e1; font-weight: bold; font-size: 11px; height: 25px; }
+                .comp-header { background: #e2e8f0; font-size: 9px; color: #1e293b; height: 20px; }
+                
+                /* Vertical Text for Criteria */
+                .vertical-header {
+                    height: 100px; /* Alto fijo para el texto vertical */
+                    vertical-align: bottom;
+                    background: #fff;
+                    font-size: 8px;
+                    line-height: 10px;
+                }
+                .v-text-wrapper {
+                    writing-mode: vertical-rl;
+                    transform: rotate(180deg);
+                    width: 100%;
+                    height: 100%;
+                    text-align: left;
+                    white-space: normal; /* Permite wrap si es muy largo */
+                    display: flex;
+                    align-items: center;
+                }
+
+                .grade-ad { color: #1d4ed8; font-weight: bold; }
+                .grade-a { color: #15803d; font-weight: bold; }
+                .grade-b { color: #b45309; font-weight: bold; }
+                .grade-c { color: #b91c1c; font-weight: bold; }
+                .grade-empty { color: #cbd5e1; }
+                
+                tr:nth-child(even) td { background-color: #f8fafc; }
+            </style></head><body>`;
+
+            for (let i = 0; i < ses.length; i += sessionsPerPage) {
+                const chunk = ses.slice(i, i + sessionsPerPage);
+                const isFirstPage = i === 0;
+
+                fullHtml += `
+                <div class="${!isFirstPage ? 'page-break' : ''}" style="padding:10px">
+                    <h3 style="margin-bottom:10px; font-size: 14px; text-transform: uppercase;">REPORTE PARCIAL ${Math.floor(i/sessionsPerPage) + 1} | ${b} | ${g}° ${n} | ${a}</h3>
+                    <table>`;
+                
+                // Build Colgroup for precise widths
+                fullHtml += `<colgroup>`;
+                fullHtml += `<col class="w-nro"><col class="w-alumno">`;
+                chunk.forEach(() => {
+                    fullHtml += `<col class="w-asis">`; // Asistencia
                     curr.competencias.forEach(c => {
-                        let sumComp = 0, countComp = 0;
-                        c.criterios.forEach((_, ci) => {
-                            const val = s.n[`nota-${i}-${c.id}-${ci}`] || '';
-                            const num = valMap[val] || 0;
-                            if(num > 0) { sumComp += num; countComp++; }
+                        c.criterios.forEach(() => fullHtml += `<col class="w-crit">`); // Criterios
+                        fullHtml += `<col class="w-prom">`; // Promedio Comp
+                    });
+                    fullHtml += `<col class="w-pf">`; // Promedio Final
+                });
+                fullHtml += `</colgroup>`;
+
+                // Headers
+                fullHtml += `<thead><tr>`;
+                fullHtml += `<th rowspan="3" class="w-nro">N°</th><th rowspan="3" class="w-alumno">ESTUDIANTE</th>`;
+                
+                // Session Titles
+                chunk.forEach(s => {
+                    let colsInSession = 1; // Asis
+                    curr.competencias.forEach(c => colsInSession += c.criterios.length + 1); // Crit + Prom
+                    colsInSession += 1; // PF
+                    fullHtml += `<th colspan="${colsInSession}" class="session-header">${s.f} - ${s.t ? s.t.substring(0, 60) + '...' : 'Sin Tema'}</th>`;
+                });
+                fullHtml += `</tr><tr>`;
+                
+                // Competencies
+                chunk.forEach(() => {
+                    fullHtml += `<th rowspan="2" class="w-asis">As</th>`;
+                    curr.competencias.forEach(c => {
+                        fullHtml += `<th colspan="${c.criterios.length + 1}" class="comp-header" title="${c.nombre}">${c.nombre.substring(0,25)}...</th>`;
+                    });
+                    fullHtml += `<th rowspan="2" class="w-pf">PF</th>`;
+                });
+                fullHtml += `</tr><tr>`;
+                
+                // Criteria
+                chunk.forEach(s => {
+                    curr.competencias.forEach(c => {
+                        c.criterios.forEach((cr, ci) => {
+                            const hid = `header-${c.id}-${ci}`;
+                            const txt = (s.h && s.h[hid]) ? s.h[hid] : cr;
+                            fullHtml += `<th class="vertical-header"><div class="v-text-wrapper">${txt}</div></th>`;
+                        });
+                        fullHtml += `<th class="w-prom">P</th>`;
+                    });
+                });
+                fullHtml += `</tr></thead><tbody>`;
+                
+                // Body
+                getStudentsList(n,g).forEach((nm, idx) => {
+                    const parts = nm.split(',');
+                    fullHtml += `<tr>
+                        <td class="w-nro">${idx+1}</td>
+                        <td class="w-alumno"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
+                    
+                    chunk.forEach(s => {
+                        const asis = s.n[`asistencia-${idx}`] || '-';
+                        const asisColor = asis === 'F' ? 'color:red; font-weight:bold' : '';
+                        fullHtml += `<td style="${asisColor}">${asis}</td>`;
+                        
+                        let sumFinal = 0, countFinal = 0;
+                        
+                        curr.competencias.forEach(c => {
+                            let sumComp = 0, countComp = 0;
+                            c.criterios.forEach((_, ci) => {
+                                const val = s.n[`nota-${idx}-${c.id}-${ci}`] || '';
+                                const num = valMap[val] || 0;
+                                if(num > 0) { sumComp += num; countComp++; }
+                                
+                                let cls = val==='AD'?'grade-ad':(val==='A'?'grade-a':(val==='B'?'grade-b':(val==='C'?'grade-c':'grade-empty')));
+                                fullHtml += `<td class="${cls}">${val}</td>`;
+                            });
                             
-                            let color = val==='C'?'red':(val==='AD'?'blue':(val==='A'?'green':'#b45309'));
-                            if(val==='') color='black';
-                            h += `<td style="color:${color}">${val}</td>`;
+                            const prom = countComp > 0 ? sumComp/countComp : 0;
+                            const promTxt = toL(prom);
+                            if(prom > 0) { sumFinal += prom; countFinal++; }
+                            
+                            let pCls = promTxt==='AD'?'grade-ad':(promTxt==='A'?'grade-a':(promTxt==='B'?'grade-b':(promTxt==='C'?'grade-c':'grade-empty')));
+                            fullHtml += `<td class="w-prom ${pCls}">${promTxt}</td>`;
                         });
                         
-                        const prom = countComp > 0 ? sumComp/countComp : 0;
-                        const promTxt = toL(prom);
-                        if(prom > 0) { sumFinal += prom; countFinal++; }
-                        
-                        let pColor = promTxt==='C'?'red':(promTxt==='AD'?'blue':(promTxt==='A'?'green':'#b45309'));
-                        if(promTxt==='-') pColor='#ccc';
-                        h += `<td style="font-weight:bold;background:#f8fafc;color:${pColor}">${promTxt}</td>`;
+                        const pf = countFinal > 0 ? sumFinal/countFinal : 0;
+                        const pfTxt = toL(pf);
+                        let fCls = pfTxt==='AD'?'grade-ad':(pfTxt==='A'?'grade-a':(pfTxt==='B'?'grade-b':(pfTxt==='C'?'grade-c':'grade-empty')));
+                        fullHtml += `<td class="w-pf ${fCls}">${pfTxt}</td>`;
                     });
-                    
-                    const pf = countFinal > 0 ? sumFinal/countFinal : 0;
-                    const pfTxt = toL(pf);
-                    let fColor = pfTxt==='C'?'red':(pfTxt==='AD'?'blue':(pfTxt==='A'?'green':'#b45309'));
-                    if(pfTxt==='-') fColor='#ccc';
-                    h += `<td style="font-weight:bold;background:#e0e7ff;color:${fColor}">${pfTxt}</td>`;
+                    fullHtml += `</tr>`;
                 });
-                h += `</tr>`;
-            });
+                
+                fullHtml += `</tbody></table></div>`;
+            }
             
-            h += `</tbody></table></body></html>`;
+            fullHtml += `</body></html>`;
             
             if (win) {
                 win.document.open();
-                win.document.write(h);
+                win.document.write(fullHtml);
                 win.document.close();
             } else {
                 showToast("⚠️ Ventana bloqueada. Permite pop-ups.");
