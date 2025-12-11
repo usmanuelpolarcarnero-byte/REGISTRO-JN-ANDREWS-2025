@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro Auxiliar v4.9.18 - Sistema Blindado</title>
+    <title>Registro Auxiliar v4.9.20 - Sistema Blindado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
         @media print {
             body { font-family: 'Arial', sans-serif; background: white; }
-            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar, #modal-gestion-alumnos { display: none !important; }
+            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar, #modal-gestion-alumnos, #seccion-datos-oficiales { display: none !important; }
             #tabla-registro { display: block !important; width: 100%; margin: 0; padding: 0; }
             table { width: 100%; border-collapse: collapse; font-size: 9px; }
             th, td { border: 1px solid #000; padding: 2px; text-align: center; }
@@ -100,7 +100,7 @@
         <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
-                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.18 (Sistema Blindado)</p>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v4.9.20 (Sistema Blindado)</p>
             </div>
             <div class="text-right mt-2 md:mt-0 flex flex-col items-end">
                 <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
@@ -197,6 +197,10 @@
                 <span> 📄 </span> Sábana de Notas
             </button>
             
+            <button id="btn-datos-oficiales" onclick="generarDatosOficiales()" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 whitespace-nowrap">
+                <span> 📋 </span> Datos Registro Oficial
+            </button>
+
             <div class="flex-[2] flex flex-col sm:flex-row gap-2 min-w-[300px]">
                 <select id="select-reporte-alumno" class="w-full sm:flex-1 border-slate-300 border rounded-lg text-sm px-3 py-2" disabled>
                     <option>Seleccione Alumno...</option>
@@ -213,6 +217,26 @@
                 <span> 🍎 </span> Ver Guía Docente
             </button>
         </section>
+        
+        <!-- SECCIÓN NUEVA: DATOS PARA REGISTRO OFICIAL -->
+        <section id="seccion-datos-oficiales" class="hidden mb-6 bg-slate-50 border border-slate-200 rounded-lg p-5 shadow-xl relative">
+            <button onclick="this.closest('section').classList.add('hidden')" class="absolute top-2 right-2 text-slate-400 hover:text-slate-700 font-bold text-xl">&times;</button>
+            <h3 class="font-bold text-teal-800 text-lg mb-2 flex items-center gap-2"> 
+                <span>📋</span> Datos para Registro Oficial
+            </h3>
+            <p class="text-xs text-slate-500 mb-6 bg-white p-2 rounded border inline-block">
+                💡 Los textos han sido <strong>formalizados</strong> automáticamente. Usa los botones para copiar y pegar directamente en tu Excel.
+            </p>
+            
+            <div id="contenedor-datos-oficiales" class="space-y-8">
+                <!-- Aquí se inyectarán las tablas por competencia -->
+                <div class="text-center p-8">
+                    <div class="spinner border-4 border-teal-500 border-t-transparent rounded-full w-8 h-8 animate-spin mx-auto mb-2"></div>
+                    <p class="text-teal-600 text-sm">Procesando historial y formalizando textos...</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Conclusiones UI -->
         <section id="seccion-conclusiones-ui" class="hidden mb-6 bg-white border border-slate-200 rounded-lg p-5 shadow-lg">
             <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
@@ -944,6 +968,204 @@
             }
         }
         
+        // --- HELPERS PARA DATOS OFICIALES ---
+        function formatEvidence(topic, area, compId, critIndex) {
+            const t = topic.trim();
+            // Lógica específica para DPCC
+            if (area === 'dpcc') {
+                const templates = [
+                    ["Ficha de identificación de fortalezas sobre ", "Mural de mis logros en "], // C1: Se valora (index 0)
+                    ["Juego de roles sobre ", "Guía de técnicas de autorregulación en "], // C1: Autorregula (index 1)
+                    ["Resolución de dilemas morales sobre ", "Ensayo breve sobre "], // C1: Reflexiona (index 2) - o C2 depende estructura
+                    ["Plan de autocuidado sobre ", "Afiche sobre toma de decisiones en "] // C1: Vive sex (index 3)
+                ];
+                // Si es la competencia 1 (Construye su identidad) tiene 4 criterios
+                if (compId === 'C1' && templates[critIndex]) {
+                    const opts = templates[critIndex];
+                    const prefix = opts[t.length % opts.length]; // Determinista simple
+                    return `${prefix}${t}`;
+                }
+                // Si es Comp 2 (Convive)
+                if (compId === 'C2') {
+                    return `Acuerdo de convivencia sobre: ${t}`;
+                }
+            }
+            
+            // Lógica Genérica para otras áreas
+            const generalPrefixes = ["Ficha de trabajo: ", "Informe sobre ", "Organizador visual de ", "Proyecto: "];
+            const p = generalPrefixes[t.length % generalPrefixes.length];
+            return `${p}${t}`;
+        }
+
+        function summarizeCriteria(text) {
+            if (!text) return "";
+            // Estrategia: Tomar hasta el primer signo de puntuación o máximo 7 palabras
+            let short = text.split(/[.,;]/)[0];
+            const words = short.split(/\s+/);
+            if (words.length > 6) {
+                // Intento de cortar en verbo + objeto (simple heuristic)
+                return words.slice(0, 6).join(' ') + ".";
+            }
+            return short + ".";
+        }
+
+        // --- NUEVA FUNCIÓN: GENERAR DATOS PARA REGISTRO OFICIAL ---
+        window.generarDatosOficiales = async () => {
+            const b=document.getElementById('select-bimestre').value;
+            const n=document.getElementById('select-nivel').value;
+            const g=document.getElementById('select-grado').value;
+            const a=document.getElementById('select-area').value;
+            
+            if(!b||!n||!g||!a) return showToast("Seleccione filtros primero");
+            
+            const section = document.getElementById('seccion-datos-oficiales');
+            section.classList.remove('hidden');
+            
+            // 1. Fetch Sessions (similar to Conclusions but tailored)
+            let ses = [];
+            const prefix = `registro-${b}-${n}-${g}-${a}-`;
+            if (db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) ses.push({data: doc.data(), id: doc.id, date: doc.id.replace(prefix,'')});
+                });
+            }
+            ses.sort((x, y) => x.date.localeCompare(y.date)); // Chronological
+            
+            if (ses.length === 0) {
+                document.getElementById('contenedor-datos-oficiales').innerHTML = '<p class="text-center text-gray-500">No hay sesiones para procesar.</p>';
+                return;
+            }
+
+            const curr = curriculum[a];
+            const studentList = getStudentsList(n,g);
+            let htmlContent = '';
+
+            // 2. Iterate Competencies
+            curr.competencias.forEach(comp => {
+                htmlContent += `<div class="bg-white border border-teal-200 rounded-lg p-4 mb-6 shadow-sm">
+                    <h4 class="font-bold text-teal-900 text-lg mb-4 border-b border-teal-100 pb-2 flex items-center gap-2">
+                        <span>📂</span> COMPETENCIA: ${comp.nombre}
+                    </h4>
+                    <div class="overflow-x-auto pb-2">
+                        <div class="flex gap-4">`;
+                
+                let crtCounter = 1;
+                let hasDataForComp = false;
+                
+                // 3. Iterate Sessions chronologically
+                ses.forEach(s => {
+                    // Check criterias in this session for this competency
+                    comp.criterios.forEach((critLabel, critIndex) => {
+                        // Determine if this criteria was evaluated (has grades)
+                        let hasGrades = false;
+                        const grades = [];
+                        
+                        studentList.forEach((_, studentIdx) => {
+                            const val = s.data.notas[`nota-${studentIdx}-${comp.id}-${critIndex}`];
+                            grades.push(val || ""); // Push value or empty
+                            if (val) hasGrades = true;
+                        });
+
+                        if (hasGrades) {
+                            hasDataForComp = true;
+                            // Data Logic
+                            const specificHeader = s.data.headers ? s.data.headers[`header-${comp.id}-${critIndex}`] : null;
+                            const description = specificHeader || critLabel; // The long performance text
+                            const topic = s.data.prompt || "Tema no registrado";
+                            
+                            // NEW: Applied Intelligence
+                            const formalEvidence = formatEvidence(topic, a, comp.id, critIndex);
+                            const shortCriteria = summarizeCriteria(description);
+
+                            htmlContent += `
+                            <div class="min-w-[280px] w-[280px] bg-slate-50 border border-slate-300 rounded-md flex flex-col shadow-sm shrink-0">
+                                <div class="bg-teal-700 text-white text-xs font-bold px-3 py-2 rounded-t-md flex justify-between items-center">
+                                    <span>CRT ${crtCounter}</span>
+                                    <span class="bg-teal-800 px-2 py-0.5 rounded text-[10px]">${s.date}</span>
+                                </div>
+                                
+                                <div class="p-3 flex-1 flex flex-col gap-3">
+                                    <!-- 1. EVIDENCIA (Amarillo) -->
+                                    <div class="bg-yellow-50 border border-yellow-200 p-2 rounded">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="text-[10px] font-bold text-yellow-700 uppercase">🟡 Evidencia (Excel)</label>
+                                            <button onclick="copiarTexto('${formalEvidence.replace(/'/g, "\\'")}')" class="text-[10px] bg-white border border-yellow-300 text-yellow-700 px-2 rounded hover:bg-yellow-100">Copiar</button>
+                                        </div>
+                                        <div class="text-[11px] font-medium text-slate-700 leading-tight" title="${formalEvidence}">
+                                            ${formalEvidence}
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. DESEMPEÑO (Morado) -->
+                                    <div class="bg-purple-50 border border-purple-200 p-2 rounded">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="text-[10px] font-bold text-purple-700 uppercase">🟣 Desempeño</label>
+                                            <button onclick="copiarTexto('${description.replace(/'/g, "\\'")}')" class="text-[10px] bg-white border border-purple-300 text-purple-700 px-2 rounded hover:bg-purple-100">Copiar</button>
+                                        </div>
+                                        <div class="text-[10px] text-slate-600 h-12 overflow-y-auto leading-tight italic" title="${description}">
+                                            "${description}"
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. CRITERIO CORTO (Vertical) -->
+                                    <div class="bg-gray-50 border border-gray-200 p-2 rounded">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="text-[10px] font-bold text-gray-600 uppercase">⚪ Criterio Vertical</label>
+                                            <button onclick="copiarTexto('${shortCriteria.replace(/'/g, "\\'")}')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 rounded hover:bg-gray-100">Copiar</button>
+                                        </div>
+                                        <div class="text-[11px] text-slate-800 font-bold leading-tight">
+                                            ${shortCriteria}
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. NOTAS (Columna) -->
+                                    <div class="flex-1 mt-1">
+                                        <div class="flex items-end gap-2">
+                                            <div class="flex-1 bg-white border border-slate-300 rounded p-1 h-16 overflow-hidden relative shadow-inner">
+                                                <div class="text-[9px] text-center text-slate-500 leading-4">
+                                                    ${grades.slice(0, 5).map(g => g || "-").join('<br>')}
+                                                    ${grades.length > 5 ? '<br>...' : ''}
+                                                </div>
+                                                <div class="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white to-transparent"></div>
+                                            </div>
+                                            <button onclick="copiarColumna('${grades.join(',')}')" class="h-10 bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold px-3 rounded shadow-sm flex flex-col justify-center items-center transition-colors border-b-4 border-teal-800 active:border-b-0 active:translate-y-1">
+                                                <span>📊</span>
+                                                <span>COPIAR</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                            crtCounter++;
+                        }
+                    });
+                });
+                
+                if (!hasDataForComp) {
+                    htmlContent += `<div class="w-full text-center py-8 text-slate-400 text-sm bg-slate-50 border border-dashed border-slate-300 rounded">
+                        No se han registrado evaluaciones para la competencia <strong>"${comp.nombre}"</strong> en este periodo.
+                    </div>`;
+                }
+
+                htmlContent += `</div></div></div>`;
+            });
+
+            document.getElementById('contenedor-datos-oficiales').innerHTML = htmlContent;
+        }
+
+        // Helpers
+        window.copiarTexto = (txt) => {
+            navigator.clipboard.writeText(txt).then(() => showToast("Texto copiado al portapapeles"));
+        }
+        
+        window.copiarColumna = (csvGrades) => {
+            // Convert comma separated to new lines for Excel pasting
+            const colData = csvGrades.split(',').join('\n');
+            navigator.clipboard.writeText(colData).then(() => showToast("Columna copiada. ¡Pégala en Excel!"));
+        }
+
         // --- NUEVO REPORTE: INFORME DE PROGRESO ---
         window.imprimirConsolidado = () => {
             if(!lastAnalysisResults || !currentBimesterSessions) return showToast("No hay datos para imprimir");
