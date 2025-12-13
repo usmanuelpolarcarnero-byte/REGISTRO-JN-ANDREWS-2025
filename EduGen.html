@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGen AI - I.E. JN ANDREWS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .glass-header {
+            background: rgba(30, 58, 138, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 4px solid #FACC15;
+        }
+        
+        .card-shadow { box-shadow: 0 10px 40px -10px rgba(30, 58, 138, 0.2); }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        canvas { background-color: #f8fafc; border-radius: 1rem; width: 100% !important; height: 200px !important; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #printable-report, #printable-report * { visibility: visible; }
+            #printable-report { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; z-index: 9999; }
+            .no-print { display: none !important; }
+        }
+        #printable-report { display: none; }
+        @media print { #printable-report { display: block; } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen flex items-center justify-center p-4 text-gray-800">
+
+    <!-- REPORTE DE IMPRESIÓN -->
+    <div id="printable-report">
+        <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="image_9d4f3d.jpg" alt="Logo" style="width: 60px; height: auto;">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-900">I.E. J.N. ANDREWS</h1>
+                    <p class="text-sm text-gray-500">Examen de Conocimientos - Prof. Manuel Polar</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Fecha</p>
+                <p class="font-mono text-sm" id="print-date">--/--/----</p>
+            </div>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6 grid grid-cols-2 gap-4">
+            <div><p class="text-xs text-gray-500 uppercase font-bold">Estudiante</p><p class="text-lg font-bold text-gray-800" id="print-student">--</p></div>
+            <div><p class="text-xs text-gray-500 uppercase font-bold">Grado</p><p class="text-gray-800" id="print-grade">--</p></div>
+            <div><p class="text-xs text-gray-500 uppercase font-bold">Nota Oficial</p><p class="text-xl font-bold text-blue-700" id="print-score">--</p></div>
+        </div>
+        <h3 class="font-bold text-gray-700 border-b border-gray-300 pb-2 mb-4">Detalle de Respuestas</h3>
+        <div id="print-details" class="space-y-3"></div>
+        <div class="mt-12 text-center text-xs text-gray-400 border-t border-gray-200 pt-4"><p>Documento generado por EduGen AI</p></div>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div class="bg-white w-full max-w-md rounded-3xl card-shadow overflow-hidden fade-in relative min-h-[700px] flex flex-col border border-white/50 no-print">
+        
+        <!-- HEADER -->
+        <div class="glass-header p-5 text-white shadow-lg z-20 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400 rounded-full mix-blend-overlay opacity-20 blur-2xl"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg p-1 shrink-0 border-2 border-yellow-400">
+                    <img src="image_9d4f3d.jpg" alt="Escudo" class="w-full h-full object-contain">
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-[10px] font-bold text-yellow-300 tracking-widest uppercase mb-0.5">Institución Educativa</h2>
+                    <h1 class="font-extrabold text-xl leading-tight">J.N. ANDREWS</h1>
+                    <div class="h-0.5 w-10 bg-yellow-400 my-1 rounded-full"></div>
+                    <p class="text-[11px] text-blue-100 font-medium flex items-center gap-1">
+                        <i class="fas fa-chalkboard-teacher text-yellow-400"></i> Prof. Manuel Polar Carnero
+                    </p>
+                </div>
+            </div>
+            <button onclick="window.location.reload()" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-lg backdrop-blur-sm transition text-yellow-300 border border-white/10 shadow-sm" title="Reiniciar App">
+                <i class="fas fa-sync-alt text-lg"></i>
+            </button>
+        </div>
+
+        <!-- VISTAS -->
+        <div class="flex-1 overflow-hidden relative bg-slate-50">
+            
+            <!-- 1. DOCENTE -->
+            <div id="view-teacher" class="p-6 h-full overflow-y-auto flex flex-col gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm"><i class="fas fa-cog"></i></span>
+                        Configurar Examen
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1 ml-10">Vinculado a: <strong>Registro Oficial</strong></p>
+                </div>
+                
+                <div class="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl p-4 text-center hover:bg-blue-50 transition cursor-pointer group" onclick="alert('Simulación: Archivos cargados.')">
+                    <div class="bg-white text-blue-600 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:scale-110 transition border border-blue-100">
+                        <i class="fas fa-cloud-upload-alt text-lg"></i>
+                    </div>
+                    <p class="text-xs font-bold text-slate-600">Subir Material (PDF/Video)</p>
+                </div>
+                
+                <textarea id="input-text" class="w-full border border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none h-20 shadow-sm placeholder:text-slate-400" placeholder="Pegue aquí el texto o tema..."></textarea>
+                
+                <!-- FILTROS REGISTRO -->
+                <div class="bg-blue-50 border border-blue-100 p-3 rounded-xl">
+                    <p class="text-[10px] font-bold text-blue-800 uppercase mb-2">Datos para Sincronización</p>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <select id="select-bimestre" class="w-full text-xs p-2 rounded border border-slate-200 font-semibold text-slate-700">
+                            <option value="B1">I Bimestre</option>
+                            <option value="B2">II Bimestre</option>
+                            <option value="B3">III Bimestre</option>
+                            <option value="B4">IV Bimestre</option>
+                        </select>
+                        <select id="select-area" class="w-full text-xs p-2 rounded border border-slate-200 font-semibold text-slate-700">
+                            <option value="arte">Arte y Cultura</option>
+                            <option value="dpcc">DPCC</option>
+                            <option value="ept">EPT</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="select-nivel" class="w-full text-xs p-2 rounded border border-slate-200 font-semibold text-slate-700" onchange="updateGrades()">
+                            <option value="primaria">Primaria</option>
+                            <option value="secundaria">Secundaria</option>
+                        </select>
+                        <select id="select-grado" class="w-full text-xs p-2 rounded border border-slate-200 font-semibold text-slate-700">
+                            <!-- JS llena esto -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CONFIG EXAMEN -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block">Preguntas</label>
+                        <select id="select-count" class="w-full text-xs font-semibold text-slate-700 bg-transparent outline-none">
+                            <option value="3">3 Preguntas</option>
+                            <option value="5">5 Preguntas</option>
+                        </select>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase block">Tiempo/Preg</label>
+                        <select id="select-time" class="w-full text-xs font-semibold text-slate-700 bg-transparent outline-none">
+                            <option value="15">15 seg</option>
+                            <option value="30" selected>30 seg</option>
+                            <option value="60">1 min</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- FECHAS -->
+                <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2"><i class="far fa-clock"></i> Disponibilidad (Opcional)</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="datetime-local" id="quiz-start" class="w-full bg-slate-50 border border-slate-200 rounded p-1 text-[10px]">
+                        <input type="datetime-local" id="quiz-end" class="w-full bg-slate-50 border border-slate-200 rounded p-1 text-[10px]">
+                    </div>
+                </div>
+
+                <button onclick="startGeneration()" class="mt-2 w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
+                    <i class="fas fa-save"></i> Guardar y Generar
+                </button>
+                <div class="h-4"></div>
+            </div>
+
+            <!-- 2. LINK -->
+            <div id="view-link" class="hidden h-full flex flex-col items-center justify-center p-8 text-center fade-in bg-white">
+                <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4 text-3xl animate-bounce border-4 border-green-100">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">¡Examen Publicado!</h2>
+                <p class="text-xs text-slate-500 mb-4">Listo para sincronizarse con su registro.</p>
+                
+                <div id="schedule-info" class="hidden w-full bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-left">
+                     <p class="text-[10px] font-bold text-amber-700 uppercase"><i class="fas fa-info-circle"></i> Horario:</p>
+                     <p class="text-[10px] text-amber-900 font-mono" id="schedule-text"></p>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl w-full mb-4 border border-slate-200 cursor-pointer" onclick="alert('Link copiado')">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Enlace Estudiante</p>
+                    <p class="text-blue-600 font-mono font-bold text-xs">edugen.app/jn-andrews/quiz/XYZ</p>
+                </div>
+
+                <button class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl shadow-lg mb-2 flex items-center justify-center gap-2 text-sm" onclick="alert('Abriendo WhatsApp...')">
+                    <i class="fab fa-whatsapp"></i> Compartir
+                </button>
+                <button class="w-full bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-sm" onclick="goToRegistration()">
+                    Simular Vista Estudiante
+                </button>
+            </div>
+
+            <!-- 3. REGISTRO ESTUDIANTE (CON LISTA) -->
+            <div id="view-register" class="hidden h-full flex flex-col justify-center p-8 fade-in bg-white">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold text-blue-900">Ingreso Estudiante</h2>
+                    <p class="text-xs text-slate-500">Selecciona tus datos correctamente.</p>
+                </div>
+                
+                <div class="space-y-4 mb-6">
+                    <!-- Solo mostramos los datos que configuró el docente para evitar errores -->
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <p class="text-[10px] text-blue-400 font-bold uppercase">Clase Configurada</p>
+                        <p id="student-context-display" class="text-sm font-bold text-blue-800">--</p>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 block mb-1">Soy el alumno(a):</label>
+                        <select id="reg-student-select" class="w-full border-2 border-slate-200 bg-white rounded-lg p-3 outline-none text-sm font-medium focus:border-blue-500">
+                            <option value="">Cargando lista...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button onclick="startQuiz()" class="w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 group">
+                    Comenzar <i class="fas fa-arrow-right group-hover:translate-x-1 transition"></i>
+                </button>
+            </div>
+
+            <!-- 4. QUIZ -->
+            <div id="view-student" class="hidden h-full flex flex-col fade-in bg-slate-50">
+                <div class="w-full bg-white h-1.5 shadow-sm">
+                    <div id="progress-bar" class="bg-yellow-400 h-1.5 transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col relative overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="px-3 py-1 bg-white rounded-full text-xs font-bold text-slate-400 shadow-sm border border-slate-100">
+                            <span id="q-current" class="text-blue-600">1</span>/<span id="q-total">5</span>
+                        </span>
+                        <div class="flex items-center gap-1 text-red-500 font-mono font-bold bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                            <i class="far fa-clock"></i> <span id="timer">30</span>s
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-4 flex-1 flex flex-col justify-center">
+                        <h3 id="question-text" class="text-lg font-bold text-slate-800 leading-relaxed text-center"></h3>
+                    </div>
+                    <div id="options-container" class="space-y-2 pb-6"></div>
+                </div>
+            </div>
+
+            <!-- 5. RESULTADOS -->
+            <div id="view-results" class="hidden p-6 h-full flex flex-col fade-in overflow-y-auto bg-slate-50">
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold text-blue-900">Resultados</h2>
+                </div>
+
+                <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 mb-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Nota Oficial</p>
+                        <p id="minedu-grade" class="text-5xl font-extrabold text-blue-600 mt-1">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Aciertos</p>
+                        <p id="final-score" class="text-2xl font-bold text-slate-700">0/0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 mb-4">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4">
+                    <p id="ai-feedback" class="text-xs text-blue-800 leading-relaxed font-medium"></p>
+                </div>
+                
+                <p id="save-status" class="text-[10px] text-slate-400 text-center mb-4 italic animate-pulse">Guardando...</p>
+
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button onclick="printReport()" class="bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase">
+                        <i class="fas fa-print mr-1"></i> Imprimir
+                    </button>
+                    <button onclick="location.reload()" class="bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-xs uppercase">
+                        Salir
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, Timestamp } 
+        from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- 1. CREDENCIALES COMPARTIDAS ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
+          authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
+          projectId: "registro-jn-andrews-mpc",
+          storageBucket: "registro-jn-andrews-mpc.firebasestorage.app",
+          messagingSenderId: "701752375464",
+          appId: "1:701752375464:web:eaab256668b869d026aa9d"
+        };
+
+        // --- 2. BASE DE DATOS LOCAL (Espejo del Registro) ---
+        const database = {
+            primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí"], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel"], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías"], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis"], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan"], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego"] },
+            secundaria: { "1": ["ARUCUTIPA CALISAYA Yuliet Luanna", "CISA SAHUAYANAY Miguel Ángel", "COLQUE CHAMBI Jhems Kevin", "CRUZ ROJAS Jhon Alex", "CUYO CHOQUE Will Adriano", "GALLEGOS ZEA, James Jamir", "GUETTI RUIZ Johana Nicol", "GUTIERREZ OSORIO, Rony Alex", "GUTIERREZ ZAMATA, Gianela Ninel", "MENDOZA MAMANI, Víctor Manuel", "MONTEZA RIVAS Yair Alexander", "SANGUINO MARQUEZ Carlos Santiago", "TICONA CONDORI Heidy Milena", "VIÑA HUAMAN Esteban Andreus Caleb", "ZEVALLOS MAMANI Alisom Kimberly"], "2": ["AGUILAR TILCA, Midwad Harison", "ARMAS PEÑA, Moisés Jubal", "ARUCUTIPA CALISAYA, Emerson garry", "BELÓN AQUINO, Dayiro Andree", "CALDERON LEANDRO, Yhong Puyol.", "CALLOAPAZA CONDORCAHUANA Jhamile Sadira", "CCANCHILLO TORRES, Yulissam Priyanka", "CHOQUE LIZARRAGA, Piero Valentino", "CHOQUEHUANCA CARI, Nicole Mia Marey", "COAQUIRA CONDO, Llandhel Roberth", "CONDORI QUISPE, Mayli Yasu", "CORIMANYA ARISACA, Branco Adriano", "DIAZ CAPACOILA, Anely Yesica", "HUAYHUA HUITTOCCOLLO Alonso Delbir", "LUNA QUISPE, Jimmy Noé", "LUQUE VILCAPAZA, Eva Luz", "MANCHA COAQUIRA, George Luis", "PEREIRA VILCA Neymar Piero", "PEREZ LUPO, Gerald Abdías", "PHALA TORRES, Benjamín Franco", "QUISPE CAMALA, José Daniel", "QUISPE GUTIERREZ, Ana Cristina", "QUISPE QUISPE, Thalía Úrsula", "RIVEROS SUPA, Mathias Leonardo", "VILCA GUTIERREZ, Jandy Betzabe"], "3": ["AMANQUI YANARICO, Jean Paul", "ANCCALLE MERMA, Danna Magdiell", "APAZA MAMANI, Eduardo Nicolás", "AROCUTIPA ROMERO, Zamir Yhonncy", "BELÓN AQUINO, Fabrizio André", "CHOQUEHUANCA CARI, David Yair", "FALCON PUMA, Enoc Elías", "GARCIA CISA SANTIAGO BENJAMIN", "GARCIA TICONA Emanuel Matías", "HANAMPA QUISPE, Erick Jonathan", "MACHUCA CRUZ Baurulet", "MALPARTIDA ALE Alvaro Joaquín", "MAMANI ANAYA Sebastián Mateo", "MARQUEZ TACURI, Jesús", "MERMA MENDOZA, Roberto Maradona", "MIRAMIRA GUTIERREZ, Josías Daniel", "ORTEGA BENAVENTE, Nill Antony", "OSORIO CCACCA Marisol", "ROQUE HUARCA, Dianeth Nicol", "TOTORA CUCHO Yuliana Nery", "VALDEZ SUNI, Luz Maricielo", "VARGAS CARI Marylin Elena Josenit"], "4": ["BRINGAS JUAREZ Brandon", "CANAZA QUISPE Luis Eduardo", "CARDENAS CARDENAS Vivian Maryel", "CONDORI QUISPE Abel Benjamín", "GARCIA TICONA Angie Ruth", "GUTIERREZ ALVAREZ Lisandro", "JANAMPA LIMA Jeff Dacio", "LLANQUE ALMIRON Yader Jocsan", "MOLLEAPAZA VALERIANO Yesybell Analia", "SALAZAR PEREZ Juan Hersy", "SANGUINO MARQUEZ Daylen", "VILCA ALVAREZ Rodrigo Alejandro", "VIÑA HUAMAN Brayan Andrés"], "5": ["APAZA GAMARRA German Enrique", "AYALA PEÑAFIEL Diego Gabriel", "CALCINA QUISPE Lizeth Sheyla", "CAMI VILLAVICENCIO Olger Eliel", "CONDORI ANAHUA Abigail Dorkas", "CONDORI ANAHUA Jetzabe María del Pilar", "CORDOVA OVADA Gabriel Gedeón", "CUTIMBO TACUMA David Alexander", "HANAMPA QUISPE Rubí Alejandra", "HUAMAN CANAHUIRI, Frank Antony", "HUARCAYA COILA STEFANY", "MARIN CHOQUE Fredy Erick", "ORCOAPAZA MAMANI Johan Joel", "PALO AGUILAR Yanira Brendaly", "QUISPE CAMALA Kevin Andi", "QUISPE CHOQUE Oliver Omar", "SANCHEZ PEROZO Oriana Valentina", "SANO MAMANI Jenny Abigail", "SUPANTA HUACHANI Angely", "VARGAS ALANOCA Maryori Nayomi"] }
+        };
+
+        let db, auth;
+        let userId = "PROFESOR_MANUEL"; // ID FIJO PARA SINCRONIZACIÓN
+        let isFirebaseActive = false;
+
+        // INIT FIREBASE
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            signInAnonymously(auth).then(() => {
+                isFirebaseActive = true;
+                console.log("Conectado a la nube del Profesor Manuel");
+            }).catch(e => console.error("Error login:", e));
+        } catch(e) { console.error(e); }
+
+        // --- ESTADO APP ---
+        let currentQuestions = [];
+        let currentIdx = 0;
+        let score = 0;
+        let timer = 30;
+        let interval;
+        let timePerQuestion = 30;
+        
+        let sessionConfig = { 
+            bimestre: "", area: "", nivel: "", grado: "", prompt: "", 
+            start: null, end: null 
+        };
+        let studentData = { index: -1, name: "" };
+        let userAnswers = [];
+
+        // PREGUNTAS MOCK (Se expandirán con IA en la versión completa)
+        const mockDB = {
+            primaria: [ { q: "¿Capital de Perú?", opts: ["Lima", "Cusco", "Arequipa", "Piura"], a: 0 }, { q: "¿5 + 3?", opts: ["10", "8", "6", "9"], a: 1 }, { q: "Animal mamífero", opts: ["Sapo", "Trucha", "Perro", "Loro"], a: 2 } ],
+            secundaria: [ { q: "¿Autor de 'El Quijote'?", opts: ["Dante", "Cervantes", "Homero", "Vallejo"], a: 1 }, { q: "Símbolo Au", opts: ["Plata", "Cobre", "Oro", "Hierro"], a: 2 }, { q: "Raíz de 144", opts: ["10", "11", "12", "13"], a: 2 } ]
+        };
+
+        // --- UI HELPERS ---
+        window.updateGrades = () => {
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado');
+            g.innerHTML = '';
+            const max = n === 'primaria' ? 6 : 5;
+            for(let i=1; i<=max; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = i + '° Grado';
+                g.appendChild(opt);
+            }
+        };
+        updateGrades(); // Init
+
+        window.startGeneration = () => {
+            const btn = document.querySelector('button[onclick="startGeneration()"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando Configuración...';
+            btn.disabled = true;
+
+            // Guardar configuración docente
+            sessionConfig.bimestre = document.getElementById('select-bimestre').value;
+            sessionConfig.area = document.getElementById('select-area').value;
+            sessionConfig.nivel = document.getElementById('select-nivel').value;
+            sessionConfig.grado = document.getElementById('select-grado').value;
+            sessionConfig.prompt = document.getElementById('input-text').value || "Evaluación General";
+            
+            const startVal = document.getElementById('quiz-start').value;
+            const endVal = document.getElementById('quiz-end').value;
+            sessionConfig.start = startVal ? new Date(startVal) : null;
+            sessionConfig.end = endVal ? new Date(endVal) : null;
+            
+            timePerQuestion = parseInt(document.getElementById('select-time').value);
+
+            setTimeout(() => {
+                const level = sessionConfig.nivel;
+                currentQuestions = [...mockDB[level]]; // En prod, aquí iría la llamada a Gemini
+                
+                // Mostrar Info
+                const schedText = document.getElementById('schedule-text');
+                const schedInfo = document.getElementById('schedule-info');
+                if(sessionConfig.start || sessionConfig.end) {
+                    schedInfo.classList.remove('hidden');
+                    schedText.innerHTML = `INICIO: ${sessionConfig.start?.toLocaleString() || 'Ya'}<br>FIN: ${sessionConfig.end?.toLocaleString() || 'Nunca'}`;
+                } else { schedInfo.classList.add('hidden'); }
+
+                showView('view-link');
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar y Generar';
+                btn.disabled = false;
+            }, 1000);
+        };
+
+        window.goToRegistration = () => {
+            // Validar Horario
+            const now = new Date();
+            if(sessionConfig.start && now < sessionConfig.start) return alert(`Aún no inicia. Hora: ${sessionConfig.start.toLocaleString()}`);
+            if(sessionConfig.end && now > sessionConfig.end) return alert(`Examen finalizado. Cierre: ${sessionConfig.end.toLocaleString()}`);
+
+            // Cargar lista de estudiantes correcta
+            const list = database[sessionConfig.nivel][sessionConfig.grado];
+            const select = document.getElementById('reg-student-select');
+            
+            document.getElementById('student-context-display').innerText = 
+                `${sessionConfig.grado}° ${sessionConfig.nivel.toUpperCase()} - ${sessionConfig.area.toUpperCase()}`;
+            
+            select.innerHTML = '<option value="">Selecciona tu nombre...</option>';
+            if(list) {
+                list.forEach((name, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx; // Guardamos el ÍNDICE (clave para el registro)
+                    opt.innerText = name;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option>No hay lista cargada</option>';
+            }
+
+            showView('view-register');
+        };
+
+        window.startQuiz = () => {
+            const idx = document.getElementById('reg-student-select').value;
+            if(idx === "") return alert("Por favor selecciona tu nombre de la lista.");
+            
+            const list = database[sessionConfig.nivel][sessionConfig.grado];
+            studentData.index = parseInt(idx);
+            studentData.name = list[idx];
+
+            score = 0; currentIdx = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+            showView('view-student');
+            loadQuestion();
+        };
+
+        function loadQuestion() {
+            if(currentIdx >= currentQuestions.length) return endQuiz();
+            
+            const q = currentQuestions[currentIdx];
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('q-current').innerText = currentIdx + 1;
+            document.getElementById('q-total').innerText = currentQuestions.length;
+            
+            const pct = (currentIdx / currentQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.opts.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-blue-50 transition flex items-center";
+                btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs flex items-center justify-center mr-3 font-bold">${String.fromCharCode(65+i)}</span> ${opt}`;
+                btn.onclick = () => checkAnswer(i, btn);
+                container.appendChild(btn);
+            });
+
+            clearInterval(interval);
+            timer = timePerQuestion;
+            document.getElementById('timer').innerText = timer;
+            interval = setInterval(() => {
+                timer--;
+                document.getElementById('timer').innerText = timer;
+                if(timer <= 0) checkAnswer(-1, null);
+            }, 1000);
+        }
+
+        function checkAnswer(selIdx, btn) {
+            clearInterval(interval);
+            userAnswers[currentIdx] = selIdx;
+            
+            const correct = currentQuestions[currentIdx].a;
+            if(selIdx === correct) {
+                score++;
+                if(btn) btn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 flex items-center font-bold";
+            } else if (btn) {
+                btn.className = "w-full text-left p-4 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 flex items-center";
+            }
+
+            currentIdx++;
+            setTimeout(loadQuestion, 800);
+        }
+
+        async function endQuiz() {
+            showView('view-results');
+            const total = currentQuestions.length;
+            const pct = (score/total)*100;
+            const gradeInfo = getMineduGrade(pct);
+            
+            document.getElementById('minedu-grade').innerText = gradeInfo.letter;
+            document.getElementById('minedu-grade').className = `text-5xl font-extrabold mt-1 ${gradeInfo.color}`;
+            document.getElementById('final-score').innerText = `${score}/${total}`;
+            document.getElementById('ai-feedback').innerText = gradeInfo.desc;
+            
+            drawChart(score, total);
+            
+            // --- SINCRONIZACIÓN CON REGISTRO OFICIAL ---
+            const statusEl = document.getElementById('save-status');
+            
+            if(isFirebaseActive) {
+                try {
+                    // 1. Construir ID de Sesión compatible con Registro Auxiliar
+                    // Formato: registro-Bimestre-Nivel-Grado-Area-Fecha
+                    // Usamos fecha de hoy (YYYY-MM-DD) para agrupar todos los exámenes del día en una sola "Sesión"
+                    const today = new Date().toISOString().split('T')[0];
+                    const docId = `registro-${sessionConfig.bimestre}-${sessionConfig.nivel}-${sessionConfig.grado}-${sessionConfig.area}-${today}`;
+                    
+                    const docRef = doc(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/registros_auxiliares`, docId);
+                    
+                    // 2. Leer si ya existe la sesión
+                    const snap = await getDoc(docRef);
+                    let data = { notas: {}, headers: {}, prompt: `Evaluación EduGen: ${sessionConfig.prompt}` };
+                    
+                    if(snap.exists()) {
+                        data = snap.data();
+                    } else {
+                        // Si es nueva, definimos los headers para que aparezcan bonitos en el registro
+                        data.headers = {
+                            "header-C1-0": "Examen EduGen (Automático)", // Asignamos a C1, Criterio 1
+                            "header-C1-1": "Participación (Manual)"
+                        };
+                    }
+                    
+                    // 3. Inyectar la nota del alumno
+                    // Usamos el índice del alumno para mapear correctamente
+                    // Formato clave nota: nota-{indexAlumno}-{idCompetencia}-{idCriterio}
+                    // Por defecto: Competencia C1, Criterio 0
+                    data.notas[`nota-${studentData.index}-C1-0`] = gradeInfo.letter;
+                    data.notas[`asistencia-${studentData.index}`] = "A"; // Marcar asistencia automática
+                    
+                    // 4. Guardar
+                    await setDoc(docRef, data, { merge: true });
+                    
+                    statusEl.innerText = "✅ Sincronizado con Registro Auxiliar (C1)";
+                    statusEl.className = "text-[10px] text-green-600 font-bold text-center mb-4";
+                    
+                } catch(e) {
+                    console.error("Error sync:", e);
+                    statusEl.innerText = "⚠️ Error de red. Nota guardada localmente.";
+                }
+            } else {
+                statusEl.innerText = "⚠️ Modo Demo (Sin conexión)";
+            }
+        }
+
+        function showView(id) {
+            ['view-teacher','view-link','view-register','view-student','view-results'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function getMineduGrade(p) {
+            if(p >= 85) return { letter: "AD", color: "text-blue-700", desc: "¡Logro Destacado! Excelente desempeño." };
+            if(p >= 70) return { letter: "A", color: "text-green-700", desc: "Logro Esperado. Buen trabajo." };
+            if(p >= 50) return { letter: "B", color: "text-yellow-600", desc: "En Proceso. Sigue practicando." };
+            return { letter: "C", color: "text-red-600", desc: "En Inicio. Necesitas reforzamiento." };
+        }
+
+        function drawChart(s, t) {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            ctx.clearRect(0,0,300,150);
+            
+            const h1 = (s/t)*120;
+            const h2 = ((t-s)/t)*120;
+            
+            ctx.fillStyle="#22c55e"; ctx.fillRect(100, 140-h1, 40, h1);
+            ctx.fillStyle="#ef4444"; ctx.fillRect(160, 140-h2, 40, h2);
+            
+            ctx.fillStyle="#333"; ctx.font="bold 12px sans-serif";
+            ctx.fillText("✔", 112, 155); ctx.fillText("✖", 172, 155);
+        }
+
+        // Funciones Globales para HTML
+        window.showView = showView;
+        window.printReport = () => {
+            document.getElementById('print-student').innerText = studentData.name;
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('print-grade').innerText = `${sessionConfig.grado}° ${sessionConfig.nivel.toUpperCase()}`;
+            document.getElementById('print-score').innerText = `${document.getElementById('minedu-grade').innerText} (${score}/${currentQuestions.length})`;
+            
+            const det = document.getElementById('print-details');
+            det.innerHTML = '';
+            currentQuestions.forEach((q, i) => {
+                const u = userAnswers[i];
+                const ok = u === q.a;
+                det.innerHTML += `<div class="border-b p-2 text-xs flex justify-between"><span>${i+1}. ${q.q}</span><span class="${ok?'text-green-600':'text-red-600'} font-bold">${ok?'CORRECTO':'INCORRECTO'}</span></div>`;
+            });
+            window.print();
+        };
+    </script>
+</body>
+</html>
