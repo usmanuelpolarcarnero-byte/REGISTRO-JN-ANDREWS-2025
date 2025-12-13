@@ -112,11 +112,13 @@
                     <p class="text-xs text-slate-500 mt-1 ml-10">Vinculado a: <strong>Registro Oficial</strong></p>
                 </div>
                 
-                <div class="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl p-4 text-center hover:bg-blue-50 transition cursor-pointer group" onclick="alert('Simulación: Archivos cargados.')">
+                <!-- ZONA DE CARGA REAL -->
+                <input type="file" id="hidden-file-input" class="hidden" accept=".pdf,.txt,.doc,.docx,.mp4,.mp3,.jpg,.png" onchange="handleFileUpload(this)">
+                <div id="upload-container" class="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl p-4 text-center hover:bg-blue-50 transition cursor-pointer group" onclick="document.getElementById('hidden-file-input').click()">
                     <div class="bg-white text-blue-600 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:scale-110 transition border border-blue-100">
                         <i class="fas fa-cloud-upload-alt text-lg"></i>
                     </div>
-                    <p class="text-xs font-bold text-slate-600">Subir Material (PDF/Video)</p>
+                    <p class="text-xs font-bold text-slate-600">Clic para Subir Material (PDF/Video)</p>
                 </div>
                 
                 <textarea id="input-text" class="w-full border border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none h-20 shadow-sm placeholder:text-slate-400" placeholder="Pegue aquí el texto o tema..."></textarea>
@@ -368,6 +370,30 @@
             }
         };
         updateGrades(); // Init
+
+        // FUNCIÓN DE CARGA DE ARCHIVOS
+        window.handleFileUpload = (input) => {
+            const file = input.files[0];
+            if(file) {
+                const dropzone = document.getElementById('upload-container');
+                dropzone.classList.remove('border-blue-200', 'bg-blue-50/50');
+                dropzone.classList.add('border-green-300', 'bg-green-50');
+                dropzone.querySelector('p').innerText = `Archivo seleccionado: ${file.name}`;
+                dropzone.querySelector('i').className = "fas fa-check-circle text-green-500 text-lg";
+                
+                // Si es texto, lo leemos
+                if(file.type === "text/plain") {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        document.getElementById('input-text').value = e.target.result;
+                    };
+                    reader.readAsText(file);
+                } else {
+                    // Para otros archivos, advertencia amigable
+                    alert("✅ Archivo recibido.\n\nNota: Para PDFs y Videos, por favor asegúrese de escribir el tema principal o pegar un resumen en el cuadro de texto para generar las mejores preguntas.");
+                }
+            }
+        };
 
         window.startGeneration = () => {
             const btn = document.querySelector('button[onclick="startGeneration()"]');
