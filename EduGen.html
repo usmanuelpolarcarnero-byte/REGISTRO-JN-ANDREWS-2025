@@ -1,495 +1,880 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Share2, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Play, 
-  History, 
-  ArrowRight,
-  Home,
-  FileText
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGen AI - I.E. JN ANDREWS (Respaldo)</title>
+    
+    <!-- LIBRERÍAS EXTERNAS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Lectores de Documentos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
-// --- Componente Principal ---
-export default function App() {
-  const [view, setView] = useState('menu'); // menu, create, quiz, results, history
-  const [examList, setExamList] = useState([]); // Historial de exámenes guardados
-  const [currentExam, setCurrentExam] = useState(null); // Examen actual en curso/creación
-
-  // Cargar historial al iniciar
-  useEffect(() => {
-    const saved = localStorage.getItem('examHistory');
-    if (saved) {
-      setExamList(JSON.parse(saved));
-    }
-  }, []);
-
-  // Guardar historial cuando cambia
-  useEffect(() => {
-    localStorage.setItem('examHistory', JSON.stringify(examList));
-  }, [examList]);
-
-  const startCreation = () => {
-    setCurrentExam({
-      id: Date.now(),
-      title: '',
-      questions: []
-    });
-    setView('create');
-  };
-
-  const saveExamToHistory = (completedExam) => {
-    const newHistory = [completedExam, ...examList];
-    setExamList(newHistory);
-  };
-
-  const deleteFromHistory = (id) => {
-    setExamList(examList.filter(ex => ex.id !== id));
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl overflow-hidden flex flex-col">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f9ff; }
+        .glass-header { background: rgba(30, 58, 138, 0.95); backdrop-filter: blur(10px); border-bottom: 4px solid #FACC15; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        {/* Header */}
-        <header className="bg-blue-600 text-white p-4 shadow-md z-10">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <FileText size={24} />
-              Evaluador Pro
-            </h1>
-            {view !== 'menu' && (
-              <button 
-                onClick={() => setView('menu')}
-                className="text-white/80 hover:text-white"
-              >
-                <Home size={24} />
-              </button>
-            )}
-          </div>
-        </header>
+        .btn-primary { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); transition: transform 0.2s; }
+        .btn-primary:active { transform: scale(0.98); }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        {/* Content Area */}
-        <main className="flex-1 p-4 overflow-y-auto">
-          {view === 'menu' && (
-            <MenuView 
-              onStartCreate={startCreation} 
-              onViewHistory={() => setView('history')}
-            />
-          )}
+        @media print {
+            body * { visibility: hidden; }
+            #printable-report, #printable-report * { visibility: visible; }
+            #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-          {view === 'create' && (
-            <CreateExamView 
-              exam={currentExam} 
-              setExam={setCurrentExam} 
-              onStartQuiz={() => setView('quiz')} 
-            />
-          )}
-
-          {view === 'quiz' && (
-            <QuizView 
-              exam={currentExam} 
-              onFinish={(results) => {
-                setCurrentExam({...currentExam, results});
-                setView('results');
-              }} 
-            />
-          )}
-
-          {view === 'results' && (
-            <ResultsView 
-              exam={currentExam} 
-              onSave={() => {
-                saveExamToHistory({...currentExam, date: new Date().toLocaleString()});
-                setView('menu');
-              }}
-            />
-          )}
-
-          {view === 'history' && (
-            <HistoryView 
-              list={examList} 
-              onDelete={deleteFromHistory}
-              onBack={() => setView('menu')}
-            />
-          )}
-        </main>
-      </div>
-    </div>
-  );
-}
-
-// --- Vistas ---
-
-function MenuView({ onStartCreate, onViewHistory }) {
-  return (
-    <div className="flex flex-col gap-6 mt-10">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-700">Bienvenido</h2>
-        <p className="text-gray-500">Crea un examen o revisa tus resultados anteriores.</p>
-      </div>
-
-      <button 
-        onClick={onStartCreate}
-        className="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95"
-      >
-        <Plus size={32} />
-        <span className="text-xl font-semibold">Crear Nuevo Examen</span>
-      </button>
-
-      <button 
-        onClick={onViewHistory}
-        className="bg-white border-2 border-gray-200 hover:border-blue-300 text-gray-700 p-6 rounded-xl shadow-sm flex items-center justify-center gap-3 transition-colors"
-      >
-        <History size={32} className="text-blue-500" />
-        <span className="text-xl font-semibold">Ver Historial</span>
-      </button>
-    </div>
-  );
-}
-
-function CreateExamView({ exam, setExam, onStartQuiz }) {
-  const [qText, setQText] = useState('');
-  const [options, setOptions] = useState(['', '', '']);
-  const [correctIndex, setCorrectIndex] = useState(0);
-
-  const addQuestion = () => {
-    if (!qText.trim() || options.some(o => !o.trim())) {
-      alert("Por favor completa la pregunta y todas las opciones.");
-      return;
-    }
-    const newQ = {
-      id: Date.now(),
-      question: qText,
-      options: [...options],
-      correctIndex
-    };
-    setExam({ ...exam, questions: [...exam.questions, newQ] });
-    setQText('');
-    setOptions(['', '', '']);
-    setCorrectIndex(0);
-  };
-
-  const updateOption = (idx, val) => {
-    const newOpts = [...options];
-    newOpts[idx] = val;
-    setOptions(newOpts);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Título del Examen / Tema</label>
-        <input 
-          type="text" 
-          value={exam.title}
-          onChange={(e) => setExam({...exam, title: e.target.value})}
-          placeholder="Ej: Matemáticas Básicas"
-          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-lg"
-        />
-      </div>
-
-      <div className="bg-white p-4 rounded-lg border shadow-sm space-y-4">
-        <h3 className="font-semibold text-gray-600">Agregar Pregunta {exam.questions.length + 1}</h3>
-        <textarea 
-          value={qText}
-          onChange={(e) => setQText(e.target.value)}
-          placeholder="Escribe la pregunta aquí..."
-          className="w-full p-2 border rounded resize-none focus:ring-1 focus:ring-blue-500"
-        />
-        
-        <div className="space-y-2">
-          {options.map((opt, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="correct" 
-                checked={correctIndex === idx} 
-                onChange={() => setCorrectIndex(idx)}
-                className="w-5 h-5 text-green-600 focus:ring-green-500"
-              />
-              <input 
-                type="text" 
-                value={opt}
-                onChange={(e) => updateOption(idx, e.target.value)}
-                placeholder={`Opción ${idx + 1}`}
-                className={`flex-1 p-2 border rounded ${correctIndex === idx ? 'border-green-500 bg-green-50' : ''}`}
-              />
-            </div>
-          ))}
-        </div>
-
-        <button 
-          onClick={addQuestion}
-          className="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-900 flex items-center justify-center gap-2"
-        >
-          <Plus size={18} /> Agregar Pregunta
-        </button>
-      </div>
-
-      {exam.questions.length > 0 && (
-        <div className="pt-4 border-t">
-          <p className="text-center text-sm text-gray-500 mb-4">{exam.questions.length} preguntas añadidas</p>
-          <button 
-            onClick={() => {
-              if(!exam.title) return alert("Ponle un título al examen antes de comenzar.");
-              onStartQuiz();
-            }}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-bold hover:bg-blue-700 shadow-lg flex items-center justify-center gap-2"
-          >
-            <Play size={24} /> COMENZAR EXAMEN
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function QuizView({ exam, onFinish }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null); // Índice seleccionado
-  const [isChecked, setIsChecked] = useState(false); // ¿Ya se validó (semáforo)?
-  const [userAnswers, setUserAnswers] = useState([]);
-
-  const currentQ = exam.questions[currentIndex];
-
-  const handleSelect = (idx) => {
-    if (isChecked) return; // No permitir cambios si ya se validó
-    setSelectedOption(idx);
-  };
-
-  const handleCheck = () => {
-    if (selectedOption === null) return;
-    setIsChecked(true); // Activa el semáforo
-  };
-
-  const handleNext = () => {
-    // Guardar respuesta
-    const isCorrect = selectedOption === currentQ.correctIndex;
-    const answerRecord = {
-      questionId: currentQ.id,
-      questionText: currentQ.question,
-      selectedText: currentQ.options[selectedOption],
-      correctText: currentQ.options[currentQ.correctIndex],
-      isCorrect: isCorrect
-    };
-
-    const newAnswers = [...userAnswers, answerRecord];
-    setUserAnswers(newAnswers);
-
-    if (currentIndex + 1 < exam.questions.length) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedOption(null);
-      setIsChecked(false);
-    } else {
-      onFinish(newAnswers);
-    }
-  };
-
-  return (
-    <div className="flex flex-col h-full justify-between">
-      <div>
-        <div className="flex justify-between items-end mb-4 border-b pb-2">
-          <h2 className="text-xl font-bold text-blue-900">{exam.title}</h2>
-          <span className="text-sm font-medium text-gray-500">
-            {currentIndex + 1}/{exam.questions.length}
-          </span>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
-          <p className="text-lg font-medium text-gray-800">{currentQ.question}</p>
-        </div>
-
-        <div className="space-y-3">
-          {currentQ.options.map((opt, idx) => {
-            // Lógica del Semáforo
-            let btnClass = "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex justify-between items-center ";
-            let icon = null;
-
-            if (isChecked) {
-              if (idx === currentQ.correctIndex) {
-                // VERDE: Es la correcta (siempre se muestra verde al validar)
-                btnClass += "bg-green-100 border-green-500 text-green-800 font-bold";
-                icon = <CheckCircle size={20} className="text-green-600" />;
-              } else if (idx === selectedOption && idx !== currentQ.correctIndex) {
-                // ROJO: El usuario la eligió y estaba mal
-                btnClass += "bg-red-100 border-red-500 text-red-800";
-                icon = <XCircle size={20} className="text-red-600" />;
-              } else {
-                // El resto de opciones
-                btnClass += "bg-gray-50 border-gray-200 text-gray-400 opacity-60";
-              }
-            } else {
-              // Estado normal antes de validar
-              if (selectedOption === idx) {
-                btnClass += "border-blue-500 bg-blue-50 text-blue-900 ring-1 ring-blue-500";
-              } else {
-                btnClass += "border-gray-200 hover:border-blue-200 hover:bg-gray-50 text-gray-700";
-              }
-            }
-
-            return (
-              <button 
-                key={idx}
-                onClick={() => handleSelect(idx)}
-                disabled={isChecked}
-                className={btnClass}
-              >
-                <span>{opt}</span>
-                {icon}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-8">
-        {!isChecked ? (
-          <button 
-            onClick={handleCheck}
-            disabled={selectedOption === null}
-            className={`w-full py-4 rounded-xl text-lg font-bold shadow-md transition-all ${
-              selectedOption === null 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-            }`}
-          >
-            Comprobar Respuesta
-          </button>
-        ) : (
-          <button 
-            onClick={handleNext}
-            className="w-full bg-gray-900 text-white py-4 rounded-xl text-lg font-bold shadow-md hover:bg-black active:scale-95 flex items-center justify-center gap-2"
-          >
-            {currentIndex + 1 === exam.questions.length ? 'Finalizar Examen' : 'Siguiente Pregunta'}
-            <ArrowRight size={20} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ResultsView({ exam, onSave }) {
-  const correctCount = exam.results.filter(r => r.isCorrect).length;
-  const score = (correctCount / exam.questions.length) * 100;
-
-  const shareViaWhatsApp = () => {
-    // Construcción del reporte detallado
-    let text = `📝 *REPORTE DE EXAMEN*\n`;
-    text += `📚 *Tema:* ${exam.title}\n`;
-    text += `📈 *Puntaje:* ${correctCount}/${exam.questions.length} (${score.toFixed(0)}%)\n\n`;
-    text += `*--- DETALLES ---*\n\n`;
-
-    exam.results.forEach((res, i) => {
-      const statusIcon = res.isCorrect ? '✅' : '❌';
-      text += `*P${i + 1}: ${res.questionText}*\n`;
-      text += `Tu respuesta: ${res.selectedText} ${statusIcon}\n`;
-      
-      // Si se equivocó, mostrar la respuesta correcta
-      if (!res.isCorrect) {
-        text += `💡 *Respuesta correcta:* ${res.correctText}\n`;
-      }
-      text += `\n`;
-    });
-
-    text += `_Generado con Evaluador Pro_`;
-
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-  };
-
-  return (
-    <div className="text-center space-y-6 animate-in fade-in zoom-in duration-300">
-      <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-        <h2 className="text-gray-500 uppercase tracking-wide text-sm font-bold mb-2">Resultados Finales</h2>
-        <div className="text-3xl font-bold text-gray-800 mb-4">{exam.title}</div>
-        
-        <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full border-8 mb-4 ${score >= 60 ? 'border-green-500 text-green-600' : 'border-red-500 text-red-600'}`}>
-          <span className="text-4xl font-bold">{score.toFixed(0)}%</span>
-        </div>
-        
-        <p className="text-gray-600">
-          Has acertado <strong className="text-gray-900">{correctCount}</strong> de <strong className="text-gray-900">{exam.questions.length}</strong> preguntas.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        <button 
-          onClick={shareViaWhatsApp}
-          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95"
-        >
-          <Share2 size={20} />
-          Enviar Reporte por WhatsApp
-        </button>
-
-        <button 
-          onClick={onSave}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95"
-        >
-          <Save size={20} />
-          Guardar y Salir
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function HistoryView({ list, onDelete, onBack }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-xl font-bold text-gray-700">Historial de Exámenes</h2>
-      </div>
-
-      {list.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
-          <History size={48} className="mx-auto mb-2 opacity-50" />
-          <p>No hay exámenes guardados aún.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {list.map((item) => {
-            const correct = item.results.filter(r => r.isCorrect).length;
-            const total = item.questions.length;
-            const percentage = Math.round((correct/total)*100);
-            
-            return (
-              <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-                <div className="flex-1">
-                  {/* Aquí mostramos explícitamente el TÍTULO que antes faltaba */}
-                  <h3 className="font-bold text-lg text-blue-900 leading-tight mb-1">{item.title || "Examen sin título"}</h3>
-                  <div className="text-xs text-gray-500 flex gap-2">
-                    <span>{item.date}</span>
-                    <span>•</span>
-                    <span className={percentage >= 60 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'}>
-                      Nota: {percentage}%
-                    </span>
-                  </div>
+    <!-- HEADER -->
+    <header class="glass-header text-white p-3 shadow-lg z-50 shrink-0">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400 overflow-hidden flex items-center justify-center">
+                    <!-- LOGO ACTUALIZADO: unnamed.jpg -->
+                    <img src="unnamed.jpg" alt="Escudo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-university text-blue-900 text-2xl hidden"></i>
                 </div>
-                
-                <button 
-                  onClick={() => onDelete(item.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                  title="Eliminar"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
-            );
-          })}
+                <div>
+                    <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
+                    <p class="text-[10px] text-blue-200">EduGen AI v6.11 (Correcciones)</p>
+                    <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
+                        <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
+                    </p>
+                </div>
+            </div>
+            <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
         </div>
-      )}
+    </header>
 
-      <button 
-        onClick={onBack}
-        className="w-full mt-4 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300"
-      >
-        Volver al Menú
-      </button>
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 overflow-y-auto relative bg-slate-50 w-full max-w-md mx-auto shadow-2xl border-x border-slate-200">
+        
+        <!-- VISTA 1: DASHBOARD DOCENTE -->
+        <div id="view-dashboard" class="view-section p-6 space-y-6 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-blue-900">Panel Docente</h2>
+                <button onclick="app.configIA()" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1 shadow-sm">
+                    🔑 Configurar IA
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="app.navTo('view-create')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-500 hover:shadow-md transition text-left group">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2 group-hover:scale-110 transition"><i class="fas fa-plus"></i></div>
+                    <p class="font-bold text-sm">Nuevo Examen</p>
+                    <p class="text-[10px] text-slate-400">Crear con IA</p>
+                </button>
+                <button onclick="app.loadExams()" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-500 hover:shadow-md transition text-left group">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-2 group-hover:scale-110 transition"><i class="fas fa-list"></i></div>
+                    <p class="font-bold text-sm">Mis Exámenes</p>
+                    <p class="text-[10px] text-slate-400">Ver Resultados</p>
+                </button>
+            </div>
+
+            <div id="exam-list-container" class="hidden">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Historial Reciente</h3>
+                <div id="exam-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- VISTA 2: CREAR EXAMEN -->
+        <div id="view-create" class="view-section p-6 space-y-4 hidden">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="app.navTo('view-dashboard')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-arrow-left"></i></button>
+                <h2 class="text-lg font-bold text-slate-800">Configurar Examen</h2>
+            </div>
+            
+            <!-- CAMPO DE TÍTULO AÑADIDO -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">Título del Examen (Opcional)</label>
+                <input type="text" id="exam-title" class="w-full p-3 border rounded-xl text-sm font-bold text-blue-900 border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: La Guerra del Pacífico">
+            </div>
+
+            <div class="relative group">
+                <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.txt" onchange="app.handleFile(this)">
+                <div onclick="document.getElementById('file-upload').click()" class="border-2 border-dashed border-blue-300 bg-blue-50 rounded-xl p-6 text-center cursor-pointer hover:bg-blue-100 transition">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-blue-500 mb-2"></i>
+                    <p class="text-xs font-bold text-blue-800">Toca para subir PDF o Word</p>
+                    <p class="text-[10px] text-blue-400" id="file-name-display">El texto se extraerá automáticamente</p>
+                </div>
+                <div id="file-loader" class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center rounded-xl hidden z-10">
+                    <div class="loader mb-2"></div>
+                    <p class="text-xs text-blue-600 font-bold">Leyendo archivo...</p>
+                </div>
+            </div>
+
+            <textarea id="prompt-text" class="w-full border border-slate-200 rounded-xl p-3 text-xs h-24 focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="O pega el texto del tema aquí..."></textarea>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="cfg-bimestre" class="w-full text-xs p-2 border rounded"><option value="B1">I Bimestre</option><option value="B2">II Bimestre</option><option value="B3">III Bimestre</option><option value="B4">IV Bimestre</option></select>
+                    <select id="cfg-area" class="w-full text-xs p-2 border rounded"><option value="arte">Arte y Cultura</option><option value="dpcc">DPCC</option><option value="ept">EPT</option></select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="cfg-nivel" class="w-full text-xs p-2 border rounded" onchange="app.updateGrades()"><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select>
+                    <select id="cfg-grado" class="w-full text-xs p-2 border rounded"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-2 border-t pt-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Preguntas</label>
+                        <select id="cfg-count" class="w-full text-xs font-bold bg-transparent"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Tiempo</label>
+                        <select id="cfg-time" class="w-full text-xs font-bold bg-transparent"><option value="15">15s</option><option value="30" selected>30s</option><option value="60">1m</option><option value="120">2m</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.generateDraft()" class="btn-primary w-full text-white font-bold py-3 rounded-xl shadow-lg text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-robot"></i> Generar Borrador con IA
+            </button>
+        </div>
+
+        <!-- VISTA 3: REVISIÓN -->
+        <div id="view-review" class="view-section p-6 space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                 <h2 class="text-lg font-bold text-slate-800">Revisar Preguntas</h2>
+                 <button onclick="app.navTo('view-create')" class="text-xs text-red-500 font-bold border border-red-200 px-2 py-1 rounded">Cancelar</button>
+            </div>
+            
+            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs text-yellow-800"><i class="fas fa-edit"></i> Puedes editar las preguntas si la IA se equivocó.</div>
+            <div id="review-list" class="space-y-4"></div>
+            <div class="grid grid-cols-2 gap-3 pt-4">
+                <button onclick="app.generateDraft()" class="border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs">Reintentar</button>
+                <button onclick="app.publishExam()" class="bg-green-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-green-700 shadow-lg">Aprobar y Publicar</button>
+            </div>
+        </div>
+
+        <!-- VISTA 4: LIVE (Link y QR) -->
+        <div id="view-live" class="view-section p-6 flex flex-col items-center justify-center h-full hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 text-center w-full">
+                <h2 class="text-xl font-bold text-blue-900 mb-1">¡Examen Listo!</h2>
+                <p class="text-xs text-slate-500 mb-4">Escanea para ingresar</p>
+                <div id="qr-container" class="flex justify-center mb-4"></div>
+                <div class="bg-slate-50 p-2 rounded border border-slate-200 mb-4 break-all cursor-pointer hover:bg-blue-50" onclick="app.copyLink()">
+                    <p id="live-link" class="text-[10px] font-mono text-blue-600">...</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="app.shareWA()" class="bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold"><i class="fab fa-whatsapp"></i> Enviar</button>
+                    <button onclick="app.viewResultsFromLive()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Ver Resultados</button>
+                </div>
+            </div>
+            <button onclick="app.simulateStudent()" class="mt-6 text-slate-400 text-xs underline">Simular Vista Alumno</button>
+        </div>
+
+        <!-- VISTA 5: RESULTADOS DOCENTE -->
+        <div id="view-results-teacher" class="view-section p-6 space-y-4 hidden h-full flex flex-col">
+             <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">Resultados</h2>
+                <button onclick="app.navTo('view-dashboard')" class="text-xs border px-2 py-1 rounded">Cerrar</button>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <!-- SE MUESTRA EL TÍTULO DEL TEMA AQUÍ -->
+                        <h3 class="font-bold text-sm text-blue-900" id="res-title">...</h3>
+                        <p class="text-[10px] text-slate-500" id="res-meta">...</p>
+                    </div>
+                    <button id="btn-lock" onclick="app.toggleLock()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold">Bloquear</button>
+                </div>
+                <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar Registro</button>
+            </div>
+            <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
+                <table class="w-full text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Acción</th></tr></thead>
+                    <tbody id="res-table" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <button onclick="window.print()" class="text-center text-xs text-slate-400 font-bold py-2">Imprimir Reporte</button>
+        </div>
+
+        <!-- VISTA 6: ALUMNO LOGIN -->
+        <div id="view-student-login" class="view-section p-8 flex flex-col justify-center h-full hidden">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-bold text-blue-900">Ingreso a Examen</h2>
+                <p class="text-xs text-slate-500 mt-1" id="login-exam-info">...</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 ml-1">Selecciona tu nombre:</label>
+                    <select id="student-select" class="w-full p-3 rounded-xl border-2 border-slate-200 bg-white focus:border-blue-500 outline-none text-sm font-bold"></select>
+                </div>
+                <button onclick="app.startExam()" class="btn-primary w-full text-white font-bold py-4 rounded-xl shadow-lg">COMENZAR</button>
+            </div>
+        </div>
+
+        <!-- VISTA 7: ALUMNO EXAMEN -->
+        <div id="view-exam" class="view-section p-6 flex flex-col h-full hidden">
+            <div class="w-full bg-slate-200 h-1.5 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-yellow-400 h-full transition-all duration-300 w-0"></div>
+            </div>
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-xs font-bold bg-white px-3 py-1 rounded-full border shadow-sm text-slate-500"><span id="q-idx" class="text-blue-600">1</span> / <span id="q-total"></span></span>
+                <div class="text-xs font-mono font-bold bg-red-50 text-red-500 px-3 py-1 rounded-full border border-red-100 animate-pulse"><i class="far fa-clock"></i> <span id="timer"></span>s</div>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <p id="q-text" class="text-lg font-bold text-slate-800 mb-6 leading-relaxed"></p>
+                <div id="q-options" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- VISTA 8: RESULTADO -->
+        <div id="view-student-result" class="view-section p-8 flex flex-col items-center justify-center h-full hidden text-center">
+            <div class="mb-6">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Tu Calificación</p>
+                <h1 id="final-grade-letter" class="text-6xl font-extrabold text-blue-600 my-2">--</h1>
+                <p id="final-score-num" class="text-sm font-bold text-slate-500">0/0</p>
+            </div>
+            <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full"><i class="fas fa-check-circle text-lg mb-1 block"></i> Examen enviado correctamente.</div>
+            <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg text-xs">FINALIZAR</button>
+        </div>
+
+    </main>
+
+    <!-- REPORTE DE IMPRESIÓN -->
+    <div id="printable-report" class="hidden bg-white p-8">
+        <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="unnamed.jpg" alt="Logo" style="width: 60px; height: auto;">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-900">I.E. J.N. ANDREWS</h1>
+                    <p class="text-sm text-gray-500">Reporte de Resultados - Prof. Manuel Polar</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Fecha de Impresión</p>
+                <p class="font-mono text-sm" id="rep-date">--/--/----</p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+            <h3 class="font-bold text-lg text-slate-800" id="rep-title">Examen de...</h3>
+            <p class="text-sm text-slate-500" id="rep-subtitle">Grado - Nivel - Área</p>
+        </div>
+
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-slate-800">
+                    <th class="py-2 text-xs uppercase">Estudiante</th>
+                    <th class="py-2 text-xs uppercase text-center">Nota</th>
+                    <th class="py-2 text-xs uppercase text-center">Nivel (MINEDU)</th>
+                    <th class="py-2 text-xs uppercase text-right">Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="rep-body" class="text-sm"></tbody>
+        </table>
+
+        <div class="mt-12 text-center text-xs text-gray-400 border-t border-gray-200 pt-4">
+            <p>Documento generado por EduGen AI - Sistema de Gestión Pedagógica</p>
+        </div>
     </div>
-  );
-}
+
+    <!-- LOGICA APP -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // === CONFIGURACIÓN ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
+            authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
+            projectId: "registro-jn-andrews-mpc",
+            storageBucket: "registro-jn-andrews-mpc.firebasestorage.app",
+            messagingSenderId: "701752375464",
+            appId: "1:701752375464:web:eaab256668b869d026aa9d"
+        };
+        
+        // URL OFICIAL DE GITHUB PAGES
+        const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
+
+        const database = {
+            primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí"], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel"], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías"], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis"], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan"], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego"] },
+            secundaria: { "1": ["ARUCUTIPA CALISAYA Yuliet Luanna", "CISA SAHUAYANAY Miguel Ángel", "COLQUE CHAMBI Jhems Kevin", "CRUZ ROJAS Jhon Alex", "CUYO CHOQUE Will Adriano", "GALLEGOS ZEA, James Jamir", "GUETTI RUIZ Johana Nicol", "GUTIERREZ OSORIO, Rony Alex", "GUTIERREZ ZAMATA, Gianela Ninel", "MENDOZA MAMANI, Víctor Manuel", "MONTEZA RIVAS Yair Alexander", "SANGUINO MARQUEZ Carlos Santiago", "TICONA CONDORI Heidy Milena", "VIÑA HUAMAN Esteban Andreus Caleb", "ZEVALLOS MAMANI Alisom Kimberly"], "2": ["AGUILAR TILCA, Midwad Harison", "ARMAS PEÑA, Moisés Jubal", "ARUCUTIPA CALISAYA, Emerson garry", "BELÓN AQUINO, Dayiro Andree", "CALDERON LEANDRO, Yhong Puyol.", "CALLOAPAZA CONDORCAHUANA Jhamile Sadira", "CCANCHILLO TORRES, Yulissam Priyanka", "CHOQUE LIZARRAGA, Piero Valentino", "CHOQUEHUANCA CARI, Nicole Mia Marey", "COAQUIRA CONDO, Llandhel Roberth", "CONDORI QUISPE, Mayli Yasu", "CORIMANYA ARISACA, Branco Adriano", "DIAZ CAPACOILA, Anely Yesica", "HUAYHUA HUITTOCCOLLO Alonso Delbir", "LUNA QUISPE, Jimmy Noé", "LUQUE VILCAPAZA, Eva Luz", "MANCHA COAQUIRA, George Luis", "PEREIRA VILCA Neymar Piero", "PEREZ LUPO, Gerald Abdías", "PHALA TORRES, Benjamín Franco", "QUISPE CAMALA, José Daniel", "QUISPE GUTIERREZ, Ana Cristina", "QUISPE QUISPE, Thalía Úrsula", "RIVEROS SUPA, Mathias Leonardo", "VILCA GUTIERREZ, Jandy Betzabe"], "3": ["AMANQUI YANARICO, Jean Paul", "ANCCALLE MERMA, Danna Magdiell", "APAZA MAMANI, Eduardo Nicolás", "AROCUTIPA ROMERO, Zamir Yhonncy", "BELÓN AQUINO, Fabrizio André", "CHOQUEHUANCA CARI, David Yair", "FALCON PUMA, Enoc Elías", "GARCIA CISA SANTIAGO BENJAMIN", "GARCIA TICONA Emanuel Matías", "HANAMPA QUISPE, Erick Jonathan", "MACHUCA CRUZ Baurulet", "MALPARTIDA ALE Alvaro Joaquín", "MAMANI ANAYA Sebastián Mateo", "MARQUEZ TACURI, Jesús", "MERMA MENDOZA, Roberto Maradona", "MIRAMIRA GUTIERREZ, Josías Daniel", "ORTEGA BENAVENTE, Nill Antony", "OSORIO CCACCA Marisol", "ROQUE HUARCA, Dianeth Nicol", "TOTORA CUCHO Yuliana Nery", "VALDEZ SUNI, Luz Maricielo", "VARGAS CARI Marylin Elena Josenit"], "4": ["BRINGAS JUAREZ Brandon", "CANAZA QUISPE Luis Eduardo", "CARDENAS CARDENAS Vivian Maryel", "CONDORI QUISPE Abel Benjamín", "GARCIA TICONA Angie Ruth", "GUTIERREZ ALVAREZ Lisandro", "JANAMPA LIMA Jeff Dacio", "LLANQUE ALMIRON Yader Jocsan", "MOLLEAPAZA VALERIANO Yesybell Analia", "SALAZAR PEREZ Juan Hersy", "SANGUINO MARQUEZ Daylen", "VILCA ALVAREZ Rodrigo Alejandro", "VIÑA HUAMAN Brayan Andrés"], "5": ["APAZA GAMARRA German Enrique", "AYALA PEÑAFIEL Diego Gabriel", "CALCINA QUISPE Lizeth Sheyla", "CAMI VILLAVICENCIO Olger Eliel", "CONDORI ANAHUA Abigail Dorkas", "CONDORI ANAHUA Jetzabe María del Pilar", "CORDOVA OVADA Gabriel Gedeón", "CUTIMBO TACUMA David Alexander", "HANAMPA QUISPE Rubí Alejandra", "HUAMAN CANAHUIRI, Frank Antony", "HUARCAYA COILA STEFANY", "MARIN CHOQUE Fredy Erick", "ORCOAPAZA MAMANI Johan Joel", "PALO AGUILAR Yanira Brendaly", "QUISPE CAMALA Kevin Andi", "QUISPE CHOQUE Oliver Omar", "SANCHEZ PEROZO Oriana Valentina", "SANO MAMANI Jenny Abigail", "SUPANTA HUACHANI Angely", "VARGAS ALANOCA Maryori Nayomi"] }
+        };
+
+        const USER_ID = "PROFESOR_MANUEL";
+
+        const state = {
+            db: null, auth: null,
+            config: {}, questions: [], currentExamId: null, currentStudent: null,
+            studentResults: [], fraudWarnings: 0, timer: null, questionIdx: 0, score: 0
+        };
+
+        // --- SISTEMA DE NAVEGACIÓN (GLOBAL) ---
+        function navTo(id) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // --- FUNCIONES IA (MODELO PREVIEW ESPECÍFICO) ---
+        function getAIKey() {
+            let key = localStorage.getItem('gemini_api_key');
+            if(!key) {
+                key = prompt("Ingrese su API Key de Google Gemini (AI Studio):");
+                if(key) {
+                    key = key.trim();
+                    localStorage.setItem('gemini_api_key', key);
+                }
+            }
+            return key;
+        }
+
+        async function fetchGemini(apiKey, prompt) {
+            const models = [
+                'gemini-2.5-flash-preview-09-2025',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro',
+                'gemini-1.0-pro'
+            ];
+
+            let lastError = null;
+
+            for (const model of models) {
+                try {
+                    const btn = document.querySelector('button[onclick="app.generateDraft()"]');
+                    if(btn) btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Probando ${model}...`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            contents:[{parts:[{text:prompt}]}], 
+                            generationConfig:{
+                                responseMimeType:"application/json",
+                                temperature: 0.3
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        let errMsg = `HTTP ${response.status}`;
+                        try {
+                            const errJson = JSON.parse(errText);
+                            if (errJson.error) errMsg = errJson.error.message;
+                        } catch(e) {}
+                        throw new Error(errMsg);
+                    }
+
+                    const data = await response.json();
+                    return data; 
+
+                } catch (e) {
+                    console.warn(`Fallo en ${model}:`, e);
+                    lastError = e;
+                    const msg = e.message.toLowerCase();
+                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) continue; 
+                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) throw e;
+                    continue; 
+                }
+            }
+            throw lastError || new Error("No se pudo conectar con ningún modelo de IA.");
+        }
+
+        // --- OBJETO APP PRINCIPAL ---
+        window.app = {
+            navTo: navTo,
+            getBaseUrl: () => BASE_URL,
+            goHome: () => window.location.href = BASE_URL,
+            
+            configIA: () => {
+                const k = prompt("API Key de Gemini:", localStorage.getItem('gemini_api_key') || "");
+                if (k !== null) localStorage.setItem('gemini_api_key', k);
+            },
+
+            startTeacherMode: () => {
+                navTo('view-dashboard');
+                window.app.updateGrades(); 
+            },
+
+            updateGrades: () => {
+                const n = document.getElementById('cfg-nivel').value;
+                const g = document.getElementById('cfg-grado');
+                g.innerHTML = '';
+                const max = n === 'primaria' ? 6 : 5;
+                for(let i=1; i<=max; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i; opt.innerText = i + '°';
+                    g.appendChild(opt);
+                }
+            },
+
+            handleFile: async (input) => {
+                const file = input.files[0];
+                if (!file) return;
+                document.getElementById('file-loader').classList.remove('hidden');
+                try {
+                    let text = "";
+                    if (file.type === "application/pdf") {
+                        const ab = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument(ab).promise;
+                        for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+                            const page = await pdf.getPage(i);
+                            const tc = await page.getTextContent();
+                            text += tc.items.map(item => item.str).join(' ') + "\n";
+                        }
+                    } else if (file.type.includes("word")) {
+                        const ab = await file.arrayBuffer();
+                        const res = await mammoth.extractRawText({arrayBuffer: ab});
+                        text = res.value;
+                    } else {
+                        text = await file.text();
+                    }
+                    document.getElementById('prompt-text').value = text.substring(0, 15000);
+                    document.getElementById('file-name-display').innerText = file.name;
+                } catch (e) {
+                    alert("Error leyendo archivo: " + e.message);
+                } finally {
+                    document.getElementById('file-loader').classList.add('hidden');
+                }
+            },
+
+            generateDraft: async () => {
+                const promptText = document.getElementById('prompt-text').value;
+                const titleText = document.getElementById('exam-title').value.trim();
+                
+                if (promptText.length < 10) return alert("Por favor ingrese un tema o suba un archivo.");
+                
+                let key = getAIKey();
+                if (!key) return;
+
+                state.config = {
+                    title: titleText || "Examen Generado por IA", // GUARDAMOS EL TÍTULO AQUÍ
+                    bimestre: document.getElementById('cfg-bimestre').value,
+                    area: document.getElementById('cfg-area').value,
+                    nivel: document.getElementById('cfg-nivel').value,
+                    grado: document.getElementById('cfg-grado').value,
+                    qCount: parseInt(document.getElementById('cfg-count').value),
+                    time: parseInt(document.getElementById('cfg-time').value),
+                    prompt: promptText
+                };
+
+                const btn = document.querySelector('button[onclick="app.generateDraft()"]');
+                const prevHtml = btn.innerHTML;
+                btn.innerHTML = `<div class="loader inline-block"></div> Generando...`;
+                btn.disabled = true;
+
+                try {
+                    const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple sobre el texto proporcionado. Nivel escolar. JSON Array estricto: [{"q":"...","opts":["A","B","C","D"],"a":indice_0_3}]`;
+                    const data = await fetchGemini(key, sysPrompt + "\nTEXTO: " + promptText);
+                    
+                    if(!data.candidates || !data.candidates[0].content) {
+                        throw new Error("Respuesta IA vacía.");
+                    }
+                    
+                    state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
+                    renderReview();
+                    navTo('view-review');
+
+                } catch (e) {
+                    console.error(e);
+                    if (e.message.includes("key") || e.message.includes("403")) {
+                        localStorage.removeItem('gemini_api_key');
+                        alert("⛔ Llave API inválida o expirada. Se ha borrado. Intente de nuevo.");
+                    } else {
+                        alert("⚠️ Error generando examen: " + e.message);
+                    }
+                }
+
+                btn.innerHTML = prevHtml;
+                btn.disabled = false;
+            },
+
+            publishExam: async () => {
+                try {
+                    const docRef = await addDoc(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`), {
+                        config: state.config,
+                        questions: state.questions,
+                        active: true,
+                        createdAt: Timestamp.now()
+                    });
+                    
+                    state.currentExamId = docRef.id;
+                    const link = `${BASE_URL}?q=${docRef.id}`;
+                    
+                    document.getElementById('qr-container').innerHTML = "";
+                    new QRCode(document.getElementById("qr-container"), { text: link, width: 180, height: 180 });
+                    document.getElementById('live-link').innerText = link;
+                    
+                    navTo('view-live');
+                } catch (e) {
+                    alert("Error al publicar: " + e.message);
+                }
+            },
+
+            loadExams: async () => {
+                const list = document.getElementById('exam-list');
+                list.innerHTML = '<p class="text-center text-xs">Cargando...</p>';
+                document.getElementById('exam-list-container').classList.remove('hidden');
+                
+                try {
+                    const q = collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`);
+                    const snap = await getDocs(q);
+                    
+                    list.innerHTML = "";
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const date = d.createdAt.toDate().toLocaleDateString();
+                        const status = d.active ? '<span class="text-green-500">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
+                        // AQUI MOSTRAMOS EL TÍTULO O EL ÁREA SI NO HAY TÍTULO
+                        const titleDisplay = d.config.title ? d.config.title : `${d.config.area.toUpperCase()} - ${d.config.grado}°`;
+                        
+                        list.innerHTML += `
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center hover:bg-slate-50 transition">
+                            <div onclick="app.loadResults('${doc.id}')" class="flex-1 cursor-pointer">
+                                <p class="text-xs font-bold text-blue-900">${titleDisplay}</p>
+                                <p class="text-[10px] text-slate-400">${d.config.area.toUpperCase()} ${d.config.grado}° • ${date} • ${status}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                 <button onclick="app.deleteExam('${doc.id}', event)" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                                 <i class="fas fa-chevron-right text-slate-300"></i>
+                            </div>
+                        </div>`;
+                    });
+                } catch (e) { console.error(e); }
+            },
+            
+            deleteExam: async (id, event) => {
+                event.stopPropagation();
+                if(!confirm("¿Estás seguro de eliminar este examen y todos sus resultados? Esta acción no se puede deshacer.")) return;
+                
+                try {
+                    await deleteDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
+                    alert("Examen eliminado correctamente.");
+                    app.loadExams();
+                } catch (e) {
+                    alert("Error al eliminar: " + e.message);
+                }
+            },
+
+            loadResults: async (id) => {
+                state.currentExamId = id;
+                navTo('view-results-teacher');
+                const tbody = document.getElementById('res-table');
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
+                
+                try {
+                    const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
+                    const examData = examSnap.data();
+                    state.config = examData.config;
+                    // Asegurar que las preguntas estén disponibles en el estado para generar el reporte
+                    state.questions = examData.questions;
+                    
+                    // USAR EL TÍTULO EN EL HEADER DE RESULTADOS
+                    document.getElementById('res-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
+                    document.getElementById('res-meta').innerText = examData.active ? "En curso" : "Finalizado";
+                    
+                    const btn = document.getElementById('btn-lock');
+                    btn.innerText = examData.active ? "Bloquear" : "Abrir";
+                    btn.className = examData.active ? "text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold" : "text-xs bg-green-50 text-green-600 px-2 py-1 rounded font-bold";
+
+                    const resSnap = await getDocs(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${id}/respuestas`));
+                    state.studentResults = [];
+                    
+                    tbody.innerHTML = "";
+                    resSnap.forEach(doc => {
+                        const r = doc.data();
+                        const nota = getMinedu(r.score, r.total);
+                        // Store the full response data for report generation
+                        state.studentResults.push({...r, notaLetra: nota.L});
+                        
+                        // Generar reporte detallado para WhatsApp
+                        let detalleReporte = "";
+                        if (r.answers && state.questions) {
+                             state.questions.forEach((q, idx) => {
+                                 const userAnsIdx = r.answers[idx];
+                                 // Handle potential null/undefined/missing answers
+                                 const userAnsText = (userAnsIdx !== null && userAnsIdx !== undefined && userAnsIdx >= 0) ? q.opts[userAnsIdx] : "Sin responder";
+                                 const isCorrect = userAnsIdx === q.a;
+                                 const statusIcon = isCorrect ? "✅" : "❌";
+                                 
+                                 detalleReporte += `\n${idx + 1}. ${q.q}\n   Rpta: ${userAnsText} ${statusIcon}`;
+                                 if (!isCorrect) {
+                                     detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
+                                 }
+                                 detalleReporte += `\n`;
+                             });
+                        } else {
+                             detalleReporte = "\n(Detalle no disponible para este examen)";
+                        }
+
+                        // AGREGAR TÍTULO AL REPORTE DE WHATSAPP
+                        const waMsg = `*REPORTE DE EXAMEN*\n` +
+                                      `*Tema: ${state.config.title || state.config.area}*\n` +
+                                      `Estudiante: ${r.student}\n` +
+                                      `Nota: ${nota.L} (${r.score}/${r.total})\n\n` +
+                                      `*DETALLE DEL CUESTIONARIO:*\n` + 
+                                      detalleReporte + 
+                                      `\n_Generado por EduGen AI_`;
+                        
+                        tbody.innerHTML += `
+                        <tr class="border-b">
+                            <td class="p-2 text-slate-700">${r.student}</td>
+                            <td class="p-2 text-center"><span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span></td>
+                            <td class="p-2 text-center">
+                                <a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a>
+                            </td>
+                        </tr>`;
+                    });
+                } catch(e) { 
+                    console.error(e);
+                    alert("Error cargando resultados: " + e.message); 
+                }
+            },
+
+            syncOfficial: async () => {
+                if(!confirm("¿Enviar notas al Registro Oficial?")) return;
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+                    const docId = `registro-${state.config.bimestre}-${state.config.nivel}-${state.config.grado}-${state.config.area}-${today}`;
+                    const docRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/registros_auxiliares`, docId);
+                    
+                    const snap = await getDoc(docRef);
+                    let data = snap.exists() ? snap.data() : { notas: {}, headers: { "header-C1-0": "Examen EduGen" }, prompt: "Examen Virtual" };
+                    
+                    state.studentResults.forEach(r => {
+                        data.notas[`nota-${r.studentIndex}-C1-0`] = r.notaLetra;
+                        data.notas[`asistencia-${r.studentIndex}`] = "A";
+                    });
+                    
+                    await setDoc(docRef, data, { merge: true });
+                    alert("✅ Notas sincronizadas correctamente.");
+                } catch(e) {
+                    alert("Error al sincronizar: " + e.message);
+                }
+            },
+
+            toggleLock: async () => {
+                const ref = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, state.currentExamId);
+                const snap = await getDoc(ref);
+                await updateDoc(ref, { active: !snap.data().active });
+                app.loadResults(state.currentExamId);
+            },
+
+            startStudentMode: async (examId) => {
+                state.currentExamId = examId;
+                const snap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, examId));
+                if (!snap.exists()) return document.body.innerHTML = "<h1 class='p-10'>Examen no encontrado</h1>";
+                
+                const data = snap.data();
+                if (!data.active) return document.body.innerHTML = "<h1 class='p-10 text-center text-red-600 font-bold'>Este examen ha finalizado.</h1>";
+                
+                state.questions = data.questions;
+                state.config = data.config;
+                
+                const list = database[state.config.nivel][state.config.grado];
+                const sel = document.getElementById('student-select');
+                sel.innerHTML = '<option value="">Selecciona tu nombre...</option>';
+                list.forEach((n, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i; opt.innerText = n;
+                    sel.appendChild(opt);
+                });
+                
+                // MOSTRAR TÍTULO EN PANTALLA DE INGRESO
+                document.getElementById('login-exam-info').innerText = state.config.title || `${state.config.area} - ${state.config.grado}°`;
+                navTo('view-student-login');
+            },
+
+            startExam: async () => {
+                const idx = document.getElementById('student-select').value;
+                if (!idx) return alert("Selecciona tu nombre");
+                
+                if(localStorage.getItem(`done_${state.currentExamId}_${idx}`)) return alert("Ya enviaste este examen.");
+
+                const resRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${idx}`);
+                const snap = await getDoc(resRef);
+                if(snap.exists()) return alert("Ya existe un registro de tu examen.");
+
+                state.currentStudent = { 
+                    name: database[state.config.nivel][state.config.grado][idx], 
+                    idx: idx 
+                };
+                
+                window.addEventListener('blur', () => {
+                    state.fraudWarnings++;
+                    if(state.fraudWarnings >= 3) {
+                        alert("Has salido de la pantalla demasiadas veces. El examen se enviará ahora.");
+                        app.finishExam();
+                    } else {
+                        alert(`⚠️ ¡ADVERTENCIA ${state.fraudWarnings}/3! No salgas de la pantalla.`);
+                    }
+                });
+
+                navTo('view-exam');
+                app.loadQuestion(0);
+                
+                // Inicializar array de respuestas
+                state.userAnswers = new Array(state.questions.length).fill(null);
+            },
+
+            loadQuestion: (idx) => {
+                if (idx >= state.questions.length) return app.finishExam();
+                
+                state.questionIdx = idx;
+                const q = state.questions[idx];
+                
+                document.getElementById('q-idx').innerText = idx + 1;
+                document.getElementById('q-total').innerText = state.questions.length;
+                document.getElementById('q-text').innerText = q.q;
+                document.getElementById('progress-bar').style.width = `${(idx / state.questions.length) * 100}%`;
+                
+                const optsDiv = document.getElementById('q-options');
+                optsDiv.innerHTML = "";
+                
+                q.opts.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 transition mb-2";
+                    btn.innerText = opt;
+                    btn.onclick = () => app.answer(i);
+                    optsDiv.appendChild(btn);
+                });
+
+                let t = state.config.time || 30;
+                clearInterval(state.timer);
+                document.getElementById('timer').innerText = t;
+                state.timer = setInterval(() => {
+                    t--;
+                    document.getElementById('timer').innerText = t;
+                    if(t <= 0) app.answer(-1); 
+                }, 1000);
+            },
+
+            answer: (ansIdx) => {
+                clearInterval(state.timer);
+                
+                // GUARDAR RESPUESTA DEL USUARIO
+                state.userAnswers[state.questionIdx] = ansIdx;
+                
+                const correct = state.questions[state.questionIdx].a;
+                
+                const optsDiv = document.getElementById('q-options');
+                const buttons = optsDiv.querySelectorAll('button');
+
+                // Disable all
+                buttons.forEach(b => b.disabled = true);
+
+                // Highlight Logic (SISTEMA SEMÁFORO)
+                if (ansIdx === correct) {
+                    state.score++;
+                    buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
+                    buttons[ansIdx].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
+                } else {
+                    if (ansIdx !== -1) {
+                         // ROJO PARA INCORRECTA
+                         buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
+                         buttons[ansIdx].classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+                    }
+                    // MOSTRAR LA CORRECTA EN VERDE
+                    buttons[correct].classList.remove('bg-white', 'border-slate-200');
+                    buttons[correct].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
+                }
+
+                // Delay for visual feedback
+                setTimeout(() => {
+                    app.loadQuestion(state.questionIdx + 1);
+                }, 1500);
+            },
+
+            finishExam: async () => {
+                const total = state.questions.length;
+                const note = getMinedu(state.score, total);
+                
+                document.getElementById('final-grade-letter').innerText = note.L;
+                document.getElementById('final-grade-letter').className = `text-6xl font-extrabold my-2 ${note.C}`;
+                document.getElementById('final-score-num').innerText = `${state.score}/${total}`;
+                
+                navTo('view-student-result');
+                
+                try {
+                    await setDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${state.currentStudent.idx}`), {
+                        student: state.currentStudent.name,
+                        studentIndex: state.currentStudent.idx,
+                        score: state.score,
+                        total: total,
+                        percentage: (state.score/total)*100,
+                        timestamp: Timestamp.now(),
+                        answers: state.userAnswers // GUARDAMOS EL ARRAY DE RESPUESTAS AQUÍ
+                    });
+                    localStorage.setItem(`done_${state.currentExamId}_${state.currentStudent.idx}`, 'true');
+                } catch(e) { console.error(e); }
+            },
+
+            copyLink: () => {
+                navigator.clipboard.writeText(document.getElementById('live-link').innerText);
+                alert("Copiado!");
+            },
+            shareWA: () => {
+                const link = document.getElementById('live-link').innerText;
+                window.open(`https://wa.me/?text=Examen: ${link}`, '_blank');
+            },
+            simulateStudent: () => app.startStudentMode(state.currentExamId),
+            viewResultsFromLive: () => app.loadResults(state.currentExamId)
+        };
+
+        function renderReview() {
+            const l = document.getElementById('review-list');
+            l.innerHTML = "";
+            state.questions.forEach((q, i) => {
+                l.innerHTML += `
+                <div class="bg-white p-3 rounded border">
+                    <input class="w-full font-bold mb-2 border-b" value="${q.q}" onchange="app.updateQ(${i},'q',this.value)">
+                    <div class="grid grid-cols-2 gap-2">
+                        ${q.opts.map((o, oi) => `<input class="text-xs border rounded p-1" value="${o}" onchange="app.updateOpt(${i},${oi},this.value)">`).join('')}
+                    </div>
+                </div>`;
+            });
+            app.updateQ = (i, f, v) => state.questions[i][f] = v;
+            app.updateOpt = (q, o, v) => state.questions[q].opts[o] = v;
+        }
+
+        function getMinedu(s, t) {
+            const p = (s/t)*100;
+            if(p >= 85) return {L:'AD', C:'text-blue-600'};
+            if(p >= 70) return {L:'A', C:'text-green-600'};
+            if(p >= 50) return {L:'B', C:'text-yellow-600'};
+            return {L:'C', C:'text-red-600'};
+        }
+
+        // --- INIT PRINCIPAL (AL FINAL PARA ASEGURAR QUE TODO ESTÉ CARGADO) ---
+        async function init() {
+            try {
+                const appInstance = initializeApp(firebaseConfig);
+                state.auth = getAuth(appInstance);
+                state.db = getFirestore(appInstance);
+                await signInAnonymously(state.auth);
+                console.log("Firebase Conectado");
+
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('q')) {
+                    // Llamada segura a la función dentro de window.app
+                    window.app.startStudentMode(params.get('q'));
+                } else {
+                    window.app.startTeacherMode();
+                }
+            } catch (e) {
+                console.error("Error init:", e);
+                let msg = "Error crítico de conexión con la Base de Datos.";
+                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
+                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
+                else msg += "\n\nDetalle: " + e.message;
+                alert(msg);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
