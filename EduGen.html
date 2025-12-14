@@ -26,20 +26,29 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Espejo para la cámara (Selfie) */
         #camera-feed { transform: scaleX(-1); object-fit: cover; }
 
+        /* Estilos de Impresión */
         @media print {
             body * { visibility: hidden; }
             #printable-report, #printable-report * { visibility: visible; }
-            #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
+            #printable-report { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                background: white;
+                padding: 20px;
+                display: block !important; 
+            }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
     <!-- HEADER -->
-    <header class="glass-header text-white p-3 shadow-lg z-50 shrink-0">
+    <header class="glass-header text-white p-3 shadow-lg z-50 shrink-0 no-print">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400 overflow-hidden flex items-center justify-center">
@@ -48,19 +57,18 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.5 (Seguridad Bloqueo)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.6 (Reportes Full)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
                 </div>
             </div>
-            <!-- BOTÓN HOME CON ID PARA OCULTARLO EN MODO ALUMNO -->
             <button id="btn-home" onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
         </div>
     </header>
 
     <!-- MAIN CONTAINER -->
-    <main class="flex-1 overflow-y-auto relative bg-slate-50 w-full max-w-md mx-auto shadow-2xl border-x border-slate-200">
+    <main class="flex-1 overflow-y-auto relative bg-slate-50 w-full max-w-md mx-auto shadow-2xl border-x border-slate-200 no-print">
         
         <!-- VISTA 1: DASHBOARD DOCENTE -->
         <div id="view-dashboard" class="view-section p-6 space-y-6 hidden">
@@ -131,7 +139,6 @@
                         <select id="cfg-time" class="w-full text-xs font-bold bg-transparent"><option value="15">15s</option><option value="30" selected>30s</option><option value="60">1m</option><option value="120">2m</option></select>
                     </div>
                 </div>
-                <!-- SECCIÓN DE PROGRAMACIÓN DE FECHA -->
                 <div class="grid grid-cols-2 gap-2 border-t pt-3">
                     <div>
                         <label class="text-[10px] font-bold text-blue-600 block mb-1">Inicio (Opcional)</label>
@@ -196,9 +203,8 @@
                     <button id="btn-lock" onclick="app.toggleLock()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold">Bloquear</button>
                 </div>
                 
-                <!-- BOTÓN: REPORTE GRUPAL WHATSAPP -->
                 <button onclick="app.shareGeneralReport()" class="w-full bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-green-600 mb-2 flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp text-lg"></i> Reporte Grupal (Todos)
+                    <i class="fab fa-whatsapp text-lg"></i> Reporte Grupal
                 </button>
 
                 <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar Registro</button>
@@ -216,17 +222,16 @@
                     <tbody id="res-table" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
-            <button onclick="window.print()" class="text-center text-xs text-slate-400 font-bold py-2">Imprimir Reporte</button>
+            <button onclick="app.printReport()" class="text-center text-xs text-slate-400 font-bold py-2 hover:text-slate-600"><i class="fas fa-print"></i> Imprimir Reporte</button>
         </div>
 
-        <!-- VISTA 6: ALUMNO LOGIN (CON CÁMARA) -->
+        <!-- VISTA 6: ALUMNO LOGIN -->
         <div id="view-student-login" class="view-section p-8 flex flex-col justify-center h-full hidden">
             <div class="text-center mb-4">
                 <h2 class="text-xl font-bold text-blue-900">Ingreso a Examen</h2>
                 <p class="text-xs text-slate-500 mt-1" id="login-exam-info">...</p>
             </div>
             
-            <!-- CÁMARA UI -->
             <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg mb-4 relative h-48 w-full border-4 border-slate-200">
                 <video id="camera-feed" autoplay playsinline class="w-full h-full object-cover"></video>
                 <div id="camera-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -276,7 +281,7 @@
             <div class="text-[10px] text-red-500 font-bold mt-2">⛔ Acceso finalizado. No puedes volver a ingresar.</div>
         </div>
         
-        <!-- VISTA 9: BLOQUEO (NUEVA) -->
+        <!-- VISTA 9: BLOQUEO -->
         <div id="view-blocked" class="view-section p-8 flex flex-col items-center justify-center h-full hidden text-center bg-red-50">
             <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 border-4 border-red-200">
                 <i class="fas fa-lock text-red-500 text-3xl"></i>
@@ -287,7 +292,7 @@
 
     </main>
 
-    <!-- REPORTE DE IMPRESIÓN -->
+    <!-- REPORTE DE IMPRESIÓN (OCULTO) -->
     <div id="printable-report" class="hidden bg-white p-8">
         <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -311,10 +316,9 @@
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="border-b-2 border-slate-800">
-                    <th class="py-2 text-xs uppercase">Estudiante</th>
-                    <th class="py-2 text-xs uppercase text-center">Nota</th>
-                    <th class="py-2 text-xs uppercase text-center">Nivel (MINEDU)</th>
-                    <th class="py-2 text-xs uppercase text-right">Fecha</th>
+                    <th class="py-2 text-xs uppercase border-b border-slate-300">Estudiante</th>
+                    <th class="py-2 text-xs uppercase text-center border-b border-slate-300">Nota</th>
+                    <th class="py-2 text-xs uppercase text-center border-b border-slate-300">Nivel (MINEDU)</th>
                 </tr>
             </thead>
             <tbody id="rep-body" class="text-sm"></tbody>
@@ -341,7 +345,6 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
         const USER_ID = "PROFESOR_MANUEL";
 
@@ -444,7 +447,6 @@
                 if (promptText.length < 10) return alert("Ingrese un tema.");
                 let key = getAIKey(); if (!key) return;
                 
-                // Recoger FECHAS
                 const startVal = document.getElementById('cfg-start').value;
                 const endVal = document.getElementById('cfg-end').value;
 
@@ -456,7 +458,6 @@
                     qCount: parseInt(document.getElementById('cfg-count').value),
                     time: parseInt(document.getElementById('cfg-time').value),
                     prompt: promptText,
-                    // Guardar como fecha real si existe, o null
                     start: startVal ? new Date(startVal) : null,
                     end: endVal ? new Date(endVal) : null
                 };
@@ -538,21 +539,61 @@
                     const nota = getMinedu(r.score, r.total);
                     state.studentResults.push({...r, notaLetra: nota.L});
                     
-                    // REPORTE DETALLADO INDIVIDUAL
-                    let detail = "";
+                    // REPORTE DETALLADO INDIVIDUAL (WHATSAPP)
+                    let waDetail = "";
                     if(r.answers && state.questions) {
                         state.questions.forEach((q, i) => {
                             const ans = Number(r.answers[i]);
                             const txt = (ans!=null && ans>=0) ? q.opts[ans] : "Sin responder";
                             const icon = ans===Number(q.a) ? "✅" : "❌";
-                            detail += `\n${i+1}. ${q.q.substring(0,30)}...\n   R: ${txt} ${icon}`;
+                            // Limitar largo de pregunta para URL de WhatsApp
+                            let qText = q.q.length > 80 ? q.q.substring(0, 80) + "..." : q.q;
+                            
+                            waDetail += `\n${i+1}. ${qText}\n   R: ${txt} ${icon}`;
+                            if(ans !== Number(q.a)) {
+                                waDetail += `\n   (Correcta: ${q.opts[q.a]})`;
+                            }
                         });
                     }
-                    const waMsg = `*REPORTE ${state.config.area.toUpperCase()}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n${detail}`;
+                    const waMsg = `*REPORTE EXAMEN - ${state.config.area.toUpperCase()}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n${waDetail}\n\n_EduGen AI_`;
                     
                     const photoHtml = r.photo ? `<img src="${r.photo}" class="w-8 h-8 rounded-full object-cover border" onclick="window.open('${r.photo}')">` : '<span class="text-[9px]">Sin Foto</span>';
                     tbody.innerHTML += `<tr class="border-b"><td class="p-2 text-slate-700">${r.student}</td><td class="p-2 text-center">${photoHtml}</td><td class="p-2 text-center font-bold ${nota.C}">${nota.L}</td><td class="p-2 text-center"><a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a></td></tr>`;
                 });
+            },
+            
+            // --- NUEVA FUNCIÓN DE IMPRESIÓN ---
+            printReport: () => {
+                // 1. Llenar Datos
+                document.getElementById('rep-title').innerText = `Reporte: ${state.config.area.toUpperCase()} - ${state.config.grado}° ${state.config.nivel.toUpperCase()}`;
+                document.getElementById('rep-subtitle').innerText = `Bimestre: ${state.config.bimestre} | Fecha: ${new Date().toLocaleDateString()}`;
+                document.getElementById('rep-date').innerText = new Date().toLocaleString();
+                
+                // 2. Llenar Tabla
+                const tbody = document.getElementById('rep-body');
+                tbody.innerHTML = '';
+                
+                if(!state.studentResults || state.studentResults.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No hay alumnos evaluados aún.</td></tr>';
+                } else {
+                    // Ordenar alfabéticamente
+                    const sorted = [...state.studentResults].sort((a,b) => a.student.localeCompare(b.student));
+                    
+                    sorted.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-300";
+                        tr.innerHTML = `
+                            <td class="py-2 text-xs">${r.student}</td>
+                            <td class="py-2 text-xs text-center">${r.score}/${r.total}</td>
+                            <td class="py-2 text-xs text-center font-bold">${r.notaLetra}</td>
+                            <td class="py-2 text-xs text-right">${new Date(r.timestamp.seconds*1000).toLocaleDateString()}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                
+                // 3. Lanzar impresión
+                window.print();
             },
 
             // --- REPORTE GRUPAL ---
@@ -590,14 +631,10 @@
             },
 
             startStudentMode: async (examId) => {
-                // BLOQUEO POST-EXAMEN 1: Verificar LocalStorage
+                // BLOQUEO POST-EXAMEN 1
                 const doneKey = Object.keys(localStorage).find(k => k.startsWith(`done_${examId}_`));
-                if (doneKey) {
-                    navTo('view-blocked');
-                    return;
-                }
+                if (doneKey) { navTo('view-blocked'); return; }
                 
-                // Ocultar botón HOME para alumnos
                 document.getElementById('btn-home').classList.add('hidden');
 
                 state.currentExamId = examId;
@@ -607,27 +644,18 @@
                 
                 const data = snap.data();
                 
-                // VALIDACIÓN DE FECHA Y HORA
                 const now = new Date();
                 let startTime = data.config.start;
                 let endTime = data.config.end;
                 
-                // Convertir Timestamps a Date si es necesario
                 if (startTime && startTime.seconds) startTime = new Date(startTime.seconds * 1000);
                 if (endTime && endTime.seconds) endTime = new Date(endTime.seconds * 1000);
-                // Si fueron guardados como string
                 if (startTime && typeof startTime === 'string') startTime = new Date(startTime);
                 if (endTime && typeof endTime === 'string') endTime = new Date(endTime);
 
                 if (!data.active) return document.body.innerHTML = "<h1 class='p-10 text-center text-red-600 font-bold'>Este examen ha sido cerrado por el profesor.</h1>";
-
-                if (startTime && now < startTime) {
-                    return document.body.innerHTML = `<h1 class='p-10 text-center font-bold'>El examen inicia el: <br> ${startTime.toLocaleString()}</h1>`;
-                }
-
-                if (endTime && now > endTime) {
-                    return document.body.innerHTML = `<h1 class='p-10 text-center text-red-600 font-bold'>El tiempo del examen finalizó el: <br> ${endTime.toLocaleString()}</h1>`;
-                }
+                if (startTime && now < startTime) return document.body.innerHTML = `<h1 class='p-10 text-center font-bold'>El examen inicia el: <br> ${startTime.toLocaleString()}</h1>`;
+                if (endTime && now > endTime) return document.body.innerHTML = `<h1 class='p-10 text-center text-red-600 font-bold'>El tiempo del examen finalizó el: <br> ${endTime.toLocaleString()}</h1>`;
                 
                 state.questions = data.questions;
                 state.config = data.config;
@@ -654,14 +682,9 @@
                 const idx = document.getElementById('student-select').value;
                 if (!idx) return alert("Selecciona nombre");
                 
-                // BLOQUEO POST-EXAMEN 2: Verificación nube
                 const resRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${idx}`);
                 const snap = await getDoc(resRef);
-                if (snap.exists()) {
-                     alert("Ya has enviado este examen. No puedes ingresar nuevamente.");
-                     navTo('view-blocked');
-                     return;
-                }
+                if (snap.exists()) { alert("Ya has enviado este examen."); navTo('view-blocked'); return; }
 
                 let photoData = null;
                 if (state.cameraStream) {
@@ -700,7 +723,6 @@
                 q.opts.forEach((o, i) => {
                     const btn = document.createElement('button'); 
                     btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2 flex items-center gap-3 hover:bg-blue-50 transition";
-                    // MODIFICADO: SIN LETRAS, SOLO ÍCONO NEUTRO
                     btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-xs">●</span><span class="flex-1">${o}</span>`;
                     btn.onclick = () => app.answer(i);
                     c.appendChild(btn);
