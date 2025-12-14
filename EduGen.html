@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v6.8 (Logo Fix)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v6.9 (Gestión Total)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -277,7 +277,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // === CONFIGURACIÓN ===
         const firebaseConfig = {
@@ -531,15 +531,32 @@
                         const status = d.active ? '<span class="text-green-500">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
                         
                         list.innerHTML += `
-                        <div onclick="app.loadResults('${doc.id}')" class="bg-white p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 flex justify-between items-center">
-                            <div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center hover:bg-slate-50 transition">
+                            <div onclick="app.loadResults('${doc.id}')" class="flex-1 cursor-pointer">
                                 <p class="text-xs font-bold text-blue-900">${d.config.area.toUpperCase()} - ${d.config.grado}°</p>
                                 <p class="text-[10px] text-slate-400">${date} • ${status}</p>
                             </div>
-                            <i class="fas fa-chevron-right text-slate-300"></i>
+                            <div class="flex items-center gap-2">
+                                 <button onclick="app.deleteExam('${doc.id}', event)" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                                 <i class="fas fa-chevron-right text-slate-300"></i>
+                            </div>
                         </div>`;
                     });
                 } catch (e) { console.error(e); }
+            },
+            
+            deleteExam: async (id, event) => {
+                event.stopPropagation(); // Evitar abrir los resultados al hacer clic en eliminar
+                if(!confirm("¿Estás seguro de eliminar este examen y todos sus resultados? Esta acción no se puede deshacer.")) return;
+                
+                try {
+                    await deleteDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
+                    // Nota: Firestore no elimina subcolecciones automáticamente. Los resultados quedarán huérfanos pero ocultos.
+                    alert("Examen eliminado correctamente.");
+                    app.loadExams(); // Recargar la lista
+                } catch (e) {
+                    alert("Error al eliminar: " + e.message);
+                }
             },
 
             loadResults: async (id) => {
