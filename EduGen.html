@@ -57,7 +57,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.6 (Reportes Full)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.8 (Semáforo Restaurado)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -204,7 +204,7 @@
                 </div>
                 
                 <button onclick="app.shareGeneralReport()" class="w-full bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-green-600 mb-2 flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp text-lg"></i> Reporte Grupal
+                    <i class="fab fa-whatsapp text-lg"></i> Reporte Grupal (Todos)
                 </button>
 
                 <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar Registro</button>
@@ -225,13 +225,14 @@
             <button onclick="app.printReport()" class="text-center text-xs text-slate-400 font-bold py-2 hover:text-slate-600"><i class="fas fa-print"></i> Imprimir Reporte</button>
         </div>
 
-        <!-- VISTA 6: ALUMNO LOGIN -->
+        <!-- VISTA 6: ALUMNO LOGIN (CON CÁMARA) -->
         <div id="view-student-login" class="view-section p-8 flex flex-col justify-center h-full hidden">
             <div class="text-center mb-4">
                 <h2 class="text-xl font-bold text-blue-900">Ingreso a Examen</h2>
                 <p class="text-xs text-slate-500 mt-1" id="login-exam-info">...</p>
             </div>
             
+            <!-- CÁMARA UI -->
             <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg mb-4 relative h-48 w-full border-4 border-slate-200">
                 <video id="camera-feed" autoplay playsinline class="w-full h-full object-cover"></video>
                 <div id="camera-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -345,6 +346,7 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
+        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
         const USER_ID = "PROFESOR_MANUEL";
 
@@ -468,7 +470,14 @@
                 btn.disabled = true;
 
                 try {
-                    const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple con EXACTAMENTE 4 alternativas cada una. No uses A, B, C, D en el texto. JSON Array: [{"q":"Pregunta...","opts":["Opcion 1","Opcion 2","Opcion 3","Opcion 4"],"a":0}] (donde 'a' es el índice 0-3 de la correcta)`;
+                    // PROMPT REFINADO: OPCIONES CORTAS Y SIN A/B/C/D
+                    const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple.
+                    REGLAS:
+                    1. EXACTAMENTE 4 alternativas por pregunta.
+                    2. Las opciones deben ser BREVES y DIRECTAS. NO incluyas definiciones ni explicaciones entre paréntesis en las opciones.
+                    3. No uses letras A, B, C, D en el texto de las opciones.
+                    4. Formato JSON Array: [{"q":"Enunciado...","opts":["Opcion 1","Opcion 2","Opcion 3","Opcion 4"],"a":0}] (donde 'a' es el índice 0-3 de la correcta)`;
+                    
                     const data = await fetchGemini(key, sysPrompt + "\nTEXTO: " + promptText);
                     state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
                     state.questions.forEach(q => {
@@ -540,45 +549,38 @@
                     state.studentResults.push({...r, notaLetra: nota.L});
                     
                     // REPORTE DETALLADO INDIVIDUAL (WHATSAPP)
-                    let waDetail = "";
+                    let detail = "";
                     if(r.answers && state.questions) {
                         state.questions.forEach((q, i) => {
                             const ans = Number(r.answers[i]);
                             const txt = (ans!=null && ans>=0) ? q.opts[ans] : "Sin responder";
                             const icon = ans===Number(q.a) ? "✅" : "❌";
-                            // Limitar largo de pregunta para URL de WhatsApp
-                            let qText = q.q.length > 80 ? q.q.substring(0, 80) + "..." : q.q;
+                            let qText = q.q.length > 100 ? q.q.substring(0, 100) + "..." : q.q;
                             
-                            waDetail += `\n${i+1}. ${qText}\n   R: ${txt} ${icon}`;
+                            detail += `\n${i+1}. ${qText}\n   R: ${txt} ${icon}`;
                             if(ans !== Number(q.a)) {
-                                waDetail += `\n   (Correcta: ${q.opts[q.a]})`;
+                                detail += `\n   (Correcta: ${q.opts[q.a]})`;
                             }
                         });
                     }
-                    const waMsg = `*REPORTE EXAMEN - ${state.config.area.toUpperCase()}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n${waDetail}\n\n_EduGen AI_`;
+                    const waMsg = `*REPORTE EXAMEN - ${state.config.area.toUpperCase()}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n${detail}\n\n_EduGen AI_`;
                     
                     const photoHtml = r.photo ? `<img src="${r.photo}" class="w-8 h-8 rounded-full object-cover border" onclick="window.open('${r.photo}')">` : '<span class="text-[9px]">Sin Foto</span>';
                     tbody.innerHTML += `<tr class="border-b"><td class="p-2 text-slate-700">${r.student}</td><td class="p-2 text-center">${photoHtml}</td><td class="p-2 text-center font-bold ${nota.C}">${nota.L}</td><td class="p-2 text-center"><a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a></td></tr>`;
                 });
             },
             
-            // --- NUEVA FUNCIÓN DE IMPRESIÓN ---
             printReport: () => {
-                // 1. Llenar Datos
                 document.getElementById('rep-title').innerText = `Reporte: ${state.config.area.toUpperCase()} - ${state.config.grado}° ${state.config.nivel.toUpperCase()}`;
                 document.getElementById('rep-subtitle').innerText = `Bimestre: ${state.config.bimestre} | Fecha: ${new Date().toLocaleDateString()}`;
                 document.getElementById('rep-date').innerText = new Date().toLocaleString();
-                
-                // 2. Llenar Tabla
                 const tbody = document.getElementById('rep-body');
                 tbody.innerHTML = '';
                 
                 if(!state.studentResults || state.studentResults.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No hay alumnos evaluados aún.</td></tr>';
                 } else {
-                    // Ordenar alfabéticamente
                     const sorted = [...state.studentResults].sort((a,b) => a.student.localeCompare(b.student));
-                    
                     sorted.forEach(r => {
                         const tr = document.createElement('tr');
                         tr.className = "border-b border-slate-300";
@@ -591,8 +593,6 @@
                         tbody.appendChild(tr);
                     });
                 }
-                
-                // 3. Lanzar impresión
                 window.print();
             },
 
@@ -723,7 +723,8 @@
                 q.opts.forEach((o, i) => {
                     const btn = document.createElement('button'); 
                     btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2 flex items-center gap-3 hover:bg-blue-50 transition";
-                    btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-xs">●</span><span class="flex-1">${o}</span>`;
+                    // MODO CIEGO: Círculo vacío por defecto
+                    btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-xs border border-slate-300"></span><span class="flex-1">${o}</span>`;
                     btn.onclick = () => app.answer(i);
                     c.appendChild(btn);
                 });
@@ -738,37 +739,31 @@
                 clearInterval(state.timer);
                 state.userAnswers[state.questionIdx] = ansIdx;
                 
-                const correct = Number(state.questions[state.questionIdx].a);
                 const selected = Number(ansIdx);
+                const correct = Number(state.questions[state.questionIdx].a);
 
                 if (selected === correct) state.score++;
                 
                 const btns = document.getElementById('q-options').children;
                 
+                // MODO CIEGO: SOLO MARCAR AZUL LA SELECCIONADA
                 if (selected !== -1) {
                     const selectedBtn = btns[selected];
                     const circle = selectedBtn.querySelector('span');
                     
-                    if (selected === correct) {
-                        selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md transform scale-[1.02] transition";
-                        circle.className = "w-6 h-6 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-xs";
-                        circle.innerHTML = "<i class='fas fa-check'></i>";
-                    } else {
-                        selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-red-400 bg-red-50 text-red-800 font-medium mb-2 flex items-center gap-3 opacity-90";
-                        circle.className = "w-6 h-6 rounded-full bg-red-500 text-white font-bold flex items-center justify-center text-xs";
-                        circle.innerHTML = "<i class='fas fa-times'></i>";
+                    // Resetear estilos de todos y deshabilitar
+                    for(let b of btns) {
+                        b.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2 flex items-center gap-3 opacity-50";
+                        b.disabled = true;
                     }
-                }
 
-                if (selected !== correct) {
-                    const correctBtn = btns[correct];
-                    const correctCircle = correctBtn.querySelector('span');
-                    correctBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md";
-                    correctCircle.className = "w-6 h-6 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-xs";
-                    correctCircle.innerHTML = "<i class='fas fa-check'></i>";
+                    // Pintar Azul (Neutro) la seleccionada
+                    selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-900 font-bold mb-2 flex items-center gap-3 shadow-md transform scale-[1.02] transition opacity-100";
+                    circle.className = "w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs";
+                    circle.innerHTML = "<i class='fas fa-check'></i>";
                 }
                 
-                setTimeout(() => app.loadQuestion(state.questionIdx + 1), 1500);
+                setTimeout(() => app.loadQuestion(state.questionIdx + 1), 1000); // 1 segundo para confirmar selección
             },
 
             finishExam: async () => {
