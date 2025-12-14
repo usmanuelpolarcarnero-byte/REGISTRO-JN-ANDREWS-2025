@@ -48,13 +48,14 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.4 (Programable)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.5 (Seguridad Bloqueo)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
                 </div>
             </div>
-            <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
+            <!-- BOTÓN HOME CON ID PARA OCULTARLO EN MODO ALUMNO -->
+            <button id="btn-home" onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
         </div>
     </header>
 
@@ -595,6 +596,9 @@
                     navTo('view-blocked');
                     return;
                 }
+                
+                // Ocultar botón HOME para alumnos
+                document.getElementById('btn-home').classList.add('hidden');
 
                 state.currentExamId = examId;
                 const snap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, examId));
