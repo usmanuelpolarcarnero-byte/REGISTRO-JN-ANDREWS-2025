@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v5.0</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v5.1</p>
                 </div>
             </div>
             <button onclick="app.goHome()" class="text-white hover:text-yellow-400 transition"><i class="fas fa-home text-lg"></i></button>
@@ -312,7 +312,16 @@
                 }
             } catch (e) {
                 console.error("Error init:", e);
-                alert("Error crítico de conexión.");
+                // DIAGNOSTICO DE ERROR DE CONEXIÓN FIREBASE
+                let msg = "Error crítico de conexión con la Base de Datos.";
+                if(e.code === 'auth/unauthorized-domain') {
+                    msg += "\n\n⚠️ DOMINIO NO AUTORIZADO:\nDebes agregar 'usmanuelpolarcarnero-byte.github.io' en Firebase Console > Authentication > Settings > Authorized Domains.";
+                } else if (e.code === 'auth/api-key-not-valid') {
+                    msg += "\n\n⚠️ API KEY INVÁLIDA en FirebaseConfig.";
+                } else {
+                    msg += "\n\nDetalle: " + e.message;
+                }
+                alert(msg);
             }
         }
 
@@ -414,7 +423,13 @@
                 btn.disabled = true;
 
                 // Modelos a probar en orden
-                const models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'];
+                const models = [
+                    'gemini-1.5-flash',
+                    'gemini-1.5-flash-latest',
+                    'gemini-1.5-pro',
+                    'gemini-1.0-pro',
+                    'gemini-pro'
+                ];
                 let success = false;
 
                 for (const model of models) {
@@ -432,7 +447,15 @@
                         });
 
                         const data = await resp.json();
-                        if (data.error) throw new Error(data.error.message);
+                        
+                        if (data.error) {
+                             // Si es error de modelo no encontrado, probamos siguiente
+                             if (data.error.code === 404 || data.error.message.includes("not found")) {
+                                 console.warn(`Modelo ${model} no encontrado, probando siguiente...`);
+                                 continue;
+                             }
+                             throw new Error(data.error.message);
+                        }
                         
                         state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
                         success = true;
@@ -440,7 +463,7 @@
 
                     } catch (e) {
                         console.warn(`Fallo ${model}:`, e);
-                        if (e.message.includes("key")) {
+                        if (e.message.includes("key") || e.message.includes("403")) {
                             localStorage.removeItem('gemini_key');
                             alert("Llave inválida. Intente de nuevo.");
                             break;
