@@ -770,6 +770,7 @@
             // Lista de modelos a probar en orden
             const models = [
                 'gemini-1.5-flash',
+                'gemini-1.5-flash-latest',
                 'gemini-1.5-pro',
                 'gemini-1.0-pro',
                 'gemini-pro'
@@ -817,10 +818,6 @@
                     
                     const msg = e.message.toLowerCase();
                     // Fallback conditions:
-                    // 1. "not found" (Model not found)
-                    // 2. "404" (HTTP 404)
-                    // 3. "generatecontent is not found" (Method not found)
-                    // 4. "unsupported"
                     if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) {
                         continue; // Try next model
                     }
