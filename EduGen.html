@@ -39,12 +39,17 @@
     <header class="glass-header text-white p-3 shadow-lg z-50 shrink-0">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400">
-                    <img src="image_9d4f3d.jpg" alt="Escudo" class="w-full h-full object-contain">
+                <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400 overflow-hidden flex items-center justify-center">
+                    <!-- LOGO ACTUALIZADO: unnamed.JPG -->
+                    <img src="unnamed.JPG" alt="Escudo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-university text-blue-900 text-2xl hidden"></i>
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v6.6 (Estable)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v6.8 (Logo Fix)</p>
+                    <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
+                        <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
+                    </p>
                 </div>
             </div>
             <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
@@ -232,8 +237,40 @@
 
     <!-- REPORTE DE IMPRESIÓN -->
     <div id="printable-report" class="hidden bg-white p-8">
-        <h1 class="text-2xl font-bold mb-4">Reporte de Notas - EduGen AI</h1>
-        <div id="print-content"></div>
+        <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="unnamed.JPG" alt="Logo" style="width: 60px; height: auto;">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-900">I.E. J.N. ANDREWS</h1>
+                    <p class="text-sm text-gray-500">Reporte de Resultados - Prof. Manuel Polar</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Fecha de Impresión</p>
+                <p class="font-mono text-sm" id="rep-date">--/--/----</p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+            <h3 class="font-bold text-lg text-slate-800" id="rep-title">Examen de...</h3>
+            <p class="text-sm text-slate-500" id="rep-subtitle">Grado - Nivel - Área</p>
+        </div>
+
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-slate-800">
+                    <th class="py-2 text-xs uppercase">Estudiante</th>
+                    <th class="py-2 text-xs uppercase text-center">Nota</th>
+                    <th class="py-2 text-xs uppercase text-center">Nivel (MINEDU)</th>
+                    <th class="py-2 text-xs uppercase text-right">Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="rep-body" class="text-sm"></tbody>
+        </table>
+
+        <div class="mt-12 text-center text-xs text-gray-400 border-t border-gray-200 pt-4">
+            <p>Documento generado por EduGen AI - Sistema de Gestión Pedagógica</p>
+        </div>
     </div>
 
     <!-- LOGICA APP -->
@@ -252,7 +289,6 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        // URL OFICIAL DE GITHUB PAGES (EVITA ERROR FILE:///)
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
 
         const database = {
@@ -268,14 +304,35 @@
             studentResults: [], fraudWarnings: 0, timer: null, questionIdx: 0, score: 0
         };
 
-        // --- SISTEMA DE NAVEGACIÓN (GLOBAL) ---
-        // Definido ANTES de cualquier uso para evitar error "navTo is not defined"
         function navTo(id) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // --- FUNCIONES IA (MODELO PREVIEW ESPECÍFICO) ---
+        async function init() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                state.auth = getAuth(app);
+                state.db = getFirestore(app);
+                await signInAnonymously(state.auth);
+                console.log("Firebase Conectado");
+
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('q')) {
+                    window.app.startStudentMode(params.get('q'));
+                } else {
+                    window.app.startTeacherMode();
+                }
+            } catch (e) {
+                console.error("Error init:", e);
+                let msg = "Error crítico de conexión con la Base de Datos.";
+                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
+                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
+                else msg += "\n\nDetalle: " + e.message;
+                alert(msg);
+            }
+        }
+
         function getAIKey() {
             let key = localStorage.getItem('gemini_api_key');
             if(!key) {
@@ -289,20 +346,18 @@
         }
 
         async function fetchGemini(apiKey, prompt) {
-            // LISTA DE MODELOS PRIORIZADA (FLASH-PREVIEW PRIMERO)
+            // LISTA DE MODELOS (INCLUYE EL QUE FUNCIONA EN SU REGISTRO)
             const models = [
-                'gemini-2.5-flash-preview-09-2025', // El modelo que funciona en su registro
+                'gemini-2.5-flash-preview-09-2025',
                 'gemini-1.5-flash',
                 'gemini-1.5-pro',
-                'gemini-1.0-pro',
-                'gemini-pro'
+                'gemini-1.0-pro'
             ];
 
             let lastError = null;
 
             for (const model of models) {
                 try {
-                    // Update UI
                     const btn = document.querySelector('button[onclick="app.generateDraft()"]');
                     if(btn) btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Probando ${model}...`;
 
@@ -334,22 +389,15 @@
                 } catch (e) {
                     console.warn(`Fallo en ${model}:`, e);
                     lastError = e;
-                    
                     const msg = e.message.toLowerCase();
-                    // Fallback logic
-                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) {
-                        continue; 
-                    }
-                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) {
-                         throw e;
-                    }
+                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) continue; 
+                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) throw e;
                     continue; 
                 }
             }
             throw lastError || new Error("No se pudo conectar con ningún modelo de IA.");
         }
 
-        // --- OBJETO APP PRINCIPAL ---
         window.app = {
             navTo: navTo,
             getBaseUrl: () => BASE_URL,
@@ -360,7 +408,6 @@
                 if (k !== null) localStorage.setItem('gemini_api_key', k);
             },
 
-            // IMPORTANTE: Definida aquí para que esté disponible para el docente
             startTeacherMode: () => {
                 navTo('view-dashboard');
                 window.app.updateGrades(); 
@@ -466,8 +513,6 @@
                     });
                     
                     state.currentExamId = docRef.id;
-                    
-                    // USAMOS LA BASE_URL CORRECTA PARA EL LINK
                     const link = `${BASE_URL}?q=${docRef.id}`;
                     
                     document.getElementById('qr-container').innerHTML = "";
@@ -665,8 +710,32 @@
             answer: (ansIdx) => {
                 clearInterval(state.timer);
                 const correct = state.questions[state.questionIdx].a;
-                if (ansIdx === correct) state.score++;
-                app.loadQuestion(state.questionIdx + 1);
+                
+                const optsDiv = document.getElementById('q-options');
+                const buttons = optsDiv.querySelectorAll('button');
+
+                // Disable all
+                buttons.forEach(b => b.disabled = true);
+
+                // Highlight Logic
+                if (ansIdx === correct) {
+                    state.score++;
+                    buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
+                    buttons[ansIdx].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
+                } else {
+                    if (ansIdx !== -1) {
+                         buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
+                         buttons[ansIdx].classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+                    }
+                    // Show correct one
+                    buttons[correct].classList.remove('bg-white', 'border-slate-200');
+                    buttons[correct].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
+                }
+
+                // Delay for visual feedback
+                setTimeout(() => {
+                    app.loadQuestion(state.questionIdx + 1);
+                }, 1500);
             },
 
             finishExam: async () => {
@@ -726,32 +795,6 @@
             if(p >= 70) return {L:'A', C:'text-green-600'};
             if(p >= 50) return {L:'B', C:'text-yellow-600'};
             return {L:'C', C:'text-red-600'};
-        }
-
-        // --- INIT PRINCIPAL (AL FINAL PARA ASEGURAR QUE TODO ESTÉ CARGADO) ---
-        async function init() {
-            try {
-                const appInstance = initializeApp(firebaseConfig);
-                state.auth = getAuth(appInstance);
-                state.db = getFirestore(appInstance);
-                await signInAnonymously(state.auth);
-                console.log("Firebase Conectado");
-
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('q')) {
-                    // Llamada segura a la función dentro de window.app
-                    window.app.startStudentMode(params.get('q'));
-                } else {
-                    window.app.startTeacherMode();
-                }
-            } catch (e) {
-                console.error("Error init:", e);
-                let msg = "Error crítico de conexión con la Base de Datos.";
-                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
-                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
-                else msg += "\n\nDetalle: " + e.message;
-                alert(msg);
-            }
         }
 
         init();
