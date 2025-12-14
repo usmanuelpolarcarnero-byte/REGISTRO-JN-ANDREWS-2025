@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGen AI - I.E. JN ANDREWS (Pro)</title>
+    <title>EduGen AI - I.E. JN ANDREWS (Final)</title>
     
     <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.1 (Seguridad)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI vFinal (Reporte Grupal)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -203,11 +203,14 @@
                     </div>
                     <button id="btn-lock" onclick="app.toggleLock()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold">Bloquear</button>
                 </div>
-                <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar Registro</button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="app.generateGroupReport()" class="bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-600">📢 Reporte Grupal</button>
+                    <button onclick="app.syncOfficial()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar</button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
                 <table class="w-full text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Foto</th></tr></thead>
+                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2 text-center">Nota</th><th class="p-2 text-center">Detalle</th></tr></thead>
                     <tbody id="res-table" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
@@ -266,7 +269,6 @@
                 <p id="final-score-num" class="text-sm font-bold text-slate-500">0/0</p>
             </div>
             <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full"><i class="fas fa-check-circle text-lg mb-1 block"></i> Examen enviado correctamente.</div>
-            <!-- SE QUITÓ LA OPCIÓN DE RECARGAR PARA FINALIZAR PARA EVITAR BUCLES, SOLO CIERRA -->
             <p class="text-xs text-slate-400">Ya puedes cerrar esta ventana.</p>
         </div>
 
@@ -573,93 +575,172 @@
                 state.currentExamId = id;
                 navTo('view-results-teacher');
                 const tbody = document.getElementById('res-table');
-                const repBody = document.getElementById('rep-body'); // TABLA DE REPORTE (IMPRESIÓN)
+                const repBody = document.getElementById('rep-body');
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
                 
                 try {
+                    // 1. OBTENER DATOS DEL EXAMEN
                     const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
                     const examData = examSnap.data();
                     state.config = examData.config;
                     state.questions = examData.questions;
                     
-                    // HEADER PANTALLA
-                    document.getElementById('res-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
-                    document.getElementById('res-meta').innerText = examData.active ? "En curso" : "Finalizado";
-                    
-                    // HEADER IMPRESIÓN
-                    document.getElementById('rep-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
-                    document.getElementById('rep-subtitle').innerText = `${state.config.grado}° ${state.config.nivel} - ${state.config.area} - ${state.config.bimestre}`;
-                    document.getElementById('rep-date').innerText = new Date().toLocaleDateString();
+                    // 2. DETERMINAR SI ESTÁ CERRADO (Manual o por fecha)
+                    let isClosed = !examData.active;
+                    if(state.config.endAt && new Date() > new Date(state.config.endAt)) {
+                        isClosed = true;
+                    }
 
+                    document.getElementById('res-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
+                    document.getElementById('res-meta').innerText = isClosed ? "Finalizado (Cerrado)" : "En curso (Abierto)";
+                    
                     const btn = document.getElementById('btn-lock');
                     btn.innerText = examData.active ? "Bloquear" : "Abrir";
                     btn.className = examData.active ? "text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold" : "text-xs bg-green-50 text-green-600 px-2 py-1 rounded font-bold";
 
+                    // 3. OBTENER RESPUESTAS
                     const resSnap = await getDocs(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${id}/respuestas`));
-                    state.studentResults = [];
                     
-                    tbody.innerHTML = "";
-                    repBody.innerHTML = ""; // Limpiar tabla de impresión
-
+                    const responsesMap = {};
                     resSnap.forEach(doc => {
                         const r = doc.data();
-                        const nota = getMinedu(r.score, r.total);
-                        state.studentResults.push({...r, notaLetra: nota.L});
-                        
-                        // Generar detalle reporte WhatsApp
-                        let detalleReporte = "";
-                        if (r.answers && state.questions) {
-                             state.questions.forEach((q, idx) => {
-                                 const userAnsIdx = r.answers[idx];
-                                 const userAnsText = (userAnsIdx !== null && userAnsIdx !== undefined && userAnsIdx >= 0) ? q.opts[userAnsIdx] : "Sin responder";
-                                 const isCorrect = userAnsIdx === q.a;
-                                 const statusIcon = isCorrect ? "✅" : "❌";
-                                 
-                                 detalleReporte += `\n${idx + 1}. ${q.q}\n   Rpta: ${userAnsText} ${statusIcon}`;
-                                 if (!isCorrect) detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
-                                 detalleReporte += `\n`;
-                             });
+                        responsesMap[r.studentIndex] = r;
+                    });
+
+                    // 4. COMBINAR CON LISTA DE CLASE COMPLETA
+                    const fullClassList = database[state.config.nivel][state.config.grado];
+                    state.studentResults = []; // Lista unificada para reporte y sync
+
+                    tbody.innerHTML = "";
+                    repBody.innerHTML = ""; 
+
+                    fullClassList.forEach((studentName, idx) => {
+                        let data = responsesMap[idx];
+                        let nota, statusHtml, actionsHtml;
+                        let isPresent = false;
+
+                        if (data) {
+                            // ALUMNO SÍ RINDIÓ EXAMEN
+                            isPresent = true;
+                            nota = getMinedu(data.score, data.total);
+                            
+                            // Detalle WA individual
+                            let detalleReporte = "";
+                            if (data.answers && state.questions) {
+                                state.questions.forEach((q, qIdx) => {
+                                    const uAns = data.answers[qIdx];
+                                    const uTxt = (uAns!=null && uAns>=0) ? q.opts[uAns] : "---";
+                                    const isOk = uAns === q.a;
+                                    detalleReporte += `\n${qIdx+1}. ${q.q}\n   R: ${uTxt} ${isOk?'✅':'❌'}`;
+                                    if(!isOk) detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
+                                    detalleReporte += `\n`;
+                                });
+                            }
+                            const waMsg = `*REPORTE INDIVIDUAL*\nAlumno: ${studentName}\nNota: ${nota.L}\n\n${detalleReporte}`;
+                            
+                            // Selfie
+                            const selfieHtml = data.selfie 
+                                ? `<img src="${data.selfie}" class="w-8 h-8 rounded-full border object-cover cursor-pointer" onclick="window.open('${data.selfie}')">` 
+                                : `<span class="text-[10px] text-gray-300">No Foto</span>`;
+
+                            statusHtml = `<span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span>`;
+                            actionsHtml = `${selfieHtml} <a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a>`;
+                            
+                            // Guardar en estado global unificado
+                            state.studentResults.push({
+                                student: studentName, studentIndex: idx, notaLetra: nota.L, status: 'Presente'
+                            });
+
+                            // IMPRESIÓN
+                            repBody.innerHTML += `
+                            <tr class="border-b border-gray-200">
+                                <td class="py-2 text-slate-800">${studentName}</td>
+                                <td class="py-2 text-center font-bold">${nota.L}</td>
+                                <td class="py-2 text-center text-xs text-gray-500">${data.score}/${data.total}</td>
+                                <td class="py-2 text-right text-xs">Presente</td>
+                            </tr>`;
+
+                        } else {
+                            // ALUMNO NO RINDIÓ
+                            if (isClosed) {
+                                // Examen CERRADO -> Automáticamente tiene C
+                                statusHtml = `<span class="text-red-500 font-bold bg-red-50 px-2 rounded text-[10px]">No Presentó (C)</span>`;
+                                state.studentResults.push({
+                                    student: studentName, studentIndex: idx, notaLetra: 'C', status: 'Ausente'
+                                });
+                                // IMPRESIÓN
+                                repBody.innerHTML += `
+                                <tr class="border-b border-gray-200 bg-red-50/50">
+                                    <td class="py-2 text-slate-500">${studentName}</td>
+                                    <td class="py-2 text-center font-bold text-red-500">C</td>
+                                    <td class="py-2 text-center text-xs text-red-400">NP</td>
+                                    <td class="py-2 text-right text-xs text-red-400">Ausente</td>
+                                </tr>`;
+                            } else {
+                                // Examen ABIERTO -> Pendiente
+                                statusHtml = `<span class="text-slate-400 text-[10px] italic">Pendiente...</span>`;
+                            }
+                            actionsHtml = `<span class="text-slate-200">---</span>`;
                         }
 
-                        const waMsg = `*REPORTE DE EXAMEN*\n*Tema: ${state.config.title}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n\n*DETALLE:*\n${detalleReporte}\n_EduGen AI_`;
-                        
-                        // FOTO DE VERIFICACIÓN
-                        const selfieHtml = r.selfie 
-                            ? `<img src="${r.selfie}" class="w-8 h-8 rounded-full border border-slate-300 object-cover cursor-pointer" onclick="window.open('${r.selfie}')">` 
-                            : `<span class="text-[10px] text-gray-400">Sin foto</span>`;
-                        
-                        // FILA PARA PANTALLA
+                        // PANTALLA
                         tbody.innerHTML += `
                         <tr class="border-b hover:bg-slate-50">
-                            <td class="p-2 text-slate-700 font-medium">${r.student}</td>
-                            <td class="p-2 text-center"><span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span></td>
-                            <td class="p-2 text-center flex items-center justify-center gap-2">
-                                ${selfieHtml}
-                                <a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a>
-                            </td>
-                        </tr>`;
-
-                        // FILA PARA IMPRESIÓN (RELLENAR DATOS OCULTOS)
-                        const selfiePrint = r.selfie 
-                            ? `<img src="${r.selfie}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">` 
-                            : `---`;
-
-                        repBody.innerHTML += `
-                        <tr class="border-b border-gray-200">
-                            <td class="py-2 text-slate-800">${r.student}</td>
-                            <td class="py-2 text-center font-bold">${nota.L}</td>
-                            <td class="py-2 text-center text-xs text-gray-500">${r.score}/${r.total}</td>
-                            <td class="py-2 text-right">${selfiePrint}</td>
+                            <td class="p-2 text-slate-700 text-xs ${!isPresent && isClosed ? 'text-red-400':''}">${studentName}</td>
+                            <td class="p-2 text-center">${statusHtml}</td>
+                            <td class="p-2 text-center flex items-center justify-center gap-2">${actionsHtml}</td>
                         </tr>`;
                     });
+
                 } catch(e) { 
                     console.error(e);
                     alert("Error cargando resultados: " + e.message); 
                 }
             },
 
+            generateGroupReport: () => {
+                if(!state.studentResults || state.studentResults.length === 0) return alert("No hay datos para generar el reporte.");
+                
+                const title = state.config.title || "Examen de " + state.config.area;
+                const date = new Date().toLocaleDateString();
+                
+                let asistieron = [];
+                let faltaron = [];
+
+                state.studentResults.forEach(r => {
+                    if (r.status === 'Presente') {
+                        asistieron.push(`- ${r.student}: *${r.notaLetra}*`);
+                    } else {
+                        // Solo listar faltas si tienen C (examen cerrado)
+                        if(r.notaLetra === 'C') faltaron.push(`- ${r.student}`);
+                    }
+                });
+
+                let msg = `📢 *REPORTE GRUPAL: ${title}*\n📅 Fecha: ${date}\n\n`;
+                
+                if (asistieron.length > 0) {
+                    msg += `✅ *RESULTADOS PUBLICADOS:*\n${asistieron.join('\n')}\n\n`;
+                }
+                
+                if (faltaron.length > 0) {
+                    msg += `❌ *NO PRESENTARON (Nota C):*\n${faltaron.join('\n')}\n\n`;
+                }
+                
+                msg += `Atte. Prof. Manuel Polar`;
+
+                // Intentar copiar al portapapeles porque el link puede ser muy largo
+                if (msg.length > 2000) {
+                     navigator.clipboard.writeText(msg).then(() => {
+                         alert("El reporte es muy largo para un enlace directo. ¡Se ha copiado al portapapeles! Pégalo en WhatsApp.");
+                         window.open('https://web.whatsapp.com', '_blank');
+                     });
+                } else {
+                     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                }
+            },
+
             syncOfficial: async () => {
-                if(!confirm("¿Enviar notas al Registro Oficial?")) return;
+                if(!confirm("¿Enviar notas (incluyendo C a los ausentes si está cerrado) al Registro Oficial?")) return;
                 try {
                     const today = new Date().toISOString().split('T')[0];
                     const docId = `registro-${state.config.bimestre}-${state.config.nivel}-${state.config.grado}-${state.config.area}-${today}`;
@@ -668,13 +749,17 @@
                     const snap = await getDoc(docRef);
                     let data = snap.exists() ? snap.data() : { notas: {}, headers: { "header-C1-0": "Examen EduGen" }, prompt: "Examen Virtual" };
                     
+                    // Ahora usa state.studentResults que YA TIENE la lista completa (presentes + ausentes con C)
                     state.studentResults.forEach(r => {
-                        data.notas[`nota-${r.studentIndex}-C1-0`] = r.notaLetra;
-                        data.notas[`asistencia-${r.studentIndex}`] = "A";
+                        // Solo sincronizamos si tiene nota (Presente o Ausente con C)
+                        if(r.notaLetra) {
+                            data.notas[`nota-${r.studentIndex}-C1-0`] = r.notaLetra;
+                            data.notas[`asistencia-${r.studentIndex}`] = r.status === 'Presente' ? "A" : "F";
+                        }
                     });
                     
                     await setDoc(docRef, data, { merge: true });
-                    alert("✅ Notas sincronizadas correctamente.");
+                    alert("✅ Notas sincronizadas correctamente con el Registro Auxiliar.");
                 } catch(e) {
                     alert("Error al sincronizar: " + e.message);
                 }
