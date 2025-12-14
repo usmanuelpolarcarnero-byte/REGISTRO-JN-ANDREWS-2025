@@ -40,8 +40,8 @@
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400 overflow-hidden flex items-center justify-center">
-                    <!-- LOGO ACTUALIZADO: unnamed.JPG -->
-                    <img src="unnamed.JPG" alt="Escudo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <!-- LOGO ACTUALIZADO: unnamed.jpg -->
+                    <img src="unnamed.jpg" alt="Escudo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fas fa-university text-blue-900 text-2xl hidden"></i>
                 </div>
                 <div>
@@ -239,7 +239,7 @@
     <div id="printable-report" class="hidden bg-white p-8">
         <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <img src="unnamed.JPG" alt="Logo" style="width: 60px; height: auto;">
+                <img src="unnamed.jpg" alt="Logo" style="width: 60px; height: auto;">
                 <div>
                     <h1 class="text-2xl font-bold text-blue-900">I.E. J.N. ANDREWS</h1>
                     <p class="text-sm text-gray-500">Reporte de Resultados - Prof. Manuel Polar</p>
@@ -289,6 +289,7 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
+        // URL OFICIAL DE GITHUB PAGES (EVITA ERROR FILE:///)
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
 
         const database = {
@@ -304,35 +305,14 @@
             studentResults: [], fraudWarnings: 0, timer: null, questionIdx: 0, score: 0
         };
 
+        // --- SISTEMA DE NAVEGACIÓN (GLOBAL) ---
+        // Definido ANTES de cualquier uso para evitar error "navTo is not defined"
         function navTo(id) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
-        async function init() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                state.auth = getAuth(app);
-                state.db = getFirestore(app);
-                await signInAnonymously(state.auth);
-                console.log("Firebase Conectado");
-
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('q')) {
-                    window.app.startStudentMode(params.get('q'));
-                } else {
-                    window.app.startTeacherMode();
-                }
-            } catch (e) {
-                console.error("Error init:", e);
-                let msg = "Error crítico de conexión con la Base de Datos.";
-                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
-                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
-                else msg += "\n\nDetalle: " + e.message;
-                alert(msg);
-            }
-        }
-
+        // --- FUNCIONES IA (MODELO PREVIEW ESPECÍFICO) ---
         function getAIKey() {
             let key = localStorage.getItem('gemini_api_key');
             if(!key) {
@@ -346,18 +326,20 @@
         }
 
         async function fetchGemini(apiKey, prompt) {
-            // LISTA DE MODELOS (INCLUYE EL QUE FUNCIONA EN SU REGISTRO)
+            // LISTA DE MODELOS PRIORIZADA (FLASH-PREVIEW PRIMERO)
             const models = [
-                'gemini-2.5-flash-preview-09-2025',
+                'gemini-2.5-flash-preview-09-2025', // El modelo que funciona en su registro
                 'gemini-1.5-flash',
                 'gemini-1.5-pro',
-                'gemini-1.0-pro'
+                'gemini-1.0-pro',
+                'gemini-pro'
             ];
 
             let lastError = null;
 
             for (const model of models) {
                 try {
+                    // Update UI
                     const btn = document.querySelector('button[onclick="app.generateDraft()"]');
                     if(btn) btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Probando ${model}...`;
 
@@ -389,15 +371,22 @@
                 } catch (e) {
                     console.warn(`Fallo en ${model}:`, e);
                     lastError = e;
+                    
                     const msg = e.message.toLowerCase();
-                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) continue; 
-                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) throw e;
+                    // Fallback logic
+                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) {
+                        continue; 
+                    }
+                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) {
+                         throw e;
+                    }
                     continue; 
                 }
             }
             throw lastError || new Error("No se pudo conectar con ningún modelo de IA.");
         }
 
+        // --- OBJETO APP PRINCIPAL ---
         window.app = {
             navTo: navTo,
             getBaseUrl: () => BASE_URL,
@@ -408,6 +397,7 @@
                 if (k !== null) localStorage.setItem('gemini_api_key', k);
             },
 
+            // IMPORTANTE: Definida aquí para que esté disponible para el docente
             startTeacherMode: () => {
                 navTo('view-dashboard');
                 window.app.updateGrades(); 
@@ -795,6 +785,32 @@
             if(p >= 70) return {L:'A', C:'text-green-600'};
             if(p >= 50) return {L:'B', C:'text-yellow-600'};
             return {L:'C', C:'text-red-600'};
+        }
+
+        // --- INIT PRINCIPAL (AL FINAL PARA ASEGURAR QUE TODO ESTÉ CARGADO) ---
+        async function init() {
+            try {
+                const appInstance = initializeApp(firebaseConfig);
+                state.auth = getAuth(appInstance);
+                state.db = getFirestore(appInstance);
+                await signInAnonymously(state.auth);
+                console.log("Firebase Conectado");
+
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('q')) {
+                    // Llamada segura a la función dentro de window.app
+                    window.app.startStudentMode(params.get('q'));
+                } else {
+                    window.app.startTeacherMode();
+                }
+            } catch (e) {
+                console.error("Error init:", e);
+                let msg = "Error crítico de conexión con la Base de Datos.";
+                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
+                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
+                else msg += "\n\nDetalle: " + e.message;
+                alert(msg);
+            }
         }
 
         init();
