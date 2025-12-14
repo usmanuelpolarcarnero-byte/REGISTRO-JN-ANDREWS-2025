@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Lectores de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -48,7 +47,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.1 (Biometría + Reportes)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.2 (Semáforo Fix)</p>
                 </div>
             </div>
             <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
@@ -181,7 +180,7 @@
                     <button id="btn-lock" onclick="app.toggleLock()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold">Bloquear</button>
                 </div>
                 
-                <!-- NUEVO: REPORTE GRUPAL WHATSAPP -->
+                <!-- BOTÓN: REPORTE GRUPAL WHATSAPP -->
                 <button onclick="app.shareGeneralReport()" class="w-full bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-green-600 mb-2 flex items-center justify-center gap-2">
                     <i class="fab fa-whatsapp text-lg"></i> Reporte Grupal (Todos)
                 </button>
@@ -193,7 +192,7 @@
                     <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0">
                         <tr>
                             <th class="p-2 text-left">Alumno</th>
-                            <th class="p-2 text-center">Foto</th> <!-- FOTO EVIDENCIA -->
+                            <th class="p-2 text-center">Foto</th>
                             <th class="p-2">Nota</th>
                             <th class="p-2">Acción</th>
                         </tr>
@@ -278,12 +277,10 @@
                 <p class="font-mono text-sm" id="rep-date">--/--/----</p>
             </div>
         </div>
-        
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
             <h3 class="font-bold text-lg text-slate-800" id="rep-title">Examen de...</h3>
             <p class="text-sm text-slate-500" id="rep-subtitle">Grado - Nivel - Área</p>
         </div>
-
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="border-b-2 border-slate-800">
@@ -295,10 +292,6 @@
             </thead>
             <tbody id="rep-body" class="text-sm"></tbody>
         </table>
-
-        <div class="mt-12 text-center text-xs text-gray-400 border-t border-gray-200 pt-4">
-            <p>Documento generado por EduGen AI - Sistema de Gestión Pedagógica</p>
-        </div>
     </div>
 
     <!-- LOGICA APP -->
@@ -317,15 +310,13 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
+        const USER_ID = "PROFESOR_MANUEL";
 
         const database = {
             primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí"], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel"], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías"], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis"], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan"], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego"] },
             secundaria: { "1": ["ARUCUTIPA CALISAYA Yuliet Luanna", "CISA SAHUAYANAY Miguel Ángel", "COLQUE CHAMBI Jhems Kevin", "CRUZ ROJAS Jhon Alex", "CUYO CHOQUE Will Adriano", "GALLEGOS ZEA, James Jamir", "GUETTI RUIZ Johana Nicol", "GUTIERREZ OSORIO, Rony Alex", "GUTIERREZ ZAMATA, Gianela Ninel", "MENDOZA MAMANI, Víctor Manuel", "MONTEZA RIVAS Yair Alexander", "SANGUINO MARQUEZ Carlos Santiago", "TICONA CONDORI Heidy Milena", "VIÑA HUAMAN Esteban Andreus Caleb", "ZEVALLOS MAMANI Alisom Kimberly"], "2": ["AGUILAR TILCA, Midwad Harison", "ARMAS PEÑA, Moisés Jubal", "ARUCUTIPA CALISAYA, Emerson garry", "BELÓN AQUINO, Dayiro Andree", "CALDERON LEANDRO, Yhong Puyol.", "CALLOAPAZA CONDORCAHUANA Jhamile Sadira", "CCANCHILLO TORRES, Yulissam Priyanka", "CHOQUE LIZARRAGA, Piero Valentino", "CHOQUEHUANCA CARI, Nicole Mia Marey", "COAQUIRA CONDO, Llandhel Roberth", "CONDORI QUISPE, Mayli Yasu", "CORIMANYA ARISACA, Branco Adriano", "DIAZ CAPACOILA, Anely Yesica", "HUAYHUA HUITTOCCOLLO Alonso Delbir", "LUNA QUISPE, Jimmy Noé", "LUQUE VILCAPAZA, Eva Luz", "MANCHA COAQUIRA, George Luis", "PEREIRA VILCA Neymar Piero", "PEREZ LUPO, Gerald Abdías", "PHALA TORRES, Benjamín Franco", "QUISPE CAMALA, José Daniel", "QUISPE GUTIERREZ, Ana Cristina", "QUISPE QUISPE, Thalía Úrsula", "RIVEROS SUPA, Mathias Leonardo", "VILCA GUTIERREZ, Jandy Betzabe"], "3": ["AMANQUI YANARICO, Jean Paul", "ANCCALLE MERMA, Danna Magdiell", "APAZA MAMANI, Eduardo Nicolás", "AROCUTIPA ROMERO, Zamir Yhonncy", "BELÓN AQUINO, Fabrizio André", "CHOQUEHUANCA CARI, David Yair", "FALCON PUMA, Enoc Elías", "GARCIA CISA SANTIAGO BENJAMIN", "GARCIA TICONA Emanuel Matías", "HANAMPA QUISPE, Erick Jonathan", "MACHUCA CRUZ Baurulet", "MALPARTIDA ALE Alvaro Joaquín", "MAMANI ANAYA Sebastián Mateo", "MARQUEZ TACURI, Jesús", "MERMA MENDOZA, Roberto Maradona", "MIRAMIRA GUTIERREZ, Josías Daniel", "ORTEGA BENAVENTE, Nill Antony", "OSORIO CCACCA Marisol", "ROQUE HUARCA, Dianeth Nicol", "TOTORA CUCHO Yuliana Nery", "VALDEZ SUNI, Luz Maricielo", "VARGAS CARI Marylin Elena Josenit"], "4": ["BRINGAS JUAREZ Brandon", "CANAZA QUISPE Luis Eduardo", "CARDENAS CARDENAS Vivian Maryel", "CONDORI QUISPE Abel Benjamín", "GARCIA TICONA Angie Ruth", "GUTIERREZ ALVAREZ Lisandro", "JANAMPA LIMA Jeff Dacio", "LLANQUE ALMIRON Yader Jocsan", "MOLLEAPAZA VALERIANO Yesybell Analia", "SALAZAR PEREZ Juan Hersy", "SANGUINO MARQUEZ Daylen", "VILCA ALVAREZ Rodrigo Alejandro", "VIÑA HUAMAN Brayan Andrés"], "5": ["APAZA GAMARRA German Enrique", "AYALA PEÑAFIEL Diego Gabriel", "CALCINA QUISPE Lizeth Sheyla", "CAMI VILLAVICENCIO Olger Eliel", "CONDORI ANAHUA Abigail Dorkas", "CONDORI ANAHUA Jetzabe María del Pilar", "CORDOVA OVADA Gabriel Gedeón", "CUTIMBO TACUMA David Alexander", "HANAMPA QUISPE Rubí Alejandra", "HUAMAN CANAHUIRI, Frank Antony", "HUARCAYA COILA STEFANY", "MARIN CHOQUE Fredy Erick", "ORCOAPAZA MAMANI Johan Joel", "PALO AGUILAR Yanira Brendaly", "QUISPE CAMALA Kevin Andi", "QUISPE CHOQUE Oliver Omar", "SANCHEZ PEROZO Oriana Valentina", "SANO MAMANI Jenny Abigail", "SUPANTA HUACHANI Angely", "VARGAS ALANOCA Maryori Nayomi"] }
         };
-
-        const USER_ID = "PROFESOR_MANUEL";
 
         const state = {
             db: null, auth: null,
@@ -440,9 +431,10 @@
                     const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple. JSON: [{"q":"...","opts":["A","B","C","D"],"a":0}]`;
                     const data = await fetchGemini(key, sysPrompt + "\nTEXTO: " + promptText);
                     state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
+                    state.questions.forEach(q => q.a = Number(q.a)); // Asegurar que es número
                     renderReview();
                     navTo('view-review');
-                } catch (e) { alert("Error IA."); }
+                } catch (e) { alert("Error IA. Revise su llave."); }
                 btn.innerHTML = prevHtml; btn.disabled = false;
             },
 
@@ -504,17 +496,15 @@
                     let detail = "";
                     if(r.answers && state.questions) {
                         state.questions.forEach((q, i) => {
-                            const ans = r.answers[i];
+                            const ans = Number(r.answers[i]);
                             const txt = (ans!=null && ans>=0) ? q.opts[ans] : "Sin responder";
-                            const icon = ans===q.a ? "✅" : "❌";
+                            const icon = ans===Number(q.a) ? "✅" : "❌";
                             detail += `\n${i+1}. ${q.q.substring(0,30)}...\n   R: ${txt} ${icon}`;
                         });
                     }
                     const waMsg = `*REPORTE ${state.config.area.toUpperCase()}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n${detail}`;
                     
-                    // FOTO MINIATURA
                     const photoHtml = r.photo ? `<img src="${r.photo}" class="w-8 h-8 rounded-full object-cover border" onclick="window.open('${r.photo}')">` : '<span class="text-[9px]">Sin Foto</span>';
-
                     tbody.innerHTML += `<tr class="border-b"><td class="p-2 text-slate-700">${r.student}</td><td class="p-2 text-center">${photoHtml}</td><td class="p-2 text-center font-bold ${nota.C}">${nota.L}</td><td class="p-2 text-center"><a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a></td></tr>`;
                 });
             },
@@ -570,7 +560,6 @@
                 document.getElementById('login-exam-info').innerText = `${state.config.area} - ${state.config.grado}°`;
                 navTo('view-student-login');
                 
-                // INICIAR CÁMARA
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const video = document.getElementById('camera-feed');
@@ -586,7 +575,6 @@
                 if (!idx) return alert("Selecciona nombre");
                 if(localStorage.getItem(`done_${state.currentExamId}_${idx}`)) return alert("Ya enviaste este examen.");
 
-                // TOMAR FOTO
                 let photoData = null;
                 if (state.cameraStream) {
                     const video = document.getElementById('camera-feed');
@@ -619,13 +607,19 @@
                 document.getElementById('q-total').innerText = state.questions.length;
                 document.getElementById('q-text').innerText = q.q;
                 document.getElementById('progress-bar').style.width = `${(idx/state.questions.length)*100}%`;
-                const c = document.getElementById('q-options'); c.innerHTML = '';
+                
+                const c = document.getElementById('q-options'); 
+                c.innerHTML = '';
+                
                 q.opts.forEach((o, i) => {
-                    const b = document.createElement('button'); b.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2";
-                    b.innerText = o;
-                    b.onclick = () => app.answer(i);
-                    c.appendChild(b);
+                    const btn = document.createElement('button'); 
+                    btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2 flex items-center gap-3 hover:bg-blue-50 transition";
+                    // RESTAURADO DISEÑO CON LETRAS EN CÍRCULO
+                    btn.innerHTML = `<span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center border border-slate-300 text-xs shadow-sm">${String.fromCharCode(65+i)}</span><span class="flex-1">${o}</span>`;
+                    btn.onclick = () => app.answer(i);
+                    c.appendChild(btn);
                 });
+                
                 clearInterval(state.timer);
                 let t = state.config.time || 30;
                 document.getElementById('timer').innerText = t;
@@ -635,13 +629,41 @@
             answer: (ansIdx) => {
                 clearInterval(state.timer);
                 state.userAnswers[state.questionIdx] = ansIdx;
-                const correct = state.questions[state.questionIdx].a;
-                if (ansIdx === correct) state.score++;
                 
-                // Feedback visual
+                // CORRECCIÓN DE TIPOS (Number) PARA COMPARACIÓN EXACTA
+                const correct = Number(state.questions[state.questionIdx].a);
+                const selected = Number(ansIdx);
+
+                if (selected === correct) state.score++;
+                
                 const btns = document.getElementById('q-options').children;
-                if(ansIdx >= 0) btns[ansIdx].classList.add(ansIdx===correct?'bg-green-100':'bg-red-100');
-                if(ansIdx !== correct && ansIdx !== -1) btns[correct].classList.add('bg-green-100');
+                
+                // LÓGICA SEMÁFORO VISUAL
+                if (selected !== -1) {
+                    const selectedBtn = btns[selected];
+                    const circle = selectedBtn.querySelector('span'); // El círculo con la letra
+                    
+                    if (selected === correct) {
+                        // CORRECTA (VERDE)
+                        selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md transform scale-[1.02] transition";
+                        circle.className = "w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center border border-green-600 text-xs shadow-sm";
+                        circle.innerHTML = "<i class='fas fa-check'></i>";
+                    } else {
+                        // INCORRECTA (ROJO)
+                        selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-red-400 bg-red-50 text-red-800 font-medium mb-2 flex items-center gap-3 opacity-90";
+                        circle.className = "w-8 h-8 rounded-full bg-red-500 text-white font-bold flex items-center justify-center border border-red-600 text-xs shadow-sm";
+                        circle.innerHTML = "<i class='fas fa-times'></i>";
+                    }
+                }
+
+                // SIEMPRE MOSTRAR LA CORRECTA (Si se equivocó)
+                if (selected !== correct) {
+                    const correctBtn = btns[correct];
+                    const correctCircle = correctBtn.querySelector('span');
+                    correctBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md";
+                    correctCircle.className = "w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center border border-green-600 text-xs shadow-sm";
+                    correctCircle.innerHTML = "<i class='fas fa-check'></i>";
+                }
                 
                 setTimeout(() => app.loadQuestion(state.questionIdx + 1), 1500);
             },
