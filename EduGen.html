@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Librería QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
         body { font-family: 'Poppins', sans-serif; }
@@ -94,20 +96,20 @@
                     </p>
                 </div>
             </div>
-            <button onclick="window.location.reload()" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-lg backdrop-blur-sm transition text-yellow-300 border border-white/10 shadow-sm" title="Reiniciar App">
-                <i class="fas fa-sync-alt text-lg"></i>
+            <button onclick="window.location.href = window.location.pathname" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 p-2 rounded-lg backdrop-blur-sm transition text-yellow-300 border border-white/10 shadow-sm" title="Inicio">
+                <i class="fas fa-home text-lg"></i>
             </button>
         </div>
 
         <!-- VISTAS -->
         <div class="flex-1 overflow-hidden relative bg-slate-50">
             
-            <!-- 1. DOCENTE -->
+            <!-- 1. DOCENTE: CONFIGURACIÓN -->
             <div id="view-teacher" class="p-6 h-full overflow-y-auto flex flex-col gap-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm"><i class="fas fa-cog"></i></span>
-                        Configurar Examen
+                        Nuevo Examen
                     </h2>
                     <p class="text-xs text-slate-500 mt-1 ml-10">Vinculado a: <strong>Registro Oficial</strong></p>
                 </div>
@@ -118,14 +120,14 @@
                     <div class="bg-white text-blue-600 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:scale-110 transition border border-blue-100">
                         <i class="fas fa-cloud-upload-alt text-lg"></i>
                     </div>
-                    <p class="text-xs font-bold text-slate-600">Clic para Subir Material (PDF/Video)</p>
+                    <p class="text-xs font-bold text-slate-600">Subir Material (PDF/Video/Texto)</p>
                 </div>
                 
-                <textarea id="input-text" class="w-full border border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none h-20 shadow-sm placeholder:text-slate-400" placeholder="Pegue aquí el texto o tema..."></textarea>
+                <textarea id="input-text" class="w-full border border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none h-24 shadow-sm placeholder:text-slate-400" placeholder="Pegue aquí el texto, resumen o tema para que la IA genere las preguntas..."></textarea>
                 
                 <!-- FILTROS REGISTRO -->
                 <div class="bg-blue-50 border border-blue-100 p-3 rounded-xl">
-                    <p class="text-[10px] font-bold text-blue-800 uppercase mb-2">Datos para Sincronización</p>
+                    <p class="text-[10px] font-bold text-blue-800 uppercase mb-2">Datos Académicos</p>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <select id="select-bimestre" class="w-full text-xs p-2 rounded border border-slate-200 font-semibold text-slate-700">
                             <option value="B1">I Bimestre</option>
@@ -157,6 +159,9 @@
                         <select id="select-count" class="w-full text-xs font-semibold text-slate-700 bg-transparent outline-none">
                             <option value="3">3 Preguntas</option>
                             <option value="5">5 Preguntas</option>
+                            <option value="10">10 Preguntas</option>
+                            <option value="15">15 Preguntas</option>
+                            <option value="20">20 Preguntas</option>
                         </select>
                     </div>
                     <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
@@ -165,6 +170,7 @@
                             <option value="15">15 seg</option>
                             <option value="30" selected>30 seg</option>
                             <option value="60">1 min</option>
+                            <option value="120">2 min</option>
                         </select>
                     </div>
                 </div>
@@ -178,39 +184,64 @@
                     </div>
                 </div>
 
-                <button onclick="startGeneration()" class="mt-2 w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
-                    <i class="fas fa-save"></i> Guardar y Generar
+                <button onclick="previsualizarExamen()" class="mt-2 w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
+                    <i class="fas fa-magic"></i> Crear Borrador con IA
                 </button>
                 <div class="h-4"></div>
             </div>
 
-            <!-- 2. LINK -->
+            <!-- 1.5. DOCENTE: REVISIÓN (NUEVO PASO) -->
+            <div id="view-review" class="hidden p-6 h-full overflow-y-auto flex flex-col gap-4 bg-slate-50 fade-in">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-800">Revisión Docente</h2>
+                    <button onclick="showView('view-teacher')" class="text-xs text-red-500 font-bold border border-red-200 px-2 py-1 rounded bg-white">Cancelar</button>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs text-yellow-800">
+                    <i class="fas fa-info-circle mr-1"></i> Revise las preguntas generadas. Puede editar el texto si es necesario antes de publicar.
+                </div>
+
+                <div id="review-container" class="space-y-4">
+                    <!-- Aquí se inyectan los inputs de preguntas -->
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-4 mb-8">
+                    <button onclick="previsualizarExamen()" class="bg-white border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase">
+                        <i class="fas fa-sync-alt mr-1"></i> Regenerar
+                    </button>
+                    <button onclick="publicarExamenDefinitivo()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i> Aprobar y Publicar
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. LINK Y QR -->
             <div id="view-link" class="hidden h-full flex flex-col items-center justify-center p-8 text-center fade-in bg-white">
-                <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4 text-3xl animate-bounce border-4 border-green-100">
+                <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4 text-2xl animate-bounce border-4 border-green-100">
                     <i class="fas fa-check"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-800">¡Examen Publicado!</h2>
-                <p class="text-xs text-slate-500 mb-4">Listo para sincronizarse con su registro.</p>
+                <h2 class="text-xl font-bold text-slate-800">¡Examen Activo!</h2>
+                <p class="text-xs text-slate-500 mb-4">Escanee el QR para ingresar.</p>
                 
-                <div id="schedule-info" class="hidden w-full bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-left">
-                     <p class="text-[10px] font-bold text-amber-700 uppercase"><i class="fas fa-info-circle"></i> Horario:</p>
-                     <p class="text-[10px] text-amber-900 font-mono" id="schedule-text"></p>
+                <!-- QR CODE AREA -->
+                <div class="bg-white p-2 border border-slate-200 rounded-lg shadow-md mb-4">
+                    <div id="qrcode"></div>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-xl w-full mb-4 border border-slate-200 cursor-pointer" onclick="alert('Link copiado')">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Enlace Estudiante</p>
-                    <p class="text-blue-600 font-mono font-bold text-xs">edugen.app/jn-andrews/quiz/XYZ</p>
+                <div class="bg-slate-50 p-3 rounded-xl w-full mb-3 border border-slate-200 cursor-pointer hover:bg-slate-100 transition" onclick="copyLink()">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Enlace Directo</p>
+                    <p id="generated-link" class="text-blue-600 font-mono font-bold text-[10px] truncate">...</p>
                 </div>
 
-                <button class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl shadow-lg mb-2 flex items-center justify-center gap-2 text-sm" onclick="alert('Abriendo WhatsApp...')">
-                    <i class="fab fa-whatsapp"></i> Compartir
+                <button class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl shadow-lg mb-2 flex items-center justify-center gap-2 text-sm hover:bg-[#20b957] transition" onclick="shareWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> Enviar a Alumnos
                 </button>
-                <button class="w-full bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-sm" onclick="goToRegistration()">
-                    Simular Vista Estudiante
+                <button class="w-full bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-sm hover:bg-slate-50 transition" onclick="goToRegistration()">
+                    Vista Previa
                 </button>
             </div>
 
-            <!-- 3. REGISTRO ESTUDIANTE (CON LISTA) -->
+            <!-- 3. REGISTRO ESTUDIANTE -->
             <div id="view-register" class="hidden h-full flex flex-col justify-center p-8 fade-in bg-white">
                 <div class="text-center mb-6">
                     <h2 class="text-xl font-bold text-blue-900">Ingreso Estudiante</h2>
@@ -218,9 +249,8 @@
                 </div>
                 
                 <div class="space-y-4 mb-6">
-                    <!-- Solo mostramos los datos que configuró el docente para evitar errores -->
                     <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <p class="text-[10px] text-blue-400 font-bold uppercase">Clase Configurada</p>
+                        <p class="text-[10px] text-blue-400 font-bold uppercase">Evaluación</p>
                         <p id="student-context-display" class="text-sm font-bold text-blue-800">--</p>
                     </div>
 
@@ -289,7 +319,7 @@
                     <button onclick="printReport()" class="bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase">
                         <i class="fas fa-print mr-1"></i> Imprimir
                     </button>
-                    <button onclick="location.reload()" class="bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-xs uppercase">
+                    <button onclick="window.location.href = window.location.pathname" class="bg-white border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl text-xs uppercase">
                         Salir
                     </button>
                 </div>
@@ -350,11 +380,50 @@
         let studentData = { index: -1, name: "" };
         let userAnswers = [];
 
-        // PREGUNTAS MOCK (Se expandirán con IA en la versión completa)
+        // PREGUNTAS MOCK (Fallback por si no hay API Key)
         const mockDB = {
             primaria: [ { q: "¿Capital de Perú?", opts: ["Lima", "Cusco", "Arequipa", "Piura"], a: 0 }, { q: "¿5 + 3?", opts: ["10", "8", "6", "9"], a: 1 }, { q: "Animal mamífero", opts: ["Sapo", "Trucha", "Perro", "Loro"], a: 2 } ],
             secundaria: [ { q: "¿Autor de 'El Quijote'?", opts: ["Dante", "Cervantes", "Homero", "Vallejo"], a: 1 }, { q: "Símbolo Au", opts: ["Plata", "Cobre", "Oro", "Hierro"], a: 2 }, { q: "Raíz de 144", opts: ["10", "11", "12", "13"], a: 2 } ]
         };
+
+        // --- INICIALIZACIÓN: DETECTAR MODO ALUMNO POR URL O QUERY PARAM ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            
+            // SI HAY UN ID DE EXAMEN (?q=...)
+            const quizId = params.get('q');
+            if (quizId) {
+                console.log("Cargando examen ID:", quizId);
+                // Bloquear vista profesor
+                document.getElementById('view-teacher').classList.add('hidden');
+                
+                if (isFirebaseActive || db) {
+                    try {
+                        const docRef = doc(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`, quizId);
+                        const snap = await getDoc(docRef);
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            // Cargar Config
+                            sessionConfig = data.config;
+                            // Convertir fechas string a Date si existen
+                            if(sessionConfig.start) sessionConfig.start = new Date(sessionConfig.start.seconds * 1000);
+                            if(sessionConfig.end) sessionConfig.end = new Date(sessionConfig.end.seconds * 1000);
+                            
+                            timePerQuestion = parseInt(sessionConfig.time);
+                            currentQuestions = data.questions;
+                            
+                            // Ir a registro
+                            goToRegistration();
+                        } else {
+                            alert("Examen no encontrado o eliminado.");
+                        }
+                    } catch (e) { console.error("Error cargando examen", e); }
+                }
+            } else {
+                // Modo Profesor (Por defecto)
+                updateGrades(); 
+            }
+        });
 
         // --- UI HELPERS ---
         window.updateGrades = () => {
@@ -369,7 +438,6 @@
                 g.appendChild(opt);
             }
         };
-        updateGrades(); // Init
 
         // FUNCIÓN DE CARGA DE ARCHIVOS
         window.handleFileUpload = (input) => {
@@ -378,59 +446,174 @@
                 const dropzone = document.getElementById('upload-container');
                 dropzone.classList.remove('border-blue-200', 'bg-blue-50/50');
                 dropzone.classList.add('border-green-300', 'bg-green-50');
-                dropzone.querySelector('p').innerText = `Archivo seleccionado: ${file.name}`;
+                dropzone.querySelector('p').innerText = `Archivo: ${file.name}`;
                 dropzone.querySelector('i').className = "fas fa-check-circle text-green-500 text-lg";
                 
-                // Si es texto, lo leemos
                 if(file.type === "text/plain") {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        document.getElementById('input-text').value = e.target.result;
-                    };
+                    reader.onload = (e) => { document.getElementById('input-text').value = e.target.result; };
                     reader.readAsText(file);
                 } else {
-                    // Para otros archivos, advertencia amigable
-                    alert("✅ Archivo recibido.\n\nNota: Para PDFs y Videos, por favor asegúrese de escribir el tema principal o pegar un resumen en el cuadro de texto para generar las mejores preguntas.");
+                    alert("✅ Archivo recibido. Por favor pegue un resumen del contenido en el cuadro de texto para asegurar buenas preguntas.");
                 }
             }
         };
 
-        window.startGeneration = () => {
-            const btn = document.querySelector('button[onclick="startGeneration()"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando Configuración...';
+        // --- IA: GENERACIÓN DE PREGUNTAS ---
+        function getAIKey() {
+            // Intenta leer la Key guardada en el otro sistema (Registro) si comparten dominio,
+            // o pide configurarla.
+            let key = localStorage.getItem('gemini_api_key');
+            if(!key) {
+                key = prompt("Ingrese su API Key de Google Gemini para generar preguntas inteligentes:");
+                if(key) localStorage.setItem('gemini_api_key', key);
+            }
+            return key;
+        }
+
+        window.previsualizarExamen = async () => {
+            const btn = document.querySelector('button[onclick="previsualizarExamen()"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando Texto...';
             btn.disabled = true;
 
-            // Guardar configuración docente
-            sessionConfig.bimestre = document.getElementById('select-bimestre').value;
-            sessionConfig.area = document.getElementById('select-area').value;
+            // Recoger config
             sessionConfig.nivel = document.getElementById('select-nivel').value;
             sessionConfig.grado = document.getElementById('select-grado').value;
-            sessionConfig.prompt = document.getElementById('input-text').value || "Evaluación General";
+            sessionConfig.area = document.getElementById('select-area').value;
+            sessionConfig.bimestre = document.getElementById('select-bimestre').value;
+            sessionConfig.prompt = document.getElementById('input-text').value;
             
+            const qCount = parseInt(document.getElementById('select-count').value);
+            const time = parseInt(document.getElementById('select-time').value);
+            sessionConfig.time = time;
+
+            // IA GENERATION
+            const apiKey = getAIKey();
+            
+            if (apiKey && sessionConfig.prompt.length > 10) {
+                try {
+                    const prompt = `Actúa como profesor. Genera un examen de ${qCount} preguntas de opción múltiple sobre este texto/tema: "${sessionConfig.prompt}".
+                    Nivel: ${sessionConfig.nivel} ${sessionConfig.grado}°.
+                    Formato JSON array: [{ "q": "Pregunta", "opts": ["A", "B", "C", "D"], "a": indice_correcta_0_a_3 }]`;
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{responseMimeType:"application/json"}})
+                    });
+                    
+                    const data = await response.json();
+                    currentQuestions = JSON.parse(data.candidates[0].content.parts[0].text);
+                } catch (e) {
+                    console.error("Error IA", e);
+                    alert("Error con la IA (Verifique Key). Usando banco de respaldo.");
+                    // Fallback Mock
+                    generateMockQuestions(qCount);
+                }
+            } else {
+                // Fallback si no hay texto o key
+                generateMockQuestions(qCount);
+            }
+
+            // RENDERIZAR REVISIÓN
+            const container = document.getElementById('review-container');
+            container.innerHTML = '';
+            
+            currentQuestions.forEach((q, i) => {
+                container.innerHTML += `
+                <div class="bg-white p-3 rounded border border-slate-200 shadow-sm relative group">
+                    <p class="text-xs font-bold text-slate-400 mb-1">Pregunta ${i+1}</p>
+                    <textarea class="w-full text-sm font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 outline-none mb-2" onchange="updateQuestion(${i}, 'q', this.value)">${q.q}</textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${q.opts.map((opt, oi) => `
+                            <div class="flex items-center gap-1">
+                                <input type="radio" name="q${i}" ${q.a === oi ? 'checked' : ''} onchange="updateQuestion(${i}, 'a', ${oi})">
+                                <input type="text" class="w-full text-xs text-slate-600 border-b border-slate-100 outline-none" value="${opt}" onchange="updateOption(${i}, ${oi}, this.value)">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+
+            showView('view-review');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        };
+
+        function generateMockQuestions(count) {
+            let base = mockDB[sessionConfig.nivel];
+            currentQuestions = [];
+            for(let i=0; i<count; i++) {
+                let q = {...base[i % base.length]}; 
+                if(i >= base.length) q.q += ` (Var. ${i+1})`;
+                currentQuestions.push(q);
+            }
+        }
+
+        window.updateQuestion = (idx, field, val) => { currentQuestions[idx][field] = val; };
+        window.updateOption = (qIdx, oIdx, val) => { currentQuestions[qIdx].opts[oIdx] = val; };
+
+        // --- PUBLICAR EXAMEN (SAVE TO FIREBASE & GENERATE LINK) ---
+        window.publicarExamenDefinitivo = async () => {
+            const btn = document.querySelector('button[onclick="publicarExamenDefinitivo()"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
+            btn.disabled = true;
+
             const startVal = document.getElementById('quiz-start').value;
             const endVal = document.getElementById('quiz-end').value;
             sessionConfig.start = startVal ? new Date(startVal) : null;
             sessionConfig.end = endVal ? new Date(endVal) : null;
-            
-            timePerQuestion = parseInt(document.getElementById('select-time').value);
 
-            setTimeout(() => {
-                const level = sessionConfig.nivel;
-                currentQuestions = [...mockDB[level]]; // En prod, aquí iría la llamada a Gemini
-                
-                // Mostrar Info
-                const schedText = document.getElementById('schedule-text');
-                const schedInfo = document.getElementById('schedule-info');
-                if(sessionConfig.start || sessionConfig.end) {
-                    schedInfo.classList.remove('hidden');
-                    schedText.innerHTML = `INICIO: ${sessionConfig.start?.toLocaleString() || 'Ya'}<br>FIN: ${sessionConfig.end?.toLocaleString() || 'Nunca'}`;
-                } else { schedInfo.classList.add('hidden'); }
+            if (isFirebaseActive) {
+                try {
+                    // Guardar definición del examen
+                    const docRef = await addDoc(collection(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`), {
+                        config: sessionConfig,
+                        questions: currentQuestions,
+                        createdAt: Timestamp.now()
+                    });
 
-                showView('view-link');
-                btn.innerHTML = '<i class="fas fa-save"></i> Guardar y Generar';
-                btn.disabled = false;
-            }, 1000);
+                    // Generar Link Corto
+                    const baseUrl = window.location.href.split('?')[0]; 
+                    const finalLink = `${baseUrl}?q=${docRef.id}`;
+                    
+                    document.getElementById('generated-link').innerText = finalLink;
+                    
+                    // QR Code
+                    document.getElementById('qrcode').innerHTML = "";
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: finalLink,
+                        width: 150,
+                        height: 150,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.L // Low correction for simpler QR
+                    });
+
+                    showView('view-link');
+
+                } catch (e) {
+                    console.error("Error publicando", e);
+                    alert("Error al guardar en la nube.");
+                }
+            } else {
+                alert("Error de conexión con la base de datos.");
+            }
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Aprobar y Publicar';
+            btn.disabled = false;
         };
+
+        window.copyLink = () => {
+            const link = document.getElementById('generated-link').innerText;
+            navigator.clipboard.writeText(link).then(() => alert("¡Enlace copiado!"));
+        }
+
+        window.shareWhatsApp = () => {
+            const link = document.getElementById('generated-link').innerText;
+            const text = `Examen de ${sessionConfig.area.toUpperCase()} (${sessionConfig.grado}°): ${link}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
 
         window.goToRegistration = () => {
             // Validar Horario
@@ -438,7 +621,7 @@
             if(sessionConfig.start && now < sessionConfig.start) return alert(`Aún no inicia. Hora: ${sessionConfig.start.toLocaleString()}`);
             if(sessionConfig.end && now > sessionConfig.end) return alert(`Examen finalizado. Cierre: ${sessionConfig.end.toLocaleString()}`);
 
-            // Cargar lista de estudiantes correcta
+            // Cargar lista
             const list = database[sessionConfig.nivel][sessionConfig.grado];
             const select = document.getElementById('reg-student-select');
             
@@ -449,7 +632,7 @@
             if(list) {
                 list.forEach((name, idx) => {
                     const opt = document.createElement('option');
-                    opt.value = idx; // Guardamos el ÍNDICE (clave para el registro)
+                    opt.value = idx; 
                     opt.innerText = name;
                     select.appendChild(opt);
                 });
@@ -490,8 +673,8 @@
             
             q.opts.forEach((opt, i) => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-blue-50 transition flex items-center";
-                btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs flex items-center justify-center mr-3 font-bold">${String.fromCharCode(65+i)}</span> ${opt}`;
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-blue-50 transition flex items-center group";
+                btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs flex items-center justify-center mr-3 font-bold group-hover:bg-blue-500 group-hover:text-white transition">${String.fromCharCode(65+i)}</span> <span class="text-sm text-slate-700 font-medium">${opt}</span>`;
                 btn.onclick = () => checkAnswer(i, btn);
                 container.appendChild(btn);
             });
@@ -513,9 +696,15 @@
             const correct = currentQuestions[currentIdx].a;
             if(selIdx === correct) {
                 score++;
-                if(btn) btn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 flex items-center font-bold";
+                if(btn) {
+                    btn.classList.remove('hover:bg-blue-50');
+                    btn.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+                    btn.querySelector('span').classList.add('bg-green-500', 'text-white');
+                }
             } else if (btn) {
-                btn.className = "w-full text-left p-4 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 flex items-center";
+                btn.classList.remove('hover:bg-blue-50');
+                btn.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+                btn.querySelector('span').classList.add('bg-red-500', 'text-white');
             }
 
             currentIdx++;
@@ -540,44 +729,32 @@
             
             if(isFirebaseActive) {
                 try {
-                    // 1. Construir ID de Sesión compatible con Registro Auxiliar
-                    // Formato: registro-Bimestre-Nivel-Grado-Area-Fecha
-                    // Usamos fecha de hoy (YYYY-MM-DD) para agrupar todos los exámenes del día en una sola "Sesión"
+                    // ID único por sesión/día para que no se sobreescriba si toman varios el mismo día
+                    // Pero para mantener compatibilidad con el registro, usamos una estructura predecible
                     const today = new Date().toISOString().split('T')[0];
                     const docId = `registro-${sessionConfig.bimestre}-${sessionConfig.nivel}-${sessionConfig.grado}-${sessionConfig.area}-${today}`;
                     
                     const docRef = doc(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/registros_auxiliares`, docId);
                     
-                    // 2. Leer si ya existe la sesión
                     const snap = await getDoc(docRef);
-                    let data = { notas: {}, headers: {}, prompt: `Evaluación EduGen: ${sessionConfig.prompt}` };
+                    let data = { notas: {}, headers: {}, prompt: `Evaluación: ${sessionConfig.prompt.substring(0,30)}...` };
                     
-                    if(snap.exists()) {
-                        data = snap.data();
-                    } else {
-                        // Si es nueva, definimos los headers para que aparezcan bonitos en el registro
-                        data.headers = {
-                            "header-C1-0": "Examen EduGen (Automático)", // Asignamos a C1, Criterio 1
-                            "header-C1-1": "Participación (Manual)"
-                        };
+                    if(snap.exists()) { data = snap.data(); } 
+                    else {
+                        data.headers = { "header-C1-0": "Examen Virtual", "header-C1-1": "Participación" };
                     }
                     
-                    // 3. Inyectar la nota del alumno
-                    // Usamos el índice del alumno para mapear correctamente
-                    // Formato clave nota: nota-{indexAlumno}-{idCompetencia}-{idCriterio}
-                    // Por defecto: Competencia C1, Criterio 0
                     data.notas[`nota-${studentData.index}-C1-0`] = gradeInfo.letter;
-                    data.notas[`asistencia-${studentData.index}`] = "A"; // Marcar asistencia automática
+                    data.notas[`asistencia-${studentData.index}`] = "A";
                     
-                    // 4. Guardar
                     await setDoc(docRef, data, { merge: true });
                     
-                    statusEl.innerText = "✅ Sincronizado con Registro Auxiliar (C1)";
+                    statusEl.innerText = "✅ Nota registrada en el cuaderno auxiliar del profesor.";
                     statusEl.className = "text-[10px] text-green-600 font-bold text-center mb-4";
                     
                 } catch(e) {
                     console.error("Error sync:", e);
-                    statusEl.innerText = "⚠️ Error de red. Nota guardada localmente.";
+                    statusEl.innerText = "⚠️ Nota guardada en dispositivo (Error de red).";
                 }
             } else {
                 statusEl.innerText = "⚠️ Modo Demo (Sin conexión)";
@@ -585,7 +762,7 @@
         }
 
         function showView(id) {
-            ['view-teacher','view-link','view-register','view-student','view-results'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            ['view-teacher','view-review','view-link','view-register','view-student','view-results'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
@@ -599,25 +776,21 @@
         function drawChart(s, t) {
             const ctx = document.getElementById('resultsChart').getContext('2d');
             ctx.clearRect(0,0,300,150);
-            
             const h1 = (s/t)*120;
             const h2 = ((t-s)/t)*120;
-            
             ctx.fillStyle="#22c55e"; ctx.fillRect(100, 140-h1, 40, h1);
             ctx.fillStyle="#ef4444"; ctx.fillRect(160, 140-h2, 40, h2);
-            
             ctx.fillStyle="#333"; ctx.font="bold 12px sans-serif";
             ctx.fillText("✔", 112, 155); ctx.fillText("✖", 172, 155);
         }
 
-        // Funciones Globales para HTML
+        // Globales
         window.showView = showView;
         window.printReport = () => {
             document.getElementById('print-student').innerText = studentData.name;
             document.getElementById('print-date').innerText = new Date().toLocaleDateString();
             document.getElementById('print-grade').innerText = `${sessionConfig.grado}° ${sessionConfig.nivel.toUpperCase()}`;
             document.getElementById('print-score').innerText = `${document.getElementById('minedu-grade').innerText} (${score}/${currentQuestions.length})`;
-            
             const det = document.getElementById('print-details');
             det.innerHTML = '';
             currentQuestions.forEach((q, i) => {
