@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGen AI - I.E. JN ANDREWS (Respaldo)</title>
+    <title>EduGen AI - I.E. JN ANDREWS (Pro)</title>
     
     <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,10 +26,12 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Estilos de impresión corregidos */
         @media print {
             body * { visibility: hidden; }
             #printable-report, #printable-report * { visibility: visible; }
-            #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
+            #printable-report { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+            @page { margin: 0.5cm; }
         }
     </style>
 </head>
@@ -40,19 +42,19 @@
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-white rounded-lg p-1 border-2 border-yellow-400 overflow-hidden flex items-center justify-center">
-                    <!-- LOGO ACTUALIZADO: unnamed.jpg -->
                     <img src="unnamed.jpg" alt="Escudo" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <i class="fas fa-university text-blue-900 text-2xl hidden"></i>
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v6.11 (Correcciones)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.1 (Seguridad)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
                 </div>
             </div>
-            <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
+            <!-- SE AGREGÓ EL ID btn-home PARA PODER OCULTARLO EN MODO ALUMNO -->
+            <button id="btn-home" onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
         </div>
     </header>
 
@@ -94,10 +96,24 @@
                 <h2 class="text-lg font-bold text-slate-800">Configurar Examen</h2>
             </div>
             
-            <!-- CAMPO DE TÍTULO AÑADIDO -->
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">Título del Examen (Opcional)</label>
                 <input type="text" id="exam-title" class="w-full p-3 border rounded-xl text-sm font-bold text-blue-900 border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: La Guerra del Pacífico">
+            </div>
+
+            <!-- PROGRAMACIÓN DE FECHAS -->
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3">
+                <p class="text-xs font-bold text-blue-800 flex items-center gap-2"><i class="far fa-calendar-alt"></i> Disponibilidad del Examen</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Inicio</label>
+                        <input type="datetime-local" id="cfg-start" class="w-full text-xs p-2 border rounded text-slate-700 bg-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Fin</label>
+                        <input type="datetime-local" id="cfg-end" class="w-full text-xs p-2 border rounded text-slate-700 bg-white">
+                    </div>
+                </div>
             </div>
 
             <div class="relative group">
@@ -130,7 +146,7 @@
                         <select id="cfg-count" class="w-full text-xs font-bold bg-transparent"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400">Tiempo</label>
+                        <label class="text-[10px] font-bold text-slate-400">Tiempo/Preg</label>
                         <select id="cfg-time" class="w-full text-xs font-bold bg-transparent"><option value="15">15s</option><option value="30" selected>30s</option><option value="60">1m</option><option value="120">2m</option></select>
                     </div>
                 </div>
@@ -182,7 +198,6 @@
             <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-2">
                     <div>
-                        <!-- SE MUESTRA EL TÍTULO DEL TEMA AQUÍ -->
                         <h3 class="font-bold text-sm text-blue-900" id="res-title">...</h3>
                         <p class="text-[10px] text-slate-500" id="res-meta">...</p>
                     </div>
@@ -192,25 +207,39 @@
             </div>
             <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
                 <table class="w-full text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Acción</th></tr></thead>
+                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Foto</th></tr></thead>
                     <tbody id="res-table" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
-            <button onclick="window.print()" class="text-center text-xs text-slate-400 font-bold py-2">Imprimir Reporte</button>
+            <button onclick="window.print()" class="text-center text-xs text-slate-400 font-bold py-2 bg-slate-100 rounded-lg">🖨️ Imprimir Reporte</button>
         </div>
 
-        <!-- VISTA 6: ALUMNO LOGIN -->
+        <!-- VISTA 6: ALUMNO LOGIN + SELFIE -->
         <div id="view-student-login" class="view-section p-8 flex flex-col justify-center h-full hidden">
-            <div class="text-center mb-6">
+            <div class="text-center mb-4">
                 <h2 class="text-xl font-bold text-blue-900">Ingreso a Examen</h2>
                 <p class="text-xs text-slate-500 mt-1" id="login-exam-info">...</p>
             </div>
             <div class="space-y-4">
                 <div>
-                    <label class="text-xs font-bold text-slate-400 ml-1">Selecciona tu nombre:</label>
+                    <label class="text-xs font-bold text-slate-400 ml-1">1. Selecciona tu nombre:</label>
                     <select id="student-select" class="w-full p-3 rounded-xl border-2 border-slate-200 bg-white focus:border-blue-500 outline-none text-sm font-bold"></select>
                 </div>
-                <button onclick="app.startExam()" class="btn-primary w-full text-white font-bold py-4 rounded-xl shadow-lg">COMENZAR</button>
+                
+                <!-- CÁMARA PARA SELFIE -->
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 bg-slate-50 text-center">
+                    <label class="text-xs font-bold text-slate-400 block mb-2">2. Verificación Facial (Obligatorio)</label>
+                    <div class="relative w-full h-48 bg-black rounded-lg overflow-hidden mb-2">
+                        <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline muted></video>
+                        <canvas id="camera-canvas" class="hidden"></canvas>
+                        <img id="selfie-preview" class="absolute inset-0 w-full h-full object-cover hidden">
+                        <div id="camera-overlay" class="absolute inset-0 flex items-center justify-center text-white/50 text-4xl"><i class="fas fa-camera"></i></div>
+                    </div>
+                    <button id="btn-take-photo" onclick="app.takeSelfie()" class="text-xs bg-slate-800 text-white px-4 py-2 rounded-full font-bold">Capturar Foto</button>
+                    <button id="btn-retake-photo" onclick="app.resetCamera()" class="text-xs bg-red-100 text-red-600 px-4 py-2 rounded-full font-bold hidden">Repetir</button>
+                </div>
+
+                <button id="btn-start-exam" onclick="app.startExam()" class="btn-primary w-full text-white font-bold py-4 rounded-xl shadow-lg opacity-50 cursor-not-allowed" disabled>COMENZAR EXAMEN</button>
             </div>
         </div>
 
@@ -237,12 +266,13 @@
                 <p id="final-score-num" class="text-sm font-bold text-slate-500">0/0</p>
             </div>
             <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full"><i class="fas fa-check-circle text-lg mb-1 block"></i> Examen enviado correctamente.</div>
-            <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg text-xs">FINALIZAR</button>
+            <!-- SE QUITÓ LA OPCIÓN DE RECARGAR PARA FINALIZAR PARA EVITAR BUCLES, SOLO CIERRA -->
+            <p class="text-xs text-slate-400">Ya puedes cerrar esta ventana.</p>
         </div>
 
     </main>
 
-    <!-- REPORTE DE IMPRESIÓN -->
+    <!-- REPORTE DE IMPRESIÓN (OCULTO EN PANTALLA, VISIBLE AL IMPRIMIR) -->
     <div id="printable-report" class="hidden bg-white p-8">
         <div class="border-b-2 border-yellow-400 pb-4 mb-6 flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -268,8 +298,8 @@
                 <tr class="border-b-2 border-slate-800">
                     <th class="py-2 text-xs uppercase">Estudiante</th>
                     <th class="py-2 text-xs uppercase text-center">Nota</th>
-                    <th class="py-2 text-xs uppercase text-center">Nivel (MINEDU)</th>
-                    <th class="py-2 text-xs uppercase text-right">Fecha</th>
+                    <th class="py-2 text-xs uppercase text-center">Nivel</th>
+                    <th class="py-2 text-xs uppercase text-right">Identidad</th>
                 </tr>
             </thead>
             <tbody id="rep-body" class="text-sm"></tbody>
@@ -296,7 +326,6 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
 
         const database = {
@@ -309,16 +338,17 @@
         const state = {
             db: null, auth: null,
             config: {}, questions: [], currentExamId: null, currentStudent: null,
-            studentResults: [], fraudWarnings: 0, timer: null, questionIdx: 0, score: 0
+            studentResults: [], fraudWarnings: 0, timer: null, questionIdx: 0, score: 0,
+            selfie: null, stream: null
         };
 
-        // --- SISTEMA DE NAVEGACIÓN (GLOBAL) ---
+        // --- SISTEMA DE NAVEGACIÓN ---
         function navTo(id) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // --- FUNCIONES IA (MODELO PREVIEW ESPECÍFICO) ---
+        // --- FUNCIONES IA ---
         function getAIKey() {
             let key = localStorage.getItem('gemini_api_key');
             if(!key) {
@@ -332,13 +362,7 @@
         }
 
         async function fetchGemini(apiKey, prompt) {
-            const models = [
-                'gemini-2.5-flash-preview-09-2025',
-                'gemini-1.5-flash',
-                'gemini-1.5-pro',
-                'gemini-1.0-pro'
-            ];
-
+            const models = ['gemini-2.5-flash-preview-09-2025', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'];
             let lastError = null;
 
             for (const model of models) {
@@ -351,39 +375,24 @@
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
                             contents:[{parts:[{text:prompt}]}], 
-                            generationConfig:{
-                                responseMimeType:"application/json",
-                                temperature: 0.3
-                            }
+                            generationConfig:{ responseMimeType:"application/json", temperature: 0.3 }
                         })
                     });
 
-                    if (!response.ok) {
-                        const errText = await response.text();
-                        let errMsg = `HTTP ${response.status}`;
-                        try {
-                            const errJson = JSON.parse(errText);
-                            if (errJson.error) errMsg = errJson.error.message;
-                        } catch(e) {}
-                        throw new Error(errMsg);
-                    }
-
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
                     return data; 
 
                 } catch (e) {
-                    console.warn(`Fallo en ${model}:`, e);
                     lastError = e;
-                    const msg = e.message.toLowerCase();
-                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) continue; 
-                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) throw e;
+                    if(e.message.includes("api key") || e.message.includes("403")) throw e;
                     continue; 
                 }
             }
             throw lastError || new Error("No se pudo conectar con ningún modelo de IA.");
         }
 
-        // --- OBJETO APP PRINCIPAL ---
+        // --- APP LOGIC ---
         window.app = {
             navTo: navTo,
             getBaseUrl: () => BASE_URL,
@@ -444,6 +453,8 @@
             generateDraft: async () => {
                 const promptText = document.getElementById('prompt-text').value;
                 const titleText = document.getElementById('exam-title').value.trim();
+                const startTime = document.getElementById('cfg-start').value;
+                const endTime = document.getElementById('cfg-end').value;
                 
                 if (promptText.length < 10) return alert("Por favor ingrese un tema o suba un archivo.");
                 
@@ -451,14 +462,16 @@
                 if (!key) return;
 
                 state.config = {
-                    title: titleText || "Examen Generado por IA", // GUARDAMOS EL TÍTULO AQUÍ
+                    title: titleText || "Examen Generado por IA",
                     bimestre: document.getElementById('cfg-bimestre').value,
                     area: document.getElementById('cfg-area').value,
                     nivel: document.getElementById('cfg-nivel').value,
                     grado: document.getElementById('cfg-grado').value,
                     qCount: parseInt(document.getElementById('cfg-count').value),
                     time: parseInt(document.getElementById('cfg-time').value),
-                    prompt: promptText
+                    prompt: promptText,
+                    startAt: startTime || null, // Guardar fecha inicio
+                    endAt: endTime || null      // Guardar fecha fin
                 };
 
                 const btn = document.querySelector('button[onclick="app.generateDraft()"]');
@@ -470,9 +483,7 @@
                     const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple sobre el texto proporcionado. Nivel escolar. JSON Array estricto: [{"q":"...","opts":["A","B","C","D"],"a":indice_0_3}]`;
                     const data = await fetchGemini(key, sysPrompt + "\nTEXTO: " + promptText);
                     
-                    if(!data.candidates || !data.candidates[0].content) {
-                        throw new Error("Respuesta IA vacía.");
-                    }
+                    if(!data.candidates || !data.candidates[0].content) throw new Error("Respuesta IA vacía.");
                     
                     state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
                     renderReview();
@@ -528,7 +539,6 @@
                         const d = doc.data();
                         const date = d.createdAt.toDate().toLocaleDateString();
                         const status = d.active ? '<span class="text-green-500">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
-                        // AQUI MOSTRAMOS EL TÍTULO O EL ÁREA SI NO HAY TÍTULO
                         const titleDisplay = d.config.title ? d.config.title : `${d.config.area.toUpperCase()} - ${d.config.grado}°`;
                         
                         list.innerHTML += `
@@ -563,19 +573,24 @@
                 state.currentExamId = id;
                 navTo('view-results-teacher');
                 const tbody = document.getElementById('res-table');
+                const repBody = document.getElementById('rep-body'); // TABLA DE REPORTE (IMPRESIÓN)
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
                 
                 try {
                     const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
                     const examData = examSnap.data();
                     state.config = examData.config;
-                    // Asegurar que las preguntas estén disponibles en el estado para generar el reporte
                     state.questions = examData.questions;
                     
-                    // USAR EL TÍTULO EN EL HEADER DE RESULTADOS
+                    // HEADER PANTALLA
                     document.getElementById('res-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
                     document.getElementById('res-meta').innerText = examData.active ? "En curso" : "Finalizado";
                     
+                    // HEADER IMPRESIÓN
+                    document.getElementById('rep-title').innerText = state.config.title || `${state.config.area} ${state.config.grado}°`;
+                    document.getElementById('rep-subtitle').innerText = `${state.config.grado}° ${state.config.nivel} - ${state.config.area} - ${state.config.bimestre}`;
+                    document.getElementById('rep-date').innerText = new Date().toLocaleDateString();
+
                     const btn = document.getElementById('btn-lock');
                     btn.innerText = examData.active ? "Bloquear" : "Abrir";
                     btn.className = examData.active ? "text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold" : "text-xs bg-green-50 text-green-600 px-2 py-1 rounded font-bold";
@@ -584,48 +599,57 @@
                     state.studentResults = [];
                     
                     tbody.innerHTML = "";
+                    repBody.innerHTML = ""; // Limpiar tabla de impresión
+
                     resSnap.forEach(doc => {
                         const r = doc.data();
                         const nota = getMinedu(r.score, r.total);
-                        // Store the full response data for report generation
                         state.studentResults.push({...r, notaLetra: nota.L});
                         
-                        // Generar reporte detallado para WhatsApp
+                        // Generar detalle reporte WhatsApp
                         let detalleReporte = "";
                         if (r.answers && state.questions) {
                              state.questions.forEach((q, idx) => {
                                  const userAnsIdx = r.answers[idx];
-                                 // Handle potential null/undefined/missing answers
                                  const userAnsText = (userAnsIdx !== null && userAnsIdx !== undefined && userAnsIdx >= 0) ? q.opts[userAnsIdx] : "Sin responder";
                                  const isCorrect = userAnsIdx === q.a;
                                  const statusIcon = isCorrect ? "✅" : "❌";
                                  
                                  detalleReporte += `\n${idx + 1}. ${q.q}\n   Rpta: ${userAnsText} ${statusIcon}`;
-                                 if (!isCorrect) {
-                                     detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
-                                 }
+                                 if (!isCorrect) detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
                                  detalleReporte += `\n`;
                              });
-                        } else {
-                             detalleReporte = "\n(Detalle no disponible para este examen)";
                         }
 
-                        // AGREGAR TÍTULO AL REPORTE DE WHATSAPP
-                        const waMsg = `*REPORTE DE EXAMEN*\n` +
-                                      `*Tema: ${state.config.title || state.config.area}*\n` +
-                                      `Estudiante: ${r.student}\n` +
-                                      `Nota: ${nota.L} (${r.score}/${r.total})\n\n` +
-                                      `*DETALLE DEL CUESTIONARIO:*\n` + 
-                                      detalleReporte + 
-                                      `\n_Generado por EduGen AI_`;
+                        const waMsg = `*REPORTE DE EXAMEN*\n*Tema: ${state.config.title}*\nEstudiante: ${r.student}\nNota: ${nota.L} (${r.score}/${r.total})\n\n*DETALLE:*\n${detalleReporte}\n_EduGen AI_`;
                         
+                        // FOTO DE VERIFICACIÓN
+                        const selfieHtml = r.selfie 
+                            ? `<img src="${r.selfie}" class="w-8 h-8 rounded-full border border-slate-300 object-cover cursor-pointer" onclick="window.open('${r.selfie}')">` 
+                            : `<span class="text-[10px] text-gray-400">Sin foto</span>`;
+                        
+                        // FILA PARA PANTALLA
                         tbody.innerHTML += `
-                        <tr class="border-b">
-                            <td class="p-2 text-slate-700">${r.student}</td>
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 text-slate-700 font-medium">${r.student}</td>
                             <td class="p-2 text-center"><span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span></td>
-                            <td class="p-2 text-center">
+                            <td class="p-2 text-center flex items-center justify-center gap-2">
+                                ${selfieHtml}
                                 <a href="https://wa.me/?text=${encodeURIComponent(waMsg)}" target="_blank" class="text-green-500"><i class="fab fa-whatsapp"></i></a>
                             </td>
+                        </tr>`;
+
+                        // FILA PARA IMPRESIÓN (RELLENAR DATOS OCULTOS)
+                        const selfiePrint = r.selfie 
+                            ? `<img src="${r.selfie}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">` 
+                            : `---`;
+
+                        repBody.innerHTML += `
+                        <tr class="border-b border-gray-200">
+                            <td class="py-2 text-slate-800">${r.student}</td>
+                            <td class="py-2 text-center font-bold">${nota.L}</td>
+                            <td class="py-2 text-center text-xs text-gray-500">${r.score}/${r.total}</td>
+                            <td class="py-2 text-right">${selfiePrint}</td>
                         </tr>`;
                     });
                 } catch(e) { 
@@ -669,10 +693,22 @@
                 if (!snap.exists()) return document.body.innerHTML = "<h1 class='p-10'>Examen no encontrado</h1>";
                 
                 const data = snap.data();
-                if (!data.active) return document.body.innerHTML = "<h1 class='p-10 text-center text-red-600 font-bold'>Este examen ha finalizado.</h1>";
+                state.config = data.config;
+
+                // VALIDACIÓN DE FECHA Y HORA
+                const now = new Date();
+                if (state.config.startAt) {
+                    const start = new Date(state.config.startAt);
+                    if (now < start) return document.body.innerHTML = `<div class='p-10 text-center'><h1 class='text-2xl font-bold text-blue-900'>El examen aún no inicia</h1><p>Fecha de inicio: ${start.toLocaleString()}</p></div>`;
+                }
+                if (state.config.endAt) {
+                    const end = new Date(state.config.endAt);
+                    if (now > end) return document.body.innerHTML = `<div class='p-10 text-center'><h1 class='text-2xl font-bold text-red-600'>El examen ha finalizado</h1><p>Cierre: ${end.toLocaleString()}</p></div>`;
+                }
+                
+                if (!data.active) return document.body.innerHTML = "<h1 class='p-10 text-center text-red-600 font-bold'>Este examen ha sido cerrado por el docente.</h1>";
                 
                 state.questions = data.questions;
-                state.config = data.config;
                 
                 const list = database[state.config.nivel][state.config.grado];
                 const sel = document.getElementById('student-select');
@@ -683,14 +719,70 @@
                     sel.appendChild(opt);
                 });
                 
-                // MOSTRAR TÍTULO EN PANTALLA DE INGRESO
                 document.getElementById('login-exam-info').innerText = state.config.title || `${state.config.area} - ${state.config.grado}°`;
                 navTo('view-student-login');
+                
+                // INICIAR CÁMARA AUTOMÁTICAMENTE
+                app.initCamera();
+            },
+
+            // --- LÓGICA DE CÁMARA ---
+            initCamera: async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                    state.stream = stream;
+                    const video = document.getElementById('camera-feed');
+                    video.srcObject = stream;
+                    document.getElementById('camera-overlay').classList.add('hidden');
+                } catch (e) {
+                    alert("⚠️ No se pudo acceder a la cámara. Es obligatoria para rendir el examen.");
+                    console.error(e);
+                }
+            },
+
+            takeSelfie: () => {
+                const video = document.getElementById('camera-feed');
+                const canvas = document.getElementById('camera-canvas');
+                const preview = document.getElementById('selfie-preview');
+                const btnTake = document.getElementById('btn-take-photo');
+                const btnRetake = document.getElementById('btn-retake-photo');
+                const btnStart = document.getElementById('btn-start-exam');
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                // Comprimir imagen para no saturar Firestore
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
+                state.selfie = dataUrl;
+                
+                preview.src = dataUrl;
+                preview.classList.remove('hidden');
+                btnTake.classList.add('hidden');
+                btnRetake.classList.remove('hidden');
+                
+                // Habilitar botón comenzar
+                btnStart.disabled = false;
+                btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnStart.classList.add('animate-pulse');
+            },
+
+            resetCamera: () => {
+                state.selfie = null;
+                document.getElementById('selfie-preview').classList.add('hidden');
+                document.getElementById('btn-take-photo').classList.remove('hidden');
+                document.getElementById('btn-retake-photo').classList.add('hidden');
+                
+                const btnStart = document.getElementById('btn-start-exam');
+                btnStart.disabled = true;
+                btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+                btnStart.classList.remove('animate-pulse');
             },
 
             startExam: async () => {
                 const idx = document.getElementById('student-select').value;
                 if (!idx) return alert("Selecciona tu nombre");
+                if (!state.selfie) return alert("Debes tomarte una foto para verificar tu identidad.");
                 
                 if(localStorage.getItem(`done_${state.currentExamId}_${idx}`)) return alert("Ya enviaste este examen.");
 
@@ -702,6 +794,11 @@
                     name: database[state.config.nivel][state.config.grado][idx], 
                     idx: idx 
                 };
+                
+                // DETENER CÁMARA
+                if (state.stream) {
+                    state.stream.getTracks().forEach(track => track.stop());
+                }
                 
                 window.addEventListener('blur', () => {
                     state.fraudWarnings++;
@@ -715,8 +812,6 @@
 
                 navTo('view-exam');
                 app.loadQuestion(0);
-                
-                // Inicializar array de respuestas
                 state.userAnswers = new Array(state.questions.length).fill(null);
             },
 
@@ -754,35 +849,28 @@
 
             answer: (ansIdx) => {
                 clearInterval(state.timer);
-                
-                // GUARDAR RESPUESTA DEL USUARIO
                 state.userAnswers[state.questionIdx] = ansIdx;
                 
                 const correct = state.questions[state.questionIdx].a;
-                
                 const optsDiv = document.getElementById('q-options');
                 const buttons = optsDiv.querySelectorAll('button');
 
-                // Disable all
                 buttons.forEach(b => b.disabled = true);
 
-                // Highlight Logic (SISTEMA SEMÁFORO)
+                // SEMÁFORO
                 if (ansIdx === correct) {
                     state.score++;
                     buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
                     buttons[ansIdx].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
                 } else {
                     if (ansIdx !== -1) {
-                         // ROJO PARA INCORRECTA
                          buttons[ansIdx].classList.remove('bg-white', 'border-slate-200');
                          buttons[ansIdx].classList.add('bg-red-100', 'border-red-500', 'text-red-700');
                     }
-                    // MOSTRAR LA CORRECTA EN VERDE
                     buttons[correct].classList.remove('bg-white', 'border-slate-200');
                     buttons[correct].classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'font-bold');
                 }
 
-                // Delay for visual feedback
                 setTimeout(() => {
                     app.loadQuestion(state.questionIdx + 1);
                 }, 1500);
@@ -806,7 +894,8 @@
                         total: total,
                         percentage: (state.score/total)*100,
                         timestamp: Timestamp.now(),
-                        answers: state.userAnswers // GUARDAMOS EL ARRAY DE RESPUESTAS AQUÍ
+                        answers: state.userAnswers,
+                        selfie: state.selfie // GUARDAMOS LA FOTO AQUÍ
                     });
                     localStorage.setItem(`done_${state.currentExamId}_${state.currentStudent.idx}`, 'true');
                 } catch(e) { console.error(e); }
@@ -848,7 +937,6 @@
             return {L:'C', C:'text-red-600'};
         }
 
-        // --- INIT PRINCIPAL (AL FINAL PARA ASEGURAR QUE TODO ESTÉ CARGADO) ---
         async function init() {
             try {
                 const appInstance = initializeApp(firebaseConfig);
@@ -859,18 +947,15 @@
 
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('q')) {
-                    // Llamada segura a la función dentro de window.app
+                    // MODO ALUMNO DETECTADO: OCULTAR BOTÓN DE INICIO
+                    document.getElementById('btn-home').style.display = 'none';
                     window.app.startStudentMode(params.get('q'));
                 } else {
                     window.app.startTeacherMode();
                 }
             } catch (e) {
                 console.error("Error init:", e);
-                let msg = "Error crítico de conexión con la Base de Datos.";
-                if(e.code === 'auth/unauthorized-domain') msg += "\n\n⚠️ DOMINIO NO AUTORIZADO. Configure Firebase.";
-                else if (e.code === 'auth/api-key-not-valid') msg += "\n\n⚠️ API KEY INVÁLIDA.";
-                else msg += "\n\nDetalle: " + e.message;
-                alert(msg);
+                alert("Error de conexión con la Base de Datos.");
             }
         }
 
