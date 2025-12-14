@@ -142,10 +142,12 @@
                 <div id="exam-list-container" class="space-y-3 hidden">
                     <p class="text-xs font-bold text-slate-400 uppercase ml-1">Historial de Evaluaciones</p>
                     <div id="exam-list-items" class="space-y-2">
+                        <!-- Lista de exámenes se inyecta aquí -->
                         <div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
                     </div>
                 </div>
 
+                <!-- Vista por defecto: Crear Examen (se reutiliza view-teacher content) -->
                 <div id="create-exam-wrapper"></div>
             </div>
 
@@ -159,8 +161,10 @@
                     <button onclick="showDashboard()" class="text-xs text-blue-600 font-bold hover:underline">Ver Historial</button>
                 </div>
                 
+                <!-- ZONA DE CARGA REAL -->
                 <input type="file" id="hidden-file-input" class="hidden" accept=".pdf,.txt,.doc,.docx" onchange="handleFileUpload(this)">
                 <div id="upload-container" class="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl p-4 text-center hover:bg-blue-50 transition cursor-pointer group relative" onclick="document.getElementById('hidden-file-input').click()">
+                    <!-- Loader Overlay -->
                     <div id="file-loading" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center rounded-2xl z-10">
                         <i class="fas fa-circle-notch fa-spin text-blue-600 text-2xl"></i>
                         <p class="text-xs text-blue-600 font-bold mt-2">Procesando archivo...</p>
@@ -197,9 +201,19 @@
                     </div>
                 </div>
 
+                <!-- FECHAS -->
+                <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2"><i class="far fa-clock"></i> Disponibilidad (Opcional)</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="datetime-local" id="quiz-start" class="w-full bg-slate-50 border border-slate-200 rounded p-1 text-[10px]">
+                        <input type="datetime-local" id="quiz-end" class="w-full bg-slate-50 border border-slate-200 rounded p-1 text-[10px]">
+                    </div>
+                </div>
+
                 <button onclick="previsualizarExamen()" class="mt-2 w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
                     <i class="fas fa-robot"></i> Generar Borrador
                 </button>
+                <div class="h-4"></div>
             </div>
 
             <!-- 1.2 DOCENTE: REVISIÓN -->
@@ -208,15 +222,26 @@
                     <h2 class="text-lg font-bold text-slate-800">Revisión Docente</h2>
                     <button onclick="showView('view-teacher')" class="text-xs text-red-500 font-bold border border-red-200 px-2 py-1 rounded bg-white">Cancelar</button>
                 </div>
-                <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs text-yellow-800"><i class="fas fa-edit mr-1"></i> Puede editar las preguntas antes de publicar.</div>
-                <div id="review-container" class="space-y-4"></div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs text-yellow-800">
+                    <i class="fas fa-edit mr-1"></i> Puede editar las preguntas antes de publicar.
+                </div>
+
+                <div id="review-container" class="space-y-4">
+                    <!-- Aquí se inyectan los inputs de preguntas -->
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 mt-4 mb-8">
-                    <button onclick="previsualizarExamen()" class="bg-white border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase"><i class="fas fa-sync-alt mr-1"></i> Regenerar</button>
-                    <button onclick="publicarExamenDefinitivo()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Publicar</button>
+                    <button onclick="previsualizarExamen()" class="bg-white border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase">
+                        <i class="fas fa-sync-alt mr-1"></i> Regenerar
+                    </button>
+                    <button onclick="publicarExamenDefinitivo()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i> Publicar
+                    </button>
                 </div>
             </div>
 
-            <!-- 1.3 DOCENTE: GESTIÓN DE RESULTADOS -->
+            <!-- 1.3 DOCENTE: GESTIÓN DE RESULTADOS (EL NUEVO CEREBRO) -->
             <div id="view-exam-results" class="hidden p-6 h-full overflow-y-auto flex flex-col gap-4 bg-slate-50 fade-in">
                 <div class="flex justify-between items-center">
                     <h2 class="text-lg font-bold text-slate-800">Resultados</h2>
@@ -236,6 +261,7 @@
                         </button>
                     </div>
                     
+                    <!-- BOTÓN DE SINCRONIZACIÓN OFICIAL -->
                     <button onclick="sincronizarNotasOficial()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md text-xs uppercase flex items-center justify-center gap-2 mt-2">
                         <i class="fas fa-cloud-upload-alt text-lg"></i> Aprobar y Sincronizar Registro
                     </button>
@@ -251,22 +277,34 @@
                                 <th class="p-3 text-center">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="results-table-body" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="results-table-body" class="divide-y divide-slate-100">
+                            <!-- Resultados aquí -->
+                        </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 2. LINK Y QR -->
             <div id="view-link" class="hidden h-full flex flex-col items-center justify-center p-8 text-center fade-in bg-white">
-                <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4 text-2xl animate-bounce border-4 border-green-100"><i class="fas fa-check"></i></div>
+                <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4 text-2xl animate-bounce border-4 border-green-100">
+                    <i class="fas fa-check"></i>
+                </div>
                 <h2 class="text-xl font-bold text-slate-800">¡Examen Publicado!</h2>
                 <p class="text-xs text-slate-500 mb-4">Escanee el QR o comparta el enlace.</p>
-                <div class="bg-white p-4 border border-slate-200 rounded-lg shadow-md mb-4 flex justify-center"><div id="qrcode"></div></div>
+                
+                <!-- QR CODE AREA MEJORADO -->
+                <div class="bg-white p-4 border border-slate-200 rounded-lg shadow-md mb-4 flex justify-center">
+                    <div id="qrcode"></div>
+                </div>
+
                 <div class="bg-slate-50 p-3 rounded-xl w-full mb-3 border border-slate-200 cursor-pointer" onclick="copyLink()">
                     <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Enlace Directo</p>
                     <p id="generated-link" class="text-blue-600 font-mono font-bold text-[10px] truncate">...</p>
                 </div>
-                <button class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl shadow-lg mb-2 flex items-center justify-center gap-2 text-sm hover:bg-[#20b957]" onclick="shareWhatsApp()"><i class="fab fa-whatsapp"></i> Enviar</button>
+
+                <button class="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl shadow-lg mb-2 flex items-center justify-center gap-2 text-sm hover:bg-[#20b957]" onclick="shareWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> Enviar a Alumnos
+                </button>
                 <button class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg text-sm hover:bg-blue-700" onclick="verResultadosAhora()"><i class="fas fa-chart-bar"></i> Resultados</button>
             </div>
 
@@ -276,26 +314,39 @@
                     <h2 class="text-xl font-bold text-blue-900">Ingreso Estudiante</h2>
                     <p class="text-xs text-slate-500">Selecciona tus datos correctamente.</p>
                 </div>
+                
                 <div class="space-y-4 mb-6">
                     <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
                         <p class="text-[10px] text-blue-400 font-bold uppercase">Evaluación</p>
                         <p id="student-context-display" class="text-sm font-bold text-blue-800">--</p>
                     </div>
+
                     <div>
                         <label class="text-xs font-bold text-slate-400 uppercase ml-1 block mb-1">Soy el alumno(a):</label>
-                        <select id="reg-student-select" class="w-full border-2 border-slate-200 bg-white rounded-lg p-3 outline-none text-sm font-medium focus:border-blue-500"><option value="">Cargando lista...</option></select>
+                        <select id="reg-student-select" class="w-full border-2 border-slate-200 bg-white rounded-lg p-3 outline-none text-sm font-medium focus:border-blue-500">
+                            <option value="">Cargando lista...</option>
+                        </select>
                     </div>
                 </div>
-                <button id="btn-start-quiz" onclick="startQuiz()" class="w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 group">Comenzar <i class="fas fa-arrow-right group-hover:translate-x-1 transition"></i></button>
+                
+                <button id="btn-start-quiz" onclick="startQuiz()" class="w-full btn-primary text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 group">
+                    Comenzar <i class="fas fa-arrow-right group-hover:translate-x-1 transition"></i>
+                </button>
             </div>
 
             <!-- 4. QUIZ -->
             <div id="view-student" class="hidden h-full flex flex-col fade-in bg-slate-50">
-                <div class="w-full bg-white h-1.5 shadow-sm"><div id="progress-bar" class="bg-yellow-400 h-1.5 transition-all duration-500" style="width: 0%"></div></div>
+                <div class="w-full bg-white h-1.5 shadow-sm">
+                    <div id="progress-bar" class="bg-yellow-400 h-1.5 transition-all duration-500" style="width: 0%"></div>
+                </div>
                 <div class="p-6 flex-1 flex flex-col relative overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
-                        <span class="px-3 py-1 bg-white rounded-full text-xs font-bold text-slate-400 shadow-sm border border-slate-100"><span id="q-current" class="text-blue-600">1</span>/<span id="q-total">5</span></span>
-                        <div class="flex items-center gap-1 text-red-500 font-mono font-bold bg-red-50 px-3 py-1 rounded-full border border-red-100"><i class="far fa-clock"></i> <span id="timer">30</span>s</div>
+                        <span class="px-3 py-1 bg-white rounded-full text-xs font-bold text-slate-400 shadow-sm border border-slate-100">
+                            <span id="q-current" class="text-blue-600">1</span>/<span id="q-total">5</span>
+                        </span>
+                        <div class="flex items-center gap-1 text-red-500 font-mono font-bold bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                            <i class="far fa-clock"></i> <span id="timer">30</span>s
+                        </div>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-4 flex-1 flex flex-col justify-center">
                         <h3 id="question-text" class="text-lg font-bold text-slate-800 leading-relaxed text-center"></h3>
@@ -309,14 +360,33 @@
                 <div class="text-center mb-4">
                     <h2 class="text-xl font-bold text-blue-900">Resultados</h2>
                 </div>
+
                 <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 mb-4 flex items-center justify-between">
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase">Nota Oficial</p><p id="minedu-grade" class="text-5xl font-extrabold text-blue-600 mt-1">--</p></div>
-                    <div class="text-right"><p class="text-[10px] text-slate-400 font-bold uppercase">Aciertos</p><p id="final-score" class="text-2xl font-bold text-slate-700">0/0</p></div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Nota Oficial</p>
+                        <p id="minedu-grade" class="text-5xl font-extrabold text-blue-600 mt-1">--</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Aciertos</p>
+                        <p id="final-score" class="text-2xl font-bold text-slate-700">0/0</p>
+                    </div>
                 </div>
-                <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 mb-4"><canvas id="resultsChart"></canvas></div>
-                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4"><p id="ai-feedback" class="text-xs text-blue-800 leading-relaxed font-medium"></p></div>
-                <p class="text-[10px] text-green-600 text-center mb-4 font-bold"><i class="fas fa-check-circle"></i> Examen enviado al profesor</p>
-                <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase w-full">Finalizar</button>
+
+                <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 mb-4">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4">
+                    <p id="ai-feedback" class="text-xs text-blue-800 leading-relaxed font-medium"></p>
+                </div>
+                
+                <p id="save-status" class="text-[10px] text-green-600 text-center mb-4 font-bold">
+                    <i class="fas fa-check-circle"></i> Examen enviado al profesor
+                </p>
+
+                <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg text-xs uppercase w-full">
+                    Finalizar
+                </button>
             </div>
 
         </div>
@@ -328,6 +398,7 @@
         import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, Timestamp } 
         from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- 1. CREDENCIALES COMPARTIDAS ---
         const firebaseConfig = {
           apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
           authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
@@ -337,6 +408,7 @@
           appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
 
+        // --- 2. BASE DE DATOS LOCAL (Espejo del Registro) ---
         const database = {
             primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí"], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel"], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías"], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis"], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan"], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego"] },
             secundaria: { "1": ["ARUCUTIPA CALISAYA Yuliet Luanna", "CISA SAHUAYANAY Miguel Ángel", "COLQUE CHAMBI Jhems Kevin", "CRUZ ROJAS Jhon Alex", "CUYO CHOQUE Will Adriano", "GALLEGOS ZEA, James Jamir", "GUETTI RUIZ Johana Nicol", "GUTIERREZ OSORIO, Rony Alex", "GUTIERREZ ZAMATA, Gianela Ninel", "MENDOZA MAMANI, Víctor Manuel", "MONTEZA RIVAS Yair Alexander", "SANGUINO MARQUEZ Carlos Santiago", "TICONA CONDORI Heidy Milena", "VIÑA HUAMAN Esteban Andreus Caleb", "ZEVALLOS MAMANI Alisom Kimberly"], "2": ["AGUILAR TILCA, Midwad Harison", "ARMAS PEÑA, Moisés Jubal", "ARUCUTIPA CALISAYA, Emerson garry", "BELÓN AQUINO, Dayiro Andree", "CALDERON LEANDRO, Yhong Puyol.", "CALLOAPAZA CONDORCAHUANA Jhamile Sadira", "CCANCHILLO TORRES, Yulissam Priyanka", "CHOQUE LIZARRAGA, Piero Valentino", "CHOQUEHUANCA CARI, Nicole Mia Marey", "COAQUIRA CONDO, Llandhel Roberth", "CONDORI QUISPE, Mayli Yasu", "CORIMANYA ARISACA, Branco Adriano", "DIAZ CAPACOILA, Anely Yesica", "HUAYHUA HUITTOCCOLLO Alonso Delbir", "LUNA QUISPE, Jimmy Noé", "LUQUE VILCAPAZA, Eva Luz", "MANCHA COAQUIRA, George Luis", "PEREIRA VILCA Neymar Piero", "PEREZ LUPO, Gerald Abdías", "PHALA TORRES, Benjamín Franco", "QUISPE CAMALA, José Daniel", "QUISPE GUTIERREZ, Ana Cristina", "QUISPE QUISPE, Thalía Úrsula", "RIVEROS SUPA, Mathias Leonardo", "VILCA GUTIERREZ, Jandy Betzabe"], "3": ["AMANQUI YANARICO, Jean Paul", "ANCCALLE MERMA, Danna Magdiell", "APAZA MAMANI, Eduardo Nicolás", "AROCUTIPA ROMERO, Zamir Yhonncy", "BELÓN AQUINO, Fabrizio André", "CHOQUEHUANCA CARI, David Yair", "FALCON PUMA, Enoc Elías", "GARCIA CISA SANTIAGO BENJAMIN", "GARCIA TICONA Emanuel Matías", "HANAMPA QUISPE, Erick Jonathan", "MACHUCA CRUZ Baurulet", "MALPARTIDA ALE Alvaro Joaquín", "MAMANI ANAYA Sebastián Mateo", "MARQUEZ TACURI, Jesús", "MERMA MENDOZA, Roberto Maradona", "MIRAMIRA GUTIERREZ, Josías Daniel", "ORTEGA BENAVENTE, Nill Antony", "OSORIO CCACCA Marisol", "ROQUE HUARCA, Dianeth Nicol", "TOTORA CUCHO Yuliana Nery", "VALDEZ SUNI, Luz Maricielo", "VARGAS CARI Marylin Elena Josenit"], "4": ["BRINGAS JUAREZ Brandon", "CANAZA QUISPE Luis Eduardo", "CARDENAS CARDENAS Vivian Maryel", "CONDORI QUISPE Abel Benjamín", "GARCIA TICONA Angie Ruth", "GUTIERREZ ALVAREZ Lisandro", "JANAMPA LIMA Jeff Dacio", "LLANQUE ALMIRON Yader Jocsan", "MOLLEAPAZA VALERIANO Yesybell Analia", "SALAZAR PEREZ Juan Hersy", "SANGUINO MARQUEZ Daylen", "VILCA ALVAREZ Rodrigo Alejandro", "VIÑA HUAMAN Brayan Andrés"], "5": ["APAZA GAMARRA German Enrique", "AYALA PEÑAFIEL Diego Gabriel", "CALCINA QUISPE Lizeth Sheyla", "CAMI VILLAVICENCIO Olger Eliel", "CONDORI ANAHUA Abigail Dorkas", "CONDORI ANAHUA Jetzabe María del Pilar", "CORDOVA OVADA Gabriel Gedeón", "CUTIMBO TACUMA David Alexander", "HANAMPA QUISPE Rubí Alejandra", "HUAMAN CANAHUIRI, Frank Antony", "HUARCAYA COILA STEFANY", "MARIN CHOQUE Fredy Erick", "ORCOAPAZA MAMANI Johan Joel", "PALO AGUILAR Yanira Brendaly", "QUISPE CAMALA Kevin Andi", "QUISPE CHOQUE Oliver Omar", "SANCHEZ PEROZO Oriana Valentina", "SANO MAMANI Jenny Abigail", "SUPANTA HUACHANI Angely", "VARGAS ALANOCA Maryori Nayomi"] }
@@ -346,14 +418,17 @@
         let userId = "PROFESOR_MANUEL"; 
         let isFirebaseActive = false;
         let currentExamId = null;
-        let currentResults = [];
+        let currentResults = []; // Almacena resultados para sync
         let fraudWarnings = 0;
 
+        // INIT FIREBASE
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            signInAnonymously(auth).then(() => { isFirebaseActive = true; }).catch(e => console.error("Error login:", e));
+            signInAnonymously(auth).then(() => {
+                isFirebaseActive = true;
+            }).catch(e => console.error("Error login:", e));
         } catch(e) { console.error(e); }
 
         let currentQuestions = [];
@@ -366,11 +441,13 @@
         let studentData = { index: -1, name: "" };
         let userAnswers = [];
 
+        // PREGUNTAS MOCK (Fallback por si no hay API Key)
         const mockDB = {
             primaria: [ { q: "¿Capital de Perú?", opts: ["Lima", "Cusco", "Arequipa", "Piura"], a: 0 }, { q: "¿5 + 3?", opts: ["10", "8", "6", "9"], a: 1 } ],
             secundaria: [ { q: "¿Autor de 'El Quijote'?", opts: ["Dante", "Cervantes", "Homero", "Vallejo"], a: 1 }, { q: "Símbolo Au", opts: ["Plata", "Cobre", "Oro", "Hierro"], a: 2 } ]
         };
 
+        // --- INICIALIZACIÓN: DETECTAR MODO ALUMNO POR URL O QUERY PARAM ---
         window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
             const quizId = params.get('q');
@@ -393,10 +470,15 @@
                             currentExamId = quizId;
                             
                             goToRegistration();
-                        } else { alert("Examen no encontrado."); }
+                        } else {
+                            alert("Examen no encontrado.");
+                        }
                     } catch (e) { console.error("Error cargando examen", e); }
                 }
-            } else { updateGrades(); }
+            } else {
+                // Modo Profesor (Por defecto)
+                updateGrades(); 
+            }
         });
 
         // --- ANTI-FRAUDE ---
@@ -417,22 +499,36 @@
             if (document.visibilityState === 'hidden') handleFraudWarning();
         });
 
-        // --- DASHBOARD ---
-        window.showDashboard = () => { showView('view-dashboard-docente'); loadExamList(); }
+        // --- FUNCIONES DASHBOARD DOCENTE ---
+        window.showDashboard = () => {
+            showView('view-dashboard-docente');
+            loadExamList();
+        }
 
         window.loadExamList = async () => {
             const listContainer = document.getElementById('exam-list-items');
             document.getElementById('exam-list-container').classList.remove('hidden');
+            
             if(!isFirebaseActive) return;
+            
             try {
                 const q = collection(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`);
                 const querySnapshot = await getDocs(q);
                 listContainer.innerHTML = "";
+                
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const date = data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleDateString() : 'Hoy';
                     const status = data.active !== false ? '<span class="text-green-600">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
-                    listContainer.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 cursor-pointer flex justify-between items-center" onclick="openExamResults('${doc.id}')"><div><p class="text-sm font-bold text-slate-700">${data.config.area.toUpperCase()} - ${data.config.grado}°</p><p class="text-[10px] text-slate-400">${date} • ${status}</p></div><i class="fas fa-chevron-right text-slate-300"></i></div>`;
+                    
+                    listContainer.innerHTML += `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 cursor-pointer flex justify-between items-center" onclick="openExamResults('${doc.id}')">
+                        <div>
+                            <p class="text-sm font-bold text-slate-700">${data.config.area.toUpperCase()} - ${data.config.grado}°</p>
+                            <p class="text-[10px] text-slate-400">${date} • ${status}</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-300"></i>
+                    </div>`;
                 });
             } catch(e) { console.error(e); }
         }
@@ -442,27 +538,55 @@
             showView('view-exam-results');
             const tbody = document.getElementById('results-table-body');
             tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            
             try {
+                // 1. Cargar Info Examen
                 const examRef = doc(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`, examId);
                 const examSnap = await getDoc(examRef);
                 const examData = examSnap.data();
-                sessionConfig = examData.config;
+                sessionConfig = examData.config; // Guardar para usar en sync
+                
                 document.getElementById('res-exam-title').innerText = `Resultados: ${examData.config.area.toUpperCase()}`;
                 document.getElementById('res-exam-meta').innerText = `${examData.config.grado}° ${examData.config.nivel} | ${examData.questions.length} Preguntas`;
+                
+                // Botón cerrar
                 const btnClose = document.getElementById('btn-cerrar-examen');
-                if(examData.active === false) { btnClose.innerHTML = '<i class="fas fa-lock-open"></i> Abrir Examen'; btnClose.classList.replace('bg-red-50','bg-green-50'); btnClose.classList.replace('text-red-600','text-green-600'); } else { btnClose.innerHTML = '<i class="fas fa-lock"></i> Cerrar Examen'; btnClose.classList.replace('bg-green-50','bg-red-50'); btnClose.classList.replace('text-green-600','text-red-600'); }
+                if(examData.active === false) {
+                    btnClose.innerHTML = '<i class="fas fa-lock-open"></i> Abrir Examen';
+                    btnClose.classList.replace('bg-red-50','bg-green-50');
+                    btnClose.classList.replace('text-red-600','text-green-600');
+                } else {
+                    btnClose.innerHTML = '<i class="fas fa-lock"></i> Cerrar Examen';
+                    btnClose.classList.replace('bg-green-50','bg-red-50');
+                    btnClose.classList.replace('text-green-600','text-red-600');
+                }
+
+                // 2. Cargar Respuestas
                 const resRef = collection(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados/${examId}/respuestas`);
                 const resSnaps = await getDocs(resRef);
+                
                 tbody.innerHTML = "";
-                currentResults = [];
+                currentResults = []; // Reset para sync
+
                 resSnaps.forEach(r => {
                     const d = r.data();
                     const grade = getMineduGrade(d.percentage);
-                    currentResults.push({ ...d, gradeLetter: grade.letter });
+                    currentResults.push({ ...d, gradeLetter: grade.letter }); // Guardar para sync
+                    
                     const waLink = `https://wa.me/?text=Hola ${d.student}, tu nota en el examen de ${examData.config.area} es: ${grade.letter} (${d.score}/${d.total})`;
-                    tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-3 text-slate-700 font-medium">${d.student}</td><td class="p-3 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold ${grade.bgClass} ${grade.textColor}">${grade.letter}</span></td><td class="p-3 text-center"><a href="${waLink}" target="_blank" class="text-green-500 hover:text-green-600 bg-green-50 p-2 rounded-full"><i class="fab fa-whatsapp"></i></a></td></tr>`;
+                    
+                    tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="p-3 text-slate-700 font-medium">${d.student}</td>
+                        <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold ${grade.bgClass} ${grade.textColor}">${grade.letter}</span></td>
+                        <td class="p-3 text-center">
+                            <a href="${waLink}" target="_blank" class="text-green-500 hover:text-green-600 bg-green-50 p-2 rounded-full"><i class="fab fa-whatsapp"></i></a>
+                        </td>
+                    </tr>`;
                 });
+                
                 if(resSnaps.empty) tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-xs text-slate-400">Aún no hay respuestas.</td></tr>';
+
             } catch(e) { console.error(e); }
         }
 
@@ -473,27 +597,45 @@
                 const snap = await getDoc(ref);
                 const newState = !snap.data().active;
                 await updateDoc(ref, { active: newState });
-                openExamResults(currentExamId);
+                openExamResults(currentExamId); // Recargar
                 alert(newState ? "Examen ABIERTO nuevamente." : "Examen CERRADO. Nadie más podrá ingresar.");
             } catch(e) { console.error(e); }
         }
 
+        // --- SINCRONIZACIÓN OFICIAL (EL GRAN BOTÓN) ---
         window.sincronizarNotasOficial = async () => {
             if(!currentExamId || currentResults.length === 0) return alert("No hay notas para sincronizar.");
-            if(!confirm("¿Está seguro de enviar estas notas al Registro Oficial?")) return;
+            if(!confirm("¿Está seguro de enviar estas notas al Registro Oficial?\n\nSe actualizará la base de datos principal.")) return;
+            
             const btn = document.querySelector('button[onclick="sincronizarNotasOficial()"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...'; btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+            btn.disabled = true;
+
             try {
+                // ID Sesión compatible con Registro Auxiliar (Fecha Hoy)
                 const today = new Date().toISOString().split('T')[0];
                 const docId = `registro-${sessionConfig.bimestre}-${sessionConfig.nivel}-${sessionConfig.grado}-${sessionConfig.area}-${today}`;
                 const docRef = doc(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/registros_auxiliares`, docId);
+                
                 const snap = await getDoc(docRef);
                 let data = { notas: {}, headers: {}, prompt: `Examen EduGen: ${sessionConfig.prompt.substring(0,30)}...` };
-                if(snap.exists()) data = snap.data(); else data.headers = { "header-C1-0": "Examen Virtual (EduGen)", "header-C1-1": "Participación" };
-                currentResults.forEach(r => { data.notas[`nota-${r.studentIndex}-C1-0`] = r.gradeLetter; data.notas[`asistencia-${r.studentIndex}`] = "A"; });
+                
+                if(snap.exists()) data = snap.data();
+                else data.headers = { "header-C1-0": "Examen Virtual (EduGen)", "header-C1-1": "Participación" };
+
+                // Batch update local object
+                currentResults.forEach(r => {
+                    data.notas[`nota-${r.studentIndex}-C1-0`] = r.gradeLetter;
+                    data.notas[`asistencia-${r.studentIndex}`] = "A";
+                });
+
                 await setDoc(docRef, data, { merge: true });
-                alert("✅ ¡Sincronización Exitosa!");
-            } catch(e) { console.error(e); alert("Error al sincronizar."); }
+                alert("✅ ¡Sincronización Exitosa!\n\nLas notas han sido enviadas al Registro Auxiliar Oficial.");
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error al sincronizar.");
+            }
             btn.innerHTML = '<i class="fas fa-check"></i> Sincronizado';
         }
 
@@ -501,102 +643,284 @@
             document.getElementById('rep-title').innerText = `Resultados: ${sessionConfig.area.toUpperCase()}`;
             document.getElementById('rep-subtitle').innerText = `${sessionConfig.grado}° ${sessionConfig.nivel} - ${new Date().toLocaleDateString()}`;
             document.getElementById('rep-date').innerText = new Date().toLocaleString();
-            const tbody = document.getElementById('rep-body'); tbody.innerHTML = "";
-            currentResults.forEach(r => { tbody.innerHTML += `<tr class="border-b border-slate-200"><td class="py-2">${r.student}</td><td class="py-2 text-center font-bold">${r.score}/${r.total}</td><td class="py-2 text-center font-bold text-blue-700">${r.gradeLetter}</td><td class="py-2 text-right text-slate-500">${new Date(r.timestamp.seconds*1000).toLocaleTimeString()}</td></tr>`; });
+            
+            const tbody = document.getElementById('rep-body');
+            tbody.innerHTML = "";
+            
+            currentResults.forEach(r => {
+                tbody.innerHTML += `
+                <tr class="border-b border-slate-200">
+                    <td class="py-2">${r.student}</td>
+                    <td class="py-2 text-center font-bold">${r.score}/${r.total}</td>
+                    <td class="py-2 text-center font-bold text-blue-700">${r.gradeLetter}</td>
+                    <td class="py-2 text-right text-slate-500">${new Date(r.timestamp.seconds*1000).toLocaleTimeString()}</td>
+                </tr>`;
+            });
             window.print();
         }
 
+        // --- UI HELPERS ---
         window.updateGrades = () => {
             const n = document.getElementById('select-nivel').value;
             const g = document.getElementById('select-grado');
             g.innerHTML = '';
             const max = n === 'primaria' ? 6 : 5;
-            for(let i=1; i<=max; i++) { const opt = document.createElement('option'); opt.value = i; opt.innerText = i + '° Grado'; g.appendChild(opt); }
+            for(let i=1; i<=max; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = i + '° Grado';
+                g.appendChild(opt);
+            }
         };
 
+        // FUNCIÓN DE CARGA DE ARCHIVOS
         window.handleFileUpload = async (input) => {
             const file = input.files[0];
             if(!file) return;
+
             const dropzone = document.getElementById('upload-container');
             const loader = document.getElementById('file-loading');
+            
+            // Mostrar estado de carga
             loader.classList.remove('hidden');
+            dropzone.classList.add('border-blue-400');
+
             try {
                 let text = "";
+                
                 if(file.type === "application/pdf") {
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    for(let i=1; i<=Math.min(pdf.numPages, 5); i++) {
+                    let maxPages = Math.min(pdf.numPages, 5); // Leer max 5 páginas para rapidez
+                    for(let i=1; i<=maxPages; i++) {
                         const page = await pdf.getPage(i);
                         const content = await page.getTextContent();
                         text += content.items.map(item => item.str).join(' ') + "\n";
                     }
-                } else if (file.type.includes("word")) {
+                } 
+                else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") { // DOCX
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
                     text = result.value;
-                } else { text = await file.text(); }
-                document.getElementById('input-text').value = text.substring(0, 15000);
-                dropzone.querySelector('p').innerText = `Archivo: ${file.name}`;
-            } catch (e) { alert("Error leyendo archivo."); } 
-            finally { loader.classList.add('hidden'); }
+                }
+                else if(file.type === "text/plain") {
+                    text = await file.text();
+                } 
+                else {
+                    alert("Formato no soportado directamente. Por favor copie y pegue el texto.");
+                    loader.classList.add('hidden');
+                    return;
+                }
+
+                if(text.length < 10) throw new Error("No se pudo extraer texto legible.");
+                
+                // Éxito
+                document.getElementById('input-text').value = text.substring(0, 15000); // Limite seguridad
+                dropzone.querySelector('p').innerText = `Archivo Cargado: ${file.name}`;
+                dropzone.querySelector('i').className = "fas fa-file-alt text-green-600 text-2xl";
+                dropzone.classList.remove('border-dashed');
+                dropzone.classList.add('border-green-500', 'bg-green-50');
+
+            } catch (e) {
+                console.error(e);
+                alert("Error al leer el archivo. Intente copiar y pegar el texto manualmente.");
+            } finally {
+                loader.classList.add('hidden');
+            }
         };
 
+        // --- IA: GENERACIÓN DE PREGUNTAS ---
         function getAIKey() {
             let key = localStorage.getItem('gemini_api_key');
-            if(!key) { key = prompt("API Key de Gemini requerida:"); if(key) localStorage.setItem('gemini_api_key', key); }
+            if(!key) {
+                key = prompt("Para generar preguntas con IA, ingrese su API Key de Gemini:");
+                if(key) localStorage.setItem('gemini_api_key', key);
+            }
             return key;
         }
 
         window.previsualizarExamen = async () => {
             const btn = document.querySelector('button[onclick="previsualizarExamen()"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...'; btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando Texto...';
+            btn.disabled = true;
+
+            // Recoger config
             sessionConfig.nivel = document.getElementById('select-nivel').value;
             sessionConfig.grado = document.getElementById('select-grado').value;
             sessionConfig.area = document.getElementById('select-area').value;
             sessionConfig.bimestre = document.getElementById('select-bimestre').value;
             sessionConfig.prompt = document.getElementById('input-text').value;
+            
             const qCount = parseInt(document.getElementById('select-count').value);
-            sessionConfig.time = parseInt(document.getElementById('select-time').value);
+            const time = parseInt(document.getElementById('select-time').value);
+            sessionConfig.time = time;
+
+            // IA GENERATION
             const apiKey = getAIKey();
+            
+            // Si el cuadro de texto está vacío o muy corto, alertar
+            if (sessionConfig.prompt.length < 5) {
+                alert("Por favor escriba un tema o pegue el contenido del archivo en el cuadro de texto.");
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                return;
+            }
+
             if (apiKey) {
                 try {
-                    const prompt = `Genera examen ${qCount} preguntas opción múltiple sobre: "${sessionConfig.prompt.substring(0,3000)}". Nivel: ${sessionConfig.nivel}. JSON: [{ "q": "Pregunta", "opts": ["A", "B", "C", "D"], "a": 0 }]`;
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{responseMimeType:"application/json"}}) });
-                    const d = await r.json();
-                    currentQuestions = JSON.parse(d.candidates[0].content.parts[0].text);
-                } catch (e) { alert("Error IA. Usando backup."); generateMockQuestions(qCount); }
-            } else { generateMockQuestions(qCount); }
-            const container = document.getElementById('review-container'); container.innerHTML = '';
-            currentQuestions.forEach((q, i) => { container.innerHTML += `<div class="bg-white p-3 rounded border shadow-sm"><textarea class="w-full font-bold border-b mb-2" onchange="updateQuestion(${i},'q',this.value)">${q.q}</textarea><div class="grid grid-cols-2 gap-2">${q.opts.map((opt,oi)=>`<div class="flex gap-1"><input type="radio" name="q${i}" ${q.a===oi?'checked':''} onchange="updateQuestion(${i},'a',${oi})"><input class="w-full text-xs border-b" value="${opt}" onchange="updateOption(${i},${oi},this.value)"></div>`).join('')}</div></div>`; });
-            showView('view-review'); btn.innerHTML = '<i class="fas fa-magic"></i> Crear Borrador'; btn.disabled = false;
+                    const prompt = `Actúa como profesor. Genera un examen de ${qCount} preguntas de opción múltiple sobre este texto/tema: "${sessionConfig.prompt}".
+                    Nivel: ${sessionConfig.nivel} ${sessionConfig.grado}°.
+                    Formato JSON array: [{ "q": "Pregunta", "opts": ["A", "B", "C", "D"], "a": indice_correcta_0_a_3 }]`;
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{responseMimeType:"application/json"}})
+                    });
+                    
+                    const data = await response.json();
+                    if(data.error) throw new Error(data.error.message);
+                    currentQuestions = JSON.parse(data.candidates[0].content.parts[0].text);
+                } catch (e) {
+                    console.error("Error IA", e);
+                    alert("⚠️ Error: No se pudo conectar con la IA. Verifique su API Key o internet. Usando preguntas de ejemplo.");
+                    generateMockQuestions(qCount);
+                }
+            } else {
+                alert("No se ingresó API Key. Usando preguntas de ejemplo.");
+                generateMockQuestions(qCount);
+            }
+
+            // RENDERIZAR REVISIÓN
+            const container = document.getElementById('review-container');
+            container.innerHTML = '';
+            
+            currentQuestions.forEach((q, i) => {
+                container.innerHTML += `
+                <div class="bg-white p-3 rounded border border-slate-200 shadow-sm relative group">
+                    <p class="text-xs font-bold text-slate-400 mb-1">Pregunta ${i+1}</p>
+                    <textarea class="w-full text-sm font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 outline-none mb-2" onchange="updateQuestion(${i}, 'q', this.value)">${q.q}</textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${q.opts.map((opt, oi) => `
+                            <div class="flex items-center gap-1">
+                                <input type="radio" name="q${i}" ${q.a === oi ? 'checked' : ''} onchange="updateQuestion(${i}, 'a', ${oi})">
+                                <input type="text" class="w-full text-xs text-slate-600 border-b border-slate-100 outline-none" value="${opt}" onchange="updateOption(${i}, ${oi}, this.value)">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+
+            showView('view-review');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
         };
 
-        function generateMockQuestions(count) { let base = mockDB[sessionConfig.nivel]; currentQuestions = []; for(let i=0; i<count; i++) currentQuestions.push({...base[i%base.length]}); }
-        window.updateQuestion = (i, f, v) => { currentQuestions[i][f] = v; };
-        window.updateOption = (q, o, v) => { currentQuestions[q].opts[o] = v; };
+        function generateMockQuestions(count) {
+            let base = mockDB[sessionConfig.nivel];
+            currentQuestions = [];
+            for(let i=0; i<count; i++) {
+                let q = {...base[i % base.length]}; 
+                if(i >= base.length) q.q += ` (Var. ${i+1})`;
+                currentQuestions.push(q);
+            }
+        }
 
+        window.updateQuestion = (idx, field, val) => { currentQuestions[idx][field] = val; };
+        window.updateOption = (qIdx, oIdx, val) => { currentQuestions[qIdx].opts[oIdx] = val; };
+
+        // --- PUBLICAR EXAMEN (SAVE TO FIREBASE & GENERATE LINK) ---
         window.publicarExamenDefinitivo = async () => {
-            if(!isFirebaseActive) return alert("Sin conexión.");
-            const docRef = await addDoc(collection(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`), { config: sessionConfig, questions: currentQuestions, createdAt: Timestamp.now(), active: true });
-            currentExamId = docRef.id;
-            verResultadosAhora();
-            const link = `${window.location.href.split('?')[0]}?q=${docRef.id}`;
-            document.getElementById('generated-link').innerText = link;
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), { text: link, width: 150, height: 150 });
-            showView('view-link');
+            const btn = document.querySelector('button[onclick="publicarExamenDefinitivo()"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
+            btn.disabled = true;
+
+            const startVal = document.getElementById('quiz-start').value;
+            const endVal = document.getElementById('quiz-end').value;
+            sessionConfig.start = startVal ? new Date(startVal) : null;
+            sessionConfig.end = endVal ? new Date(endVal) : null;
+
+            if (isFirebaseActive) {
+                try {
+                    // Guardar definición del examen
+                    const docRef = await addDoc(collection(db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`), {
+                        config: sessionConfig,
+                        questions: currentQuestions,
+                        createdAt: Timestamp.now(),
+                        active: true // POR DEFECTO ACTIVO
+                    });
+
+                    // Generar Link Corto
+                    const baseUrl = window.location.href.split('?')[0]; 
+                    const finalLink = `${baseUrl}?q=${docRef.id}`;
+                    
+                    document.getElementById('generated-link').innerText = finalLink;
+                    
+                    // QR Code (Menos denso y más grande)
+                    document.getElementById('qrcode').innerHTML = "";
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: finalLink,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.L
+                    });
+
+                    // IR DIRECTAMENTE A LA VISTA DE RESULTADOS/GESTIÓN
+                    currentExamId = docRef.id;
+                    openExamResults(currentExamId); // Muestra el panel de control
+                    showView('view-link'); // Muestra el link para compartir primero
+
+                } catch (e) {
+                    console.error("Error publicando", e);
+                    alert("Error al guardar en la nube.");
+                }
+            } else {
+                alert("Error de conexión con la base de datos.");
+            }
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Aprobar y Publicar';
+            btn.disabled = false;
         };
 
         window.verResultadosAhora = () => openExamResults(currentExamId);
-        window.copyLink = () => { navigator.clipboard.writeText(document.getElementById('generated-link').innerText); alert("Copiado"); };
-        window.shareWhatsApp = () => window.open(`https://wa.me/?text=Examen: ${document.getElementById('generated-link').innerText}`, '_blank');
+        window.copyLink = () => {
+            const link = document.getElementById('generated-link').innerText;
+            navigator.clipboard.writeText(link).then(() => alert("¡Enlace copiado!"));
+        }
+
+        window.shareWhatsApp = () => {
+            const link = document.getElementById('generated-link').innerText;
+            const text = `Examen de ${sessionConfig.area.toUpperCase()} (${sessionConfig.grado}°): ${link}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
 
         window.goToRegistration = () => {
+            // Validar Horario
+            const now = new Date();
+            if(sessionConfig.start && now < sessionConfig.start) return alert(`Aún no inicia. Hora: ${sessionConfig.start.toLocaleString()}`);
+            if(sessionConfig.end && now > sessionConfig.end) return alert(`Examen finalizado. Cierre: ${sessionConfig.end.toLocaleString()}`);
+
+            // Cargar lista
             const list = database[sessionConfig.nivel][sessionConfig.grado];
             const select = document.getElementById('reg-student-select');
-            document.getElementById('student-context-display').innerText = `${sessionConfig.grado}° ${sessionConfig.nivel.toUpperCase()}`;
+            
+            document.getElementById('student-context-display').innerText = 
+                `${sessionConfig.grado}° ${sessionConfig.nivel.toUpperCase()} - ${sessionConfig.area.toUpperCase()}`;
+            
             select.innerHTML = '<option value="">Selecciona tu nombre...</option>';
-            list.forEach((n, i) => { const o = document.createElement('option'); o.value = i; o.innerText = n; select.appendChild(o); });
+            if(list) {
+                list.forEach((name, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx; 
+                    opt.innerText = name;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option>No hay lista cargada</option>';
+            }
+
             showView('view-register');
         };
 
