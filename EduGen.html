@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduGen AI - I.E. JN ANDREWS</title>
     
-    <!-- LIBRERÍAS EXTERNAS -->
+    <!-- LIBRERÍAS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Lectores de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -21,13 +20,11 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Utilidades */
         .btn-primary { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); transition: transform 0.2s; }
         .btn-primary:active { transform: scale(0.98); }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Ocultar en impresión */
+
         @media print {
             body * { visibility: hidden; }
             #printable-report, #printable-report * { visibility: visible; }
@@ -37,7 +34,7 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- HEADER GLOBAL -->
+    <!-- HEADER -->
     <header class="glass-header text-white p-3 shadow-lg z-50 shrink-0">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -46,24 +43,22 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v5.2</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v5.3 (Estable)</p>
                 </div>
             </div>
-            <button onclick="app.goHome()" class="text-white hover:text-yellow-400 transition"><i class="fas fa-home text-lg"></i></button>
+            <button onclick="window.location.href = window.location.pathname" class="text-white hover:text-yellow-400 transition"><i class="fas fa-home text-lg"></i></button>
         </div>
     </header>
 
-    <!-- CONTENEDOR PRINCIPAL -->
+    <!-- MAIN -->
     <main class="flex-1 overflow-y-auto relative bg-slate-50 w-full max-w-md mx-auto shadow-2xl border-x border-slate-200">
         
-        <!-- VISTA 1: DASHBOARD DOCENTE -->
+        <!-- VISTA 1: DASHBOARD -->
         <div id="view-dashboard" class="view-section p-6 space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="text-lg font-bold text-blue-900">Panel Docente</h2>
                 <button onclick="app.configIA()" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold border border-purple-200">🔑 Config IA</button>
             </div>
-
-            <!-- Botones Principales -->
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="app.navTo('view-create')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-500 hover:shadow-md transition text-left group">
                     <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-2 group-hover:scale-110 transition"><i class="fas fa-plus"></i></div>
@@ -76,22 +71,19 @@
                     <p class="text-[10px] text-slate-400">Ver Resultados</p>
                 </button>
             </div>
-
-            <!-- Lista de Exámenes -->
             <div id="exam-list-container" class="hidden">
                 <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Historial Reciente</h3>
                 <div id="exam-list" class="space-y-2"></div>
             </div>
         </div>
 
-        <!-- VISTA 2: CREAR EXAMEN -->
+        <!-- VISTA 2: CREAR -->
         <div id="view-create" class="view-section p-6 space-y-4 hidden">
             <div class="flex items-center gap-2 mb-2">
                 <button onclick="app.navTo('view-dashboard')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-arrow-left"></i></button>
                 <h2 class="text-lg font-bold text-slate-800">Configurar Examen</h2>
             </div>
-
-            <!-- Subida de Archivo -->
+            
             <div class="relative group">
                 <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.txt" onchange="app.handleFile(this)">
                 <div onclick="document.getElementById('file-upload').click()" class="border-2 border-dashed border-blue-300 bg-blue-50 rounded-xl p-6 text-center cursor-pointer hover:bg-blue-100 transition">
@@ -99,7 +91,6 @@
                     <p class="text-xs font-bold text-blue-800">Toca para subir PDF o Word</p>
                     <p class="text-[10px] text-blue-400" id="file-name-display">El texto se extraerá automáticamente</p>
                 </div>
-                <!-- Loader Overlay -->
                 <div id="file-loader" class="absolute inset-0 bg-white/90 flex-col items-center justify-center rounded-xl hidden">
                     <div class="loader"></div>
                     <p class="text-xs text-blue-600 font-bold mt-2">Leyendo...</p>
@@ -108,7 +99,6 @@
 
             <textarea id="prompt-text" class="w-full border border-slate-200 rounded-xl p-3 text-xs h-24 focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="O pega el texto del tema aquí..."></textarea>
 
-            <!-- Configuración -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                 <div class="grid grid-cols-2 gap-2">
                     <select id="cfg-bimestre" class="w-full text-xs p-2 border rounded"><option value="B1">I Bimestre</option><option value="B2">II Bimestre</option><option value="B3">III Bimestre</option><option value="B4">IV Bimestre</option></select>
@@ -131,34 +121,34 @@
             </div>
 
             <button onclick="app.generateDraft()" class="btn-primary w-full text-white font-bold py-3 rounded-xl shadow-lg text-sm flex items-center justify-center gap-2">
-                <i class="fas fa-robot"></i> Generar Borrador
+                <i class="fas fa-robot"></i> Generar Borrador con IA
             </button>
         </div>
 
-        <!-- VISTA 3: REVISIÓN (Antes de Publicar) -->
+        <!-- VISTA 3: REVISIÓN -->
         <div id="view-review" class="view-section p-6 space-y-4 hidden">
-            <h2 class="text-lg font-bold text-slate-800">Revisar Preguntas</h2>
-            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs text-yellow-800">
-                <i class="fas fa-edit"></i> Edita si es necesario.
+            <div class="flex justify-between items-center">
+                 <h2 class="text-lg font-bold text-slate-800">Revisar Preguntas</h2>
+                 <button onclick="app.navTo('view-create')" class="text-xs text-red-500 font-bold border border-red-200 px-2 py-1 rounded">Cancelar</button>
             </div>
+            
+            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs text-yellow-800"><i class="fas fa-edit"></i> Puedes editar las preguntas si la IA se equivocó.</div>
             <div id="review-list" class="space-y-4"></div>
             <div class="grid grid-cols-2 gap-3 pt-4">
                 <button onclick="app.generateDraft()" class="border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl text-xs">Reintentar</button>
-                <button onclick="app.publishExam()" class="bg-green-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-green-700 shadow-lg">Publicar</button>
+                <button onclick="app.publishExam()" class="bg-green-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-green-700 shadow-lg">Aprobar y Publicar</button>
             </div>
         </div>
 
-        <!-- VISTA 4: EXAMEN LIVE (Link/QR) -->
+        <!-- VISTA 4: LIVE -->
         <div id="view-live" class="view-section p-6 flex flex-col items-center justify-center h-full hidden">
             <div class="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 text-center w-full">
                 <h2 class="text-xl font-bold text-blue-900 mb-1">¡Examen Listo!</h2>
                 <p class="text-xs text-slate-500 mb-4">Escanea para ingresar</p>
                 <div id="qr-container" class="flex justify-center mb-4"></div>
-                
                 <div class="bg-slate-50 p-2 rounded border border-slate-200 mb-4 break-all cursor-pointer hover:bg-blue-50" onclick="app.copyLink()">
                     <p id="live-link" class="text-[10px] font-mono text-blue-600">...</p>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="app.shareWA()" class="bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold"><i class="fab fa-whatsapp"></i> Enviar</button>
                     <button onclick="app.viewResultsFromLive()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Ver Resultados</button>
@@ -173,7 +163,6 @@
                 <h2 class="text-lg font-bold text-slate-800">Resultados</h2>
                 <button onclick="app.navTo('view-dashboard')" class="text-xs border px-2 py-1 rounded">Cerrar</button>
             </div>
-            
             <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between items-center mb-2">
                     <div>
@@ -182,16 +171,11 @@
                     </div>
                     <button id="btn-lock" onclick="app.toggleLock()" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold">Bloquear</button>
                 </div>
-                <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">
-                    ☁️ Sincronizar Registro Oficial
-                </button>
+                <button onclick="app.syncOfficial()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar Registro</button>
             </div>
-
             <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
                 <table class="w-full text-xs">
-                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0">
-                        <tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Acción</th></tr>
-                    </thead>
+                    <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-2 text-left">Alumno</th><th class="p-2">Nota</th><th class="p-2">Acción</th></tr></thead>
                     <tbody id="res-table" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
@@ -204,7 +188,6 @@
                 <h2 class="text-xl font-bold text-blue-900">Ingreso a Examen</h2>
                 <p class="text-xs text-slate-500 mt-1" id="login-exam-info">...</p>
             </div>
-            
             <div class="space-y-4">
                 <div>
                     <label class="text-xs font-bold text-slate-400 ml-1">Selecciona tu nombre:</label>
@@ -219,31 +202,24 @@
             <div class="w-full bg-slate-200 h-1.5 rounded-full mb-6 overflow-hidden">
                 <div id="progress-bar" class="bg-yellow-400 h-full transition-all duration-300 w-0"></div>
             </div>
-            
             <div class="flex justify-between items-center mb-6">
                 <span class="text-xs font-bold bg-white px-3 py-1 rounded-full border shadow-sm text-slate-500"><span id="q-idx" class="text-blue-600">1</span> / <span id="q-total"></span></span>
-                <div class="text-xs font-mono font-bold bg-red-50 text-red-500 px-3 py-1 rounded-full border border-red-100 animate-pulse">
-                    <i class="far fa-clock"></i> <span id="timer"></span>s
-                </div>
+                <div class="text-xs font-mono font-bold bg-red-50 text-red-500 px-3 py-1 rounded-full border border-red-100 animate-pulse"><i class="far fa-clock"></i> <span id="timer"></span>s</div>
             </div>
-
             <div class="flex-1 overflow-y-auto">
                 <p id="q-text" class="text-lg font-bold text-slate-800 mb-6 leading-relaxed"></p>
                 <div id="q-options" class="space-y-3"></div>
             </div>
         </div>
 
-        <!-- VISTA 8: RESULTADO ALUMNO -->
+        <!-- VISTA 8: RESULTADO -->
         <div id="view-student-result" class="view-section p-8 flex flex-col items-center justify-center h-full hidden text-center">
             <div class="mb-6">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Tu Calificación</p>
                 <h1 id="final-grade-letter" class="text-6xl font-extrabold text-blue-600 my-2">--</h1>
                 <p id="final-score-num" class="text-sm font-bold text-slate-500">0/0</p>
             </div>
-            <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full">
-                <i class="fas fa-check-circle text-lg mb-1 block"></i>
-                Examen enviado correctamente al profesor.
-            </div>
+            <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full"><i class="fas fa-check-circle text-lg mb-1 block"></i> Examen enviado correctamente.</div>
             <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg text-xs">FINALIZAR</button>
         </div>
 
@@ -278,6 +254,7 @@
 
         const USER_ID = "PROFESOR_MANUEL";
 
+        // ESTADO GLOBAL
         const state = {
             db: null, auth: null,
             config: {}, questions: [], currentExamId: null, currentStudent: null,
@@ -290,8 +267,8 @@
         }
         
         function showToast(msg) {
-             // Simple toast or alert
-             alert(msg);
+             // Simple toast or alert (can be improved)
+             // For now using alert for critical errors, console for others
         }
 
         async function init() {
@@ -400,12 +377,20 @@
                 btn.innerHTML = `<div class="loader inline-block"></div> Generando...`;
                 btn.disabled = true;
 
-                const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
+                // --- MODIFICACIÓN CLAVE: ORDEN DE MODELOS (CASCADA) ---
+                // Intentamos flash primero, luego pro, luego pro-legacy
+                const models = [
+                    'gemini-1.5-flash',
+                    'gemini-1.5-pro',
+                    'gemini-1.0-pro'
+                ];
+                
                 let success = false;
 
                 for (const model of models) {
                     try {
-                        console.log("Probando modelo:", model);
+                        console.log("Intentando conectar con modelo:", model);
+                        
                         const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple sobre el texto proporcionado. Nivel escolar. JSON Array estricto: [{"q":"...","opts":["A","B","C","D"],"a":indice_0_3}]`;
                         
                         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
@@ -418,14 +403,20 @@
                         });
 
                         const data = await resp.json();
+                        
                         if (data.error) {
-                             if (data.error.code === 404 || data.error.message.includes("not found") || data.error.message.includes("unsupported")) continue;
+                             // Si es error de modelo no encontrado, probamos siguiente
+                             if (data.error.code === 404 || data.error.message.includes("not found")) {
+                                 console.warn(`Modelo ${model} no disponible, probando siguiente...`);
+                                 continue;
+                             }
                              throw new Error(data.error.message);
                         }
                         
                         state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
                         success = true;
-                        break; 
+                        break; // ¡ÉXITO! Salimos del bucle
+
                     } catch (e) {
                         console.warn(`Fallo ${model}:`, e);
                         if (e.message.includes("key") || e.message.includes("403")) {
@@ -433,6 +424,7 @@
                             alert("Llave inválida. Intente de nuevo.");
                             break;
                         }
+                        // Si es otro error (no 404 ni key), probamos el siguiente modelo por si acaso
                     }
                 }
 
@@ -443,13 +435,13 @@
                     renderReview();
                     navTo('view-review');
                 } else {
-                    alert("No se pudo generar el examen. Verifique su conexión o intente con un texto más corto.");
+                    alert("⚠️ No se pudo generar el examen con la IA.\n\nPosibles causas:\n1. Conexión inestable.\n2. API Key incorrecta.\n3. Texto demasiado largo o corto.\n\nIntente de nuevo o revise su configuración.");
                 }
             },
 
             publishExam: async () => {
                 try {
-                    const docRef = await addDoc(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`), {
+                    const docRef = await addDoc(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`), {
                         config: state.config,
                         questions: state.questions,
                         active: true,
@@ -475,7 +467,7 @@
                 document.getElementById('exam-list-container').classList.remove('hidden');
                 
                 try {
-                    const q = collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`);
+                    const q = collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`);
                     const snap = await getDocs(q);
                     
                     list.innerHTML = "";
@@ -503,7 +495,7 @@
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
                 
                 try {
-                    const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`, id));
+                    const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
                     const examData = examSnap.data();
                     state.config = examData.config;
                     
@@ -514,7 +506,7 @@
                     btn.innerText = examData.active ? "Bloquear" : "Abrir";
                     btn.className = examData.active ? "text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold" : "text-xs bg-green-50 text-green-600 px-2 py-1 rounded font-bold";
 
-                    const resSnap = await getDocs(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados/${id}/respuestas`));
+                    const resSnap = await getDocs(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${id}/respuestas`));
                     state.studentResults = [];
                     
                     tbody.innerHTML = "";
@@ -542,7 +534,7 @@
                 try {
                     const today = new Date().toISOString().split('T')[0];
                     const docId = `registro-${state.config.bimestre}-${state.config.nivel}-${state.config.grado}-${state.config.area}-${today}`;
-                    const docRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/registros_auxiliares`, docId);
+                    const docRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/registros_auxiliares`, docId);
                     
                     const snap = await getDoc(docRef);
                     let data = snap.exists() ? snap.data() : { notas: {}, headers: { "header-C1-0": "Examen EduGen" }, prompt: "Examen Virtual" };
@@ -560,7 +552,7 @@
             },
 
             toggleLock: async () => {
-                const ref = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`, state.currentExamId);
+                const ref = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, state.currentExamId);
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { active: !snap.data().active });
                 app.loadResults(state.currentExamId);
@@ -568,7 +560,7 @@
 
             startStudentMode: async (examId) => {
                 state.currentExamId = examId;
-                const snap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados`, examId));
+                const snap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, examId));
                 if (!snap.exists()) return document.body.innerHTML = "<h1 class='p-10'>Examen no encontrado</h1>";
                 
                 const data = snap.data();
@@ -596,7 +588,7 @@
                 
                 if(localStorage.getItem(`done_${state.currentExamId}_${idx}`)) return alert("Ya enviaste este examen.");
 
-                const resRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados/${state.currentExamId}/respuestas`, `res_${idx}`);
+                const resRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${idx}`);
                 const snap = await getDoc(resRef);
                 if(snap.exists()) return alert("Ya existe un registro de tu examen.");
 
@@ -669,7 +661,7 @@
                 navTo('view-student-result');
                 
                 try {
-                    await setDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${userId}/examenes_creados/${state.currentExamId}/respuestas`, `res_${state.currentStudent.idx}`), {
+                    await setDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${state.currentStudent.idx}`), {
                         student: state.currentStudent.name,
                         studentIndex: state.currentStudent.idx,
                         score: state.score,
