@@ -752,7 +752,7 @@
             }
         };
 
-        // --- IA: GENERACIÓN DE PREGUNTAS (CON FALLBACK) ---
+        // --- IA: GENERACIÓN DE PREGUNTAS (CON CASCADA DE FALLBACK) ---
         function getAIKey() {
             let key = localStorage.getItem('gemini_api_key');
             if(!key) {
@@ -765,19 +765,21 @@
             return key;
         }
 
-        // NUEVA FUNCIÓN DE FETCH CON INTELIGENCIA EN CASCADA
+        // FUNCIÓN BLINDADA PARA LA CONEXIÓN IA
         async function fetchGemini(apiKey, prompt) {
+            // Lista de modelos a probar en orden
             const models = [
                 'gemini-1.5-flash',
                 'gemini-1.5-pro',
-                'gemini-1.0-pro'
+                'gemini-1.0-pro',
+                'gemini-pro'
             ];
 
             let lastError = null;
 
             for (const model of models) {
                 try {
-                    console.log("Intentando modelo:", model);
+                    console.log(`Intentando conectar con modelo: ${model}...`);
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -793,26 +795,27 @@
                     const data = await response.json();
                     
                     if(data.error) {
-                        // Si es error de modelo no encontrado (404), continuamos al siguiente
+                        // Si el error es 404 (modelo no encontrado), probamos el siguiente
                         if(data.error.code === 404) {
-                            console.warn(`Modelo ${model} no encontrado, probando siguiente...`);
-                            lastError = data.error;
+                            console.warn(`Modelo ${model} no disponible, probando siguiente...`);
                             continue;
                         }
                         throw new Error(data.error.message);
                     }
                     
-                    return data; // Éxito
+                    return data; // Éxito, salimos del bucle y retornamos
 
                 } catch (e) {
                     console.error(`Fallo en ${model}:`, e);
                     lastError = e;
-                    if(e.message.includes("404")) continue; // Probar siguiente si es 404
-                    // Si es error de autenticación (400/403), no tiene caso seguir probando modelos
-                    if(e.message.includes("API key") || e.message.includes("403")) throw e;
+                    // Si el error contiene "404", es seguro seguir probando
+                    if(e.message.includes("404")) continue;
+                    // Si es error de API Key invalida, detenemos todo
+                    if(e.message.includes("API key") || e.message.includes("400") || e.message.includes("403")) throw e;
                 }
             }
-            throw lastError || new Error("No se pudo conectar con ningún modelo de IA.");
+            // Si llegamos aquí, todos fallaron
+            throw lastError || new Error("No se pudo conectar con ningún modelo de IA disponible.");
         }
 
         window.previsualizarExamen = async () => {
@@ -855,7 +858,6 @@
                     - Estructura: [{"q": "Enunciado de la pregunta", "opts": ["Opción A", "Opción B", "Opción C", "Opción D"], "a": indice_numero_0_a_3}]
                     - No uses formato Markdown, solo JSON puro.`;
                     
-                    // USAMOS LA NUEVA FUNCIÓN DE FETCH CON CASCADA
                     const data = await fetchGemini(apiKey, prompt);
                     
                     if(!data.candidates || !data.candidates[0].content) {
@@ -875,9 +877,9 @@
                     // Si es error de autenticación, borrar la key
                     if(e.message.includes("400") || e.message.includes("403") || e.message.includes("API key")) {
                         localStorage.removeItem('gemini_api_key');
-                        alert(`⛔ ERROR DE LLAVE (API KEY)\n\nLa llave ingresada no es válida o ha expirado.\n\nDetalle: ${e.message}\n\nSe ha borrado la llave. Por favor intente generar de nuevo e ingrese una llave válida.`);
+                        alert(`⛔ ERROR DE LLAVE (API KEY)\n\nLa llave ingresada no es válida o ha expirado.\n\nSe ha borrado la llave. Por favor intente generar de nuevo e ingrese una llave válida.`);
                     } else {
-                        alert(`⚠️ ERROR DE CONEXIÓN\n\nNo se pudo conectar con la IA tras varios intentos.\n\nSe generarán preguntas de ejemplo (Modo Offline).`);
+                        alert(`⚠️ ERROR DE CONEXIÓN IA\n\nNo se pudo conectar con ningún modelo de Google Gemini tras varios intentos.\n\nCausa probable: Problema temporal de Google o bloqueo de red.\n\nSe generarán preguntas de ejemplo (Modo Offline) para que pueda probar la herramienta.`);
                         generateMockQuestions(qCount);
                         renderReview();
                         showView('view-review');
