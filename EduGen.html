@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v6.9 (Gestión Total)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v6.10 (Reporte Detallado)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -289,7 +289,7 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
-        // URL OFICIAL DE GITHUB PAGES (EVITA ERROR FILE:///)
+        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
 
         const database = {
@@ -306,7 +306,6 @@
         };
 
         // --- SISTEMA DE NAVEGACIÓN (GLOBAL) ---
-        // Definido ANTES de cualquier uso para evitar error "navTo is not defined"
         function navTo(id) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
@@ -326,20 +325,17 @@
         }
 
         async function fetchGemini(apiKey, prompt) {
-            // LISTA DE MODELOS PRIORIZADA (FLASH-PREVIEW PRIMERO)
             const models = [
-                'gemini-2.5-flash-preview-09-2025', // El modelo que funciona en su registro
+                'gemini-2.5-flash-preview-09-2025',
                 'gemini-1.5-flash',
                 'gemini-1.5-pro',
-                'gemini-1.0-pro',
-                'gemini-pro'
+                'gemini-1.0-pro'
             ];
 
             let lastError = null;
 
             for (const model of models) {
                 try {
-                    // Update UI
                     const btn = document.querySelector('button[onclick="app.generateDraft()"]');
                     if(btn) btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Probando ${model}...`;
 
@@ -371,15 +367,9 @@
                 } catch (e) {
                     console.warn(`Fallo en ${model}:`, e);
                     lastError = e;
-                    
                     const msg = e.message.toLowerCase();
-                    // Fallback logic
-                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) {
-                        continue; 
-                    }
-                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) {
-                         throw e;
-                    }
+                    if(msg.includes("not found") || msg.includes("404") || msg.includes("unsupported")) continue; 
+                    if(msg.includes("api key") || msg.includes("403") || msg.includes("key invalid")) throw e;
                     continue; 
                 }
             }
@@ -397,7 +387,6 @@
                 if (k !== null) localStorage.setItem('gemini_api_key', k);
             },
 
-            // IMPORTANTE: Definida aquí para que esté disponible para el docente
             startTeacherMode: () => {
                 navTo('view-dashboard');
                 window.app.updateGrades(); 
@@ -546,14 +535,13 @@
             },
             
             deleteExam: async (id, event) => {
-                event.stopPropagation(); // Evitar abrir los resultados al hacer clic en eliminar
+                event.stopPropagation();
                 if(!confirm("¿Estás seguro de eliminar este examen y todos sus resultados? Esta acción no se puede deshacer.")) return;
                 
                 try {
                     await deleteDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
-                    // Nota: Firestore no elimina subcolecciones automáticamente. Los resultados quedarán huérfanos pero ocultos.
                     alert("Examen eliminado correctamente.");
-                    app.loadExams(); // Recargar la lista
+                    app.loadExams();
                 } catch (e) {
                     alert("Error al eliminar: " + e.message);
                 }
@@ -569,6 +557,8 @@
                     const examSnap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, id));
                     const examData = examSnap.data();
                     state.config = examData.config;
+                    // Asegurar que las preguntas estén disponibles en el estado para generar el reporte
+                    state.questions = examData.questions;
                     
                     document.getElementById('res-title').innerText = `${state.config.area} ${state.config.grado}°`;
                     document.getElementById('res-meta').innerText = examData.active ? "En curso" : "Finalizado";
@@ -584,9 +574,35 @@
                     resSnap.forEach(doc => {
                         const r = doc.data();
                         const nota = getMinedu(r.score, r.total);
+                        // Store the full response data for report generation
                         state.studentResults.push({...r, notaLetra: nota.L});
                         
-                        const waMsg = `Hola ${r.student}, tu nota es ${nota.L} (${r.score}/${r.total})`;
+                        // Generar reporte detallado para WhatsApp
+                        let detalleReporte = "";
+                        if (r.answers && state.questions) {
+                             state.questions.forEach((q, idx) => {
+                                 const userAnsIdx = r.answers[idx];
+                                 // Handle potential null/undefined/missing answers
+                                 const userAnsText = (userAnsIdx !== null && userAnsIdx !== undefined && userAnsIdx >= 0) ? q.opts[userAnsIdx] : "Sin responder";
+                                 const isCorrect = userAnsIdx === q.a;
+                                 const statusIcon = isCorrect ? "✅" : "❌";
+                                 
+                                 detalleReporte += `\n${idx + 1}. ${q.q}\n   Rpta: ${userAnsText} ${statusIcon}`;
+                                 if (!isCorrect) {
+                                     detalleReporte += `\n   (Correcta: ${q.opts[q.a]})`;
+                                 }
+                                 detalleReporte += `\n`;
+                             });
+                        } else {
+                             detalleReporte = "\n(Detalle no disponible para este examen)";
+                        }
+
+                        const waMsg = `*REPORTE DE EXAMEN - ${state.config.area.toUpperCase()}*\n` +
+                                      `Estudiante: ${r.student}\n` +
+                                      `Nota: ${nota.L} (${r.score}/${r.total})\n\n` +
+                                      `*DETALLE DEL CUESTIONARIO:*\n` + 
+                                      detalleReporte + 
+                                      `\n_Generado por EduGen AI_`;
                         
                         tbody.innerHTML += `
                         <tr class="border-b">
@@ -597,7 +613,10 @@
                             </td>
                         </tr>`;
                     });
-                } catch(e) { alert("Error cargando resultados"); }
+                } catch(e) { 
+                    console.error(e);
+                    alert("Error cargando resultados: " + e.message); 
+                }
             },
 
             syncOfficial: async () => {
@@ -680,6 +699,9 @@
 
                 navTo('view-exam');
                 app.loadQuestion(0);
+                
+                // Inicializar array de respuestas
+                state.userAnswers = new Array(state.questions.length).fill(null);
             },
 
             loadQuestion: (idx) => {
@@ -716,6 +738,10 @@
 
             answer: (ansIdx) => {
                 clearInterval(state.timer);
+                
+                // GUARDAR RESPUESTA DEL USUARIO
+                state.userAnswers[state.questionIdx] = ansIdx;
+                
                 const correct = state.questions[state.questionIdx].a;
                 
                 const optsDiv = document.getElementById('q-options');
@@ -762,7 +788,8 @@
                         score: state.score,
                         total: total,
                         percentage: (state.score/total)*100,
-                        timestamp: Timestamp.now()
+                        timestamp: Timestamp.now(),
+                        answers: state.userAnswers // GUARDAMOS EL ARRAY DE RESPUESTAS AQUÍ
                     });
                     localStorage.setItem(`done_${state.currentExamId}_${state.currentStudent.idx}`, 'true');
                 } catch(e) { console.error(e); }
