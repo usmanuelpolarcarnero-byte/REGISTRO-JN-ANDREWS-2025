@@ -130,6 +130,13 @@
             
             <!-- 1. DOCENTE: DASHBOARD (NUEVO) -->
             <div id="view-dashboard-docente" class="p-6 h-full overflow-y-auto flex flex-col gap-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-bold text-slate-500 uppercase">Panel de Control</h2>
+                    <button onclick="configurarIA()" class="text-[10px] bg-purple-100 text-purple-700 px-3 py-1 rounded-full border border-purple-200 hover:bg-purple-200 font-bold flex items-center gap-1">
+                        🔑 Configurar IA
+                    </button>
+                </div>
+
                 <div class="flex gap-2 mb-2">
                     <button onclick="showView('view-teacher')" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl shadow text-xs uppercase flex items-center justify-center gap-2">
                         <i class="fas fa-plus-circle"></i> Nuevo Examen
@@ -504,6 +511,16 @@
             showView('view-dashboard-docente');
             loadExamList();
         }
+
+        // --- GESTIÓN DE API KEY ---
+        window.configurarIA = () => {
+            const currentKey = localStorage.getItem('gemini_api_key') || "";
+            const newKey = prompt("Ingrese su nueva API Key de Google Gemini:", currentKey);
+            if(newKey !== null) {
+                localStorage.setItem('gemini_api_key', newKey.trim());
+                alert(newKey ? "✅ Llave guardada." : "🗑️ Llave borrada.");
+            }
+        };
 
         window.loadExamList = async () => {
             const listContainer = document.getElementById('exam-list-items');
