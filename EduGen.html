@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Lectores de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -47,7 +48,10 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.2 (Semáforo Fix)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.4 (Programable)</p>
+                    <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
+                        <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
+                    </p>
                 </div>
             </div>
             <button onclick="window.location.href = window.app.getBaseUrl()" class="text-white hover:text-yellow-400 transition" title="Ir al Inicio"><i class="fas fa-home text-lg"></i></button>
@@ -124,6 +128,17 @@
                     <div>
                         <label class="text-[10px] font-bold text-slate-400">Tiempo</label>
                         <select id="cfg-time" class="w-full text-xs font-bold bg-transparent"><option value="15">15s</option><option value="30" selected>30s</option><option value="60">1m</option><option value="120">2m</option></select>
+                    </div>
+                </div>
+                <!-- SECCIÓN DE PROGRAMACIÓN DE FECHA -->
+                <div class="grid grid-cols-2 gap-2 border-t pt-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-blue-600 block mb-1">Inicio (Opcional)</label>
+                        <input type="datetime-local" id="cfg-start" class="w-full text-xs bg-slate-50 border rounded p-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-red-400 block mb-1">Cierre (Opcional)</label>
+                        <input type="datetime-local" id="cfg-end" class="w-full text-xs bg-slate-50 border rounded p-1">
                     </div>
                 </div>
             </div>
@@ -257,7 +272,16 @@
                 <p id="final-score-num" class="text-sm font-bold text-slate-500">0/0</p>
             </div>
             <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-xs mb-6 w-full"><i class="fas fa-check-circle text-lg mb-1 block"></i> Examen enviado correctamente.</div>
-            <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg text-xs">FINALIZAR</button>
+            <div class="text-[10px] text-red-500 font-bold mt-2">⛔ Acceso finalizado. No puedes volver a ingresar.</div>
+        </div>
+        
+        <!-- VISTA 9: BLOQUEO (NUEVA) -->
+        <div id="view-blocked" class="view-section p-8 flex flex-col items-center justify-center h-full hidden text-center bg-red-50">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 border-4 border-red-200">
+                <i class="fas fa-lock text-red-500 text-3xl"></i>
+            </div>
+            <h2 class="text-xl font-bold text-red-900 mb-2">ACCESO DENEGADO</h2>
+            <p class="text-sm text-red-700 mb-6">Ya has finalizado este examen. Solo se permite un intento por dispositivo.</p>
         </div>
 
     </main>
@@ -277,10 +301,12 @@
                 <p class="font-mono text-sm" id="rep-date">--/--/----</p>
             </div>
         </div>
+        
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
             <h3 class="font-bold text-lg text-slate-800" id="rep-title">Examen de...</h3>
             <p class="text-sm text-slate-500" id="rep-subtitle">Grado - Nivel - Área</p>
         </div>
+
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="border-b-2 border-slate-800">
@@ -292,6 +318,10 @@
             </thead>
             <tbody id="rep-body" class="text-sm"></tbody>
         </table>
+
+        <div class="mt-12 text-center text-xs text-gray-400 border-t border-gray-200 pt-4">
+            <p>Documento generado por EduGen AI - Sistema de Gestión Pedagógica</p>
+        </div>
     </div>
 
     <!-- LOGICA APP -->
@@ -310,6 +340,7 @@
             appId: "1:701752375464:web:eaab256668b869d026aa9d"
         };
         
+        // URL OFICIAL DE GITHUB PAGES
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
         const USER_ID = "PROFESOR_MANUEL";
 
@@ -411,6 +442,10 @@
                 const promptText = document.getElementById('prompt-text').value;
                 if (promptText.length < 10) return alert("Ingrese un tema.");
                 let key = getAIKey(); if (!key) return;
+                
+                // Recoger FECHAS
+                const startVal = document.getElementById('cfg-start').value;
+                const endVal = document.getElementById('cfg-end').value;
 
                 state.config = {
                     bimestre: document.getElementById('cfg-bimestre').value,
@@ -419,7 +454,10 @@
                     grado: document.getElementById('cfg-grado').value,
                     qCount: parseInt(document.getElementById('cfg-count').value),
                     time: parseInt(document.getElementById('cfg-time').value),
-                    prompt: promptText
+                    prompt: promptText,
+                    // Guardar como fecha real si existe, o null
+                    start: startVal ? new Date(startVal) : null,
+                    end: endVal ? new Date(endVal) : null
                 };
 
                 const btn = document.querySelector('button[onclick="app.generateDraft()"]');
@@ -428,10 +466,13 @@
                 btn.disabled = true;
 
                 try {
-                    const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple. JSON: [{"q":"...","opts":["A","B","C","D"],"a":0}]`;
+                    const sysPrompt = `Genera ${state.config.qCount} preguntas de opción múltiple con EXACTAMENTE 4 alternativas cada una. No uses A, B, C, D en el texto. JSON Array: [{"q":"Pregunta...","opts":["Opcion 1","Opcion 2","Opcion 3","Opcion 4"],"a":0}] (donde 'a' es el índice 0-3 de la correcta)`;
                     const data = await fetchGemini(key, sysPrompt + "\nTEXTO: " + promptText);
                     state.questions = JSON.parse(data.candidates[0].content.parts[0].text);
-                    state.questions.forEach(q => q.a = Number(q.a)); // Asegurar que es número
+                    state.questions.forEach(q => {
+                        q.a = Number(q.a);
+                        if(q.opts.length > 4) q.opts = q.opts.slice(0,4);
+                    });
                     renderReview();
                     navTo('view-review');
                 } catch (e) { alert("Error IA. Revise su llave."); }
@@ -483,6 +524,10 @@
                 document.getElementById('res-title').innerText = `${state.config.area} ${state.config.grado}°`;
                 document.getElementById('res-meta').innerText = examData.active ? "En curso" : "Finalizado";
                 
+                const btn = document.getElementById('btn-lock');
+                btn.innerText = examData.active ? "Bloquear" : "Abrir";
+                btn.className = examData.active ? "text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-bold" : "text-xs bg-green-50 text-green-600 px-2 py-1 rounded font-bold";
+
                 const resSnap = await getDocs(collection(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${id}/respuestas`));
                 state.studentResults = [];
                 tbody.innerHTML = "";
@@ -544,11 +589,42 @@
             },
 
             startStudentMode: async (examId) => {
+                // BLOQUEO POST-EXAMEN 1: Verificar LocalStorage
+                const doneKey = Object.keys(localStorage).find(k => k.startsWith(`done_${examId}_`));
+                if (doneKey) {
+                    navTo('view-blocked');
+                    return;
+                }
+
                 state.currentExamId = examId;
                 const snap = await getDoc(doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados`, examId));
-                if (!snap.exists() || !snap.data().active) return document.body.innerHTML = "<h1 class='p-10 text-center'>Examen no disponible</h1>";
+                
+                if (!snap.exists()) return document.body.innerHTML = "<h1 class='p-10 text-center'>Examen no encontrado</h1>";
                 
                 const data = snap.data();
+                
+                // VALIDACIÓN DE FECHA Y HORA
+                const now = new Date();
+                let startTime = data.config.start;
+                let endTime = data.config.end;
+                
+                // Convertir Timestamps a Date si es necesario
+                if (startTime && startTime.seconds) startTime = new Date(startTime.seconds * 1000);
+                if (endTime && endTime.seconds) endTime = new Date(endTime.seconds * 1000);
+                // Si fueron guardados como string
+                if (startTime && typeof startTime === 'string') startTime = new Date(startTime);
+                if (endTime && typeof endTime === 'string') endTime = new Date(endTime);
+
+                if (!data.active) return document.body.innerHTML = "<h1 class='p-10 text-center text-red-600 font-bold'>Este examen ha sido cerrado por el profesor.</h1>";
+
+                if (startTime && now < startTime) {
+                    return document.body.innerHTML = `<h1 class='p-10 text-center font-bold'>El examen inicia el: <br> ${startTime.toLocaleString()}</h1>`;
+                }
+
+                if (endTime && now > endTime) {
+                    return document.body.innerHTML = `<h1 class='p-10 text-center text-red-600 font-bold'>El tiempo del examen finalizó el: <br> ${endTime.toLocaleString()}</h1>`;
+                }
+                
                 state.questions = data.questions;
                 state.config = data.config;
                 
@@ -573,7 +649,15 @@
             startExam: async () => {
                 const idx = document.getElementById('student-select').value;
                 if (!idx) return alert("Selecciona nombre");
-                if(localStorage.getItem(`done_${state.currentExamId}_${idx}`)) return alert("Ya enviaste este examen.");
+                
+                // BLOQUEO POST-EXAMEN 2: Verificación nube
+                const resRef = doc(state.db, `artifacts/1:701752375464:web:eaab256668b869d026aa9d/users/${USER_ID}/examenes_creados/${state.currentExamId}/respuestas`, `res_${idx}`);
+                const snap = await getDoc(resRef);
+                if (snap.exists()) {
+                     alert("Ya has enviado este examen. No puedes ingresar nuevamente.");
+                     navTo('view-blocked');
+                     return;
+                }
 
                 let photoData = null;
                 if (state.cameraStream) {
@@ -607,15 +691,13 @@
                 document.getElementById('q-total').innerText = state.questions.length;
                 document.getElementById('q-text').innerText = q.q;
                 document.getElementById('progress-bar').style.width = `${(idx/state.questions.length)*100}%`;
-                
-                const c = document.getElementById('q-options'); 
-                c.innerHTML = '';
+                const c = document.getElementById('q-options'); c.innerHTML = '';
                 
                 q.opts.forEach((o, i) => {
                     const btn = document.createElement('button'); 
                     btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white mb-2 flex items-center gap-3 hover:bg-blue-50 transition";
-                    // RESTAURADO DISEÑO CON LETRAS EN CÍRCULO
-                    btn.innerHTML = `<span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center border border-slate-300 text-xs shadow-sm">${String.fromCharCode(65+i)}</span><span class="flex-1">${o}</span>`;
+                    // MODIFICADO: SIN LETRAS, SOLO ÍCONO NEUTRO
+                    btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-xs">●</span><span class="flex-1">${o}</span>`;
                     btn.onclick = () => app.answer(i);
                     c.appendChild(btn);
                 });
@@ -630,7 +712,6 @@
                 clearInterval(state.timer);
                 state.userAnswers[state.questionIdx] = ansIdx;
                 
-                // CORRECCIÓN DE TIPOS (Number) PARA COMPARACIÓN EXACTA
                 const correct = Number(state.questions[state.questionIdx].a);
                 const selected = Number(ansIdx);
 
@@ -638,30 +719,26 @@
                 
                 const btns = document.getElementById('q-options').children;
                 
-                // LÓGICA SEMÁFORO VISUAL
                 if (selected !== -1) {
                     const selectedBtn = btns[selected];
-                    const circle = selectedBtn.querySelector('span'); // El círculo con la letra
+                    const circle = selectedBtn.querySelector('span');
                     
                     if (selected === correct) {
-                        // CORRECTA (VERDE)
                         selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md transform scale-[1.02] transition";
-                        circle.className = "w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center border border-green-600 text-xs shadow-sm";
+                        circle.className = "w-6 h-6 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-xs";
                         circle.innerHTML = "<i class='fas fa-check'></i>";
                     } else {
-                        // INCORRECTA (ROJO)
                         selectedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-red-400 bg-red-50 text-red-800 font-medium mb-2 flex items-center gap-3 opacity-90";
-                        circle.className = "w-8 h-8 rounded-full bg-red-500 text-white font-bold flex items-center justify-center border border-red-600 text-xs shadow-sm";
+                        circle.className = "w-6 h-6 rounded-full bg-red-500 text-white font-bold flex items-center justify-center text-xs";
                         circle.innerHTML = "<i class='fas fa-times'></i>";
                     }
                 }
 
-                // SIEMPRE MOSTRAR LA CORRECTA (Si se equivocó)
                 if (selected !== correct) {
                     const correctBtn = btns[correct];
                     const correctCircle = correctBtn.querySelector('span');
                     correctBtn.className = "w-full text-left p-4 rounded-xl border-2 border-green-500 bg-green-50 text-green-800 font-bold mb-2 flex items-center gap-3 shadow-md";
-                    correctCircle.className = "w-8 h-8 rounded-full bg-green-500 text-white font-bold flex items-center justify-center border border-green-600 text-xs shadow-sm";
+                    correctCircle.className = "w-6 h-6 rounded-full bg-green-500 text-white font-bold flex items-center justify-center text-xs";
                     correctCircle.innerHTML = "<i class='fas fa-check'></i>";
                 }
                 
