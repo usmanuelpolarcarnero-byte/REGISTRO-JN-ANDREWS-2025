@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGen AI - I.E. JN ANDREWS (Recuperación)</title>
+    <title>EduGen AI - I.E. JN ANDREWS (Recuperación Auth)</title>
     
     <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.5 (Historial Alumno)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.6 (Auth Fix)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -210,7 +210,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="app.generateGroupReport()" class="bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-600">📢 Reporte Grupal</button>
-                    <button onclick="app.syncOfficial()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700"☁️ Sincronizar</button>
+                    <button onclick="app.syncOfficial()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar</button>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
@@ -339,7 +339,7 @@
     <!-- LOGICA APP -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; // IMPORTANTE: signInWithCustomToken
         import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // === CONFIGURACIÓN ===
@@ -1151,8 +1151,18 @@
                 const appInstance = initializeApp(firebaseConfig);
                 state.auth = getAuth(appInstance);
                 state.db = getFirestore(appInstance);
-                await signInAnonymously(state.auth);
-                console.log("Firebase Conectado");
+
+                // --- AUTENTICACIÓN MEJORADA ---
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    console.log("Intentando Auth con Token...");
+                    await signInWithCustomToken(state.auth, __initial_auth_token);
+                } else {
+                    console.log("Intentando Auth Anónima...");
+                    await signInAnonymously(state.auth);
+                }
+                
+                // DIAGNÓSTICO
+                console.log("Firebase Conectado. UID:", state.auth.currentUser ? state.auth.currentUser.uid : "No User");
 
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('q')) {
@@ -1163,13 +1173,17 @@
                     window.app.startTeacherMode();
                 }
             } catch (e) {
-                console.error("Error init:", e);
-                // Interfaz de error amigable en lugar de pantalla blanca
-                document.body.innerHTML += `<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 text-white p-4 text-center">
+                console.error("Error crítico de inicio:", e);
+                let msg = "Error de conexión. Verifica tu internet.";
+                if(e.code && e.code.includes('permission')) msg = "Error de Permisos: Las reglas de la base de datos pueden haber caducado.";
+                
+                document.body.innerHTML += `<div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 text-white p-6 text-center">
                     <div>
-                        <h2 class="text-xl font-bold text-red-400 mb-2">Error de Conexión</h2>
-                        <p class="text-sm mb-4">No se pudo conectar con la base de datos.</p>
-                        <button onclick="location.reload()" class="bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200">Reintentar</button>
+                        <div class="text-4xl mb-4">⚠️</div>
+                        <h2 class="text-xl font-bold text-red-400 mb-2">Error de Sistema</h2>
+                        <p class="text-sm mb-4 text-gray-300">${msg}</p>
+                        <p class="text-[10px] text-gray-500 font-mono mb-4 bg-black p-2 rounded border border-gray-800">${e.message}</p>
+                        <button onclick="location.reload()" class="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-200 transition">Reintentar</button>
                     </div>
                 </div>`;
             }
