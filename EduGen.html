@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.4 (Recuperación de Datos)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.5 (Historial Alumno)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -210,7 +210,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="app.generateGroupReport()" class="bg-[#25D366] text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-600">📢 Reporte Grupal</button>
-                    <button onclick="app.syncOfficial()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700">☁️ Sincronizar</button>
+                    <button onclick="app.syncOfficial()" class="bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-blue-700"☁️ Sincronizar</button>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200">
@@ -234,6 +234,11 @@
                     <select id="student-select" class="w-full p-3 rounded-xl border-2 border-slate-200 bg-white focus:border-blue-500 outline-none text-sm font-bold"></select>
                 </div>
                 
+                <!-- NUEVO BOTÓN HISTORIAL -->
+                <button onclick="app.checkHistory()" class="w-full bg-blue-100 text-blue-700 font-bold py-3 rounded-xl shadow-sm hover:bg-blue-200 text-xs flex items-center justify-center gap-2">
+                    <i class="fas fa-history"></i> 📜 Ver Mis Notas Anteriores
+                </button>
+
                 <!-- CÁMARA PARA SELFIE -->
                 <div class="border-2 border-dashed border-slate-300 rounded-xl p-2 bg-slate-50 text-center">
                     <label class="text-xs font-bold text-slate-400 block mb-2">2. Verificación Facial (Obligatorio)</label>
@@ -248,6 +253,20 @@
                 </div>
 
                 <button id="btn-start-exam" onclick="app.startExam()" class="btn-primary w-full text-white font-bold py-4 rounded-xl shadow-lg opacity-50 cursor-not-allowed" disabled>COMENZAR EXAMEN</button>
+            </div>
+        </div>
+
+        <!-- NUEVA VISTA: HISTORIAL DEL ALUMNO -->
+        <div id="view-student-history" class="view-section p-6 space-y-4 hidden h-full flex flex-col">
+            <div class="flex items-center gap-2 mb-4">
+                <button onclick="app.navTo('view-student-login')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-arrow-left"></i></button>
+                <h2 class="text-lg font-bold text-blue-900">Mis Notas Anteriores</h2>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
+                <p class="text-xs text-blue-800 font-bold" id="hist-student-name">...</p>
+            </div>
+            <div id="student-history-list" class="flex-1 overflow-y-auto space-y-2">
+                <!-- LISTA DE NOTAS -->
             </div>
         </div>
 
@@ -810,6 +829,71 @@
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { active: !snap.data().active });
                 app.loadResults(state.currentExamId);
+            },
+
+            // --- FUNCIÓN NUEVA: VER NOTAS ANTERIORES ---
+            checkHistory: async () => {
+                const studentIdx = document.getElementById('student-select').value;
+                if(!studentIdx) return alert("Por favor selecciona tu nombre primero.");
+                
+                const studentName = database[state.config.nivel][state.config.grado][studentIdx];
+                document.getElementById('hist-student-name').innerText = `Estudiante: ${studentName}`;
+                
+                const listDiv = document.getElementById('student-history-list');
+                listDiv.innerHTML = '<div class="flex justify-center p-4"><div class="loader"></div></div>';
+                
+                navTo('view-student-history');
+                
+                try {
+                    // 1. Obtener TODOS los exámenes creados por el profesor
+                    const examsSnap = await getDocs(collection(state.db, `artifacts/${APP_ID}/users/${USER_ID}/examenes_creados`));
+                    let historyHtml = "";
+                    let foundCount = 0;
+
+                    // 2. Iterar y buscar si este alumno tiene respuesta en cada uno
+                    for (const examDoc of examsSnap.docs) {
+                        const examData = examDoc.data();
+                        
+                        // Solo buscar si el examen es del mismo nivel/grado para optimizar (opcional, pero recomendado)
+                        if(examData.config && examData.config.nivel === state.config.nivel && examData.config.grado === state.config.grado) {
+                            
+                            // Buscar la respuesta específica de este alumno
+                            const resRef = doc(state.db, `artifacts/${APP_ID}/users/${USER_ID}/examenes_creados/${examDoc.id}/respuestas`, `res_${studentIdx}`);
+                            const resSnap = await getDoc(resRef);
+                            
+                            if (resSnap.exists()) {
+                                foundCount++;
+                                const resData = resSnap.data();
+                                const note = getMinedu(resData.score, resData.total);
+                                const date = resData.timestamp ? resData.timestamp.toDate().toLocaleDateString() : "---";
+                                const title = examData.config.title || examData.config.area;
+
+                                historyHtml += `
+                                <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-800">${title}</p>
+                                        <p class="text-[10px] text-slate-400">${date}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="${note.C} font-bold text-lg">${note.L}</span>
+                                        <p class="text-[9px] text-slate-400">${resData.score}/${resData.total}</p>
+                                    </div>
+                                </div>`;
+                            }
+                        }
+                    }
+
+                    if(foundCount === 0) {
+                        listDiv.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">No se encontraron exámenes anteriores para este alumno.</div>`;
+                    } else {
+                        listDiv.innerHTML = historyHtml;
+                    }
+
+                } catch(e) {
+                    console.error(e);
+                    alert("Error cargando historial: " + e.message);
+                    navTo('view-student-login');
+                }
             },
 
             startStudentMode: async (examId) => {
