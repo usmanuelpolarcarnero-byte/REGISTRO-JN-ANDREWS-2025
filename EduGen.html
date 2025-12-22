@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGen AI - I.E. JN ANDREWS (Universal Fix)</title>
+    <title>EduGen AI - I.E. JN ANDREWS (Recuperación Total)</title>
     
     <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -49,7 +49,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.9 (Buscador Universal)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v8.0 (Recuperación Local/Nube)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -347,7 +347,6 @@
         };
         
         // --- CONSTANTES ---
-        // IMPORTANTE: USAMOS EL ID FIJO ORIGINAL
         const FIXED_APP_ID = "1:701752375464:web:eaab256668b869d026aa9d"; 
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
         const LEGACY_USER_ID = "PROFESOR_MANUEL"; 
@@ -560,24 +559,51 @@
                     let allExams = [];
                     let errors = [];
 
-                    // ESTRATEGIA DE BÚSQUEDA TRIPLE (PÚBLICA, LEGADO, PRIVADA)
+                    // --- ESTRATEGIA DE BÚSQUEDA CUÁDRUPLE ---
 
-                    // 1. CARGAR EXAMENES PÚBLICOS (NUEVOS)
+                    // 1. MEMORIA LOCAL (LocalStorage - v7.5 y anteriores)
+                    // Si el usuario guardó exámenes en el dispositivo, están aquí.
+                    try {
+                        const localData = localStorage.getItem('examHistory'); // Revisa clave antigua
+                        if (localData) {
+                            const parsed = JSON.parse(localData);
+                            if (Array.isArray(parsed)) {
+                                parsed.forEach(ex => {
+                                    // Adaptar formato local al formato Firestore
+                                    allExams.push({
+                                        id: `local_${ex.id}`,
+                                        config: {
+                                            title: ex.title || "Examen Local",
+                                            area: "Local",
+                                            grado: "",
+                                            nivel: ""
+                                        },
+                                        createdAt: { toDate: () => new Date(ex.date || Date.now()) },
+                                        active: true, // Asumimos activos
+                                        type: 'local',
+                                        originalData: ex // Guardar datos originales para mostrar resultados
+                                    });
+                                });
+                            }
+                        }
+                    } catch(e) { console.warn("Local err", e); }
+
+                    // 2. CARGAR EXAMENES PÚBLICOS (NUEVOS)
                     try {
                         const qPublic = collection(state.db, `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`);
-                        const q = query(qPublic, where("creatorId", "==", state.userId));
-                        const snapPublic = await getDocs(q);
+                        // Sin filtro de creador para ver todo lo público por ahora (Debug)
+                        const snapPublic = await getDocs(qPublic);
                         snapPublic.forEach(doc => allExams.push({ id: doc.id, ...doc.data(), type: 'public' }));
                     } catch(e) { console.warn("Public err", e); errors.push("Public: " + e.code); }
 
-                    // 2. INTENTAR RECUPERAR EXÁMENES ANTIGUOS (LEGACY PROFESOR_MANUEL)
+                    // 3. INTENTAR RECUPERAR EXÁMENES ANTIGUOS (LEGACY PROFESOR_MANUEL)
                     try {
                         const qLegacy = collection(state.db, `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`);
                         const snapLegacy = await getDocs(qLegacy);
                         snapLegacy.forEach(doc => allExams.push({ id: doc.id, ...doc.data(), type: 'legacy' }));
                     } catch(e) { console.warn("Legacy err", e); errors.push("Legacy: " + e.code); }
 
-                    // 3. INTENTAR CARPETA PRIVADA ACTUAL (Por si acaso)
+                    // 4. INTENTAR CARPETA PRIVADA ACTUAL
                     try {
                         const qPrivate = collection(state.db, `artifacts/${FIXED_APP_ID}/users/${state.userId}/examenes_creados`);
                         const snapPrivate = await getDocs(qPrivate);
@@ -588,18 +614,22 @@
                     const uniqueExams = Array.from(new Map(allExams.map(item => [item.id, item])).values());
 
                     if (uniqueExams.length === 0) {
-                        list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No se encontraron exámenes.</p>';
+                        list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No se encontraron exámenes (ni locales ni en nube).</p>';
                         debug.classList.remove('hidden');
-                        debug.innerText = "Diagnóstico: " + errors.join(", ");
+                        debug.innerText = "Diagnóstico Nube: " + errors.join(", ");
                         return;
                     }
 
                     // ORDENAR POR FECHA
-                    uniqueExams.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    uniqueExams.sort((a,b) => {
+                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+                        return dateB - dateA;
+                    });
 
                     list.innerHTML = "";
                     uniqueExams.forEach(d => {
-                        if (!d.config) return;
+                        if (!d.config && d.type !== 'local') return;
 
                         const date = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString() : 'Sin fecha';
                         const status = d.active ? '<span class="text-green-500">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
@@ -607,15 +637,20 @@
                         
                         let typeLabel = "";
                         if (d.type === 'legacy') typeLabel = '<span class="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded ml-1">Recuperado</span>';
+                        if (d.type === 'local') typeLabel = '<span class="text-[9px] bg-purple-100 text-purple-700 px-1 rounded ml-1">Local</span>';
                         
+                        // Si es local, usamos una función diferente para ver resultados
+                        const clickAction = d.type === 'local' ? `app.viewLocalResults('${d.id}')` : `app.loadResults('${d.id}', '${d.type}')`;
+                        const deleteAction = d.type === 'local' ? `app.deleteLocalExam('${d.originalData.id}', event)` : `app.deleteExam('${d.id}', '${d.type}', event)`;
+
                         list.innerHTML += `
                         <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center hover:bg-slate-50 transition">
-                            <div onclick="app.loadResults('${d.id}', '${d.type}')" class="flex-1 cursor-pointer">
+                            <div onclick="${clickAction}" class="flex-1 cursor-pointer">
                                 <p class="text-xs font-bold text-blue-900 flex items-center">${titleDisplay} ${typeLabel}</p>
-                                <p class="text-[10px] text-slate-400">${d.config.area ? d.config.area.toUpperCase() : ''} ${d.config.grado}° • ${date} • ${status}</p>
+                                <p class="text-[10px] text-slate-400">${d.config.area ? d.config.area.toUpperCase() : ''} ${d.config.grado || ''} • ${date} • ${status}</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                 <button onclick="app.deleteExam('${d.id}', '${d.type}', event)" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                                 <button onclick="${deleteAction}" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
                                  <i class="fas fa-chevron-right text-slate-300"></i>
                             </div>
                         </div>`;
@@ -626,6 +661,78 @@
                 }
             },
             
+            // --- NUEVO: GESTIÓN DE EXÁMENES LOCALES ---
+            viewLocalResults: (fakeId) => {
+                // Encontrar el examen en el array temporal o volver a leer localStorage
+                // Simplificación: leer localStorage y buscar por ID
+                const localData = JSON.parse(localStorage.getItem('examHistory') || '[]');
+                // El ID en localData es numérico, en fakeId viene como "local_123"
+                const realId = parseInt(fakeId.replace('local_', ''));
+                const exam = localData.find(e => e.id === realId);
+                
+                if (!exam) return alert("Examen local no encontrado.");
+
+                navTo('view-results-teacher');
+                document.getElementById('res-title').innerText = exam.title || "Examen Local";
+                document.getElementById('res-meta').innerText = "Almacenado en dispositivo";
+                document.getElementById('btn-lock').style.display = 'none'; // No se puede bloquear localmente igual
+
+                const tbody = document.getElementById('res-table');
+                const repBody = document.getElementById('rep-body');
+                tbody.innerHTML = "";
+                repBody.innerHTML = "";
+
+                if (exam.results && Array.isArray(exam.results)) {
+                    exam.results.forEach(r => {
+                        // Adaptar formato local antiguo al nuevo visualizador
+                        // Formato antiguo local: { isCorrect: true/false, questionText: "...", selectedText: "...", ... }
+                        // No tiene "student name" porque era un examen personal de prueba?
+                        // OJO: La versión 7.5 React NO tenía login de alumnos, era un quiz directo.
+                        // Por tanto, estos resultados son del USUARIO (Profesor probando) o un solo alumno.
+                        // Los mostraremos como "Intento Registrado".
+                        
+                        const score = exam.results.filter(res => res.isCorrect).length;
+                        const total = exam.questions.length;
+                        const nota = getMinedu(score, total);
+
+                        // Como es un solo intento guardado en local, mostramos una sola fila
+                        // O si el historial guarda MÚLTIPLES intentos de exámenes diferentes, mostramos el resumen.
+                        // El objeto 'exam' es UN examen completado.
+                        
+                        tbody.innerHTML = `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 text-slate-700 text-xs">Resultado Local</td>
+                            <td class="p-2 text-center"><span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span></td>
+                            <td class="p-2 text-center text-xs">${score}/${total}</td>
+                        </tr>`;
+                        
+                        // Solo una vez
+                        return; 
+                    });
+                    
+                    // Si el examen local guarda el resultado global directamente
+                    const correctCount = exam.results.filter(r => r.isCorrect).length;
+                    const totalCount = exam.questions.length;
+                    const nota = getMinedu(correctCount, totalCount);
+                    
+                    tbody.innerHTML = `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2 text-slate-700 text-xs font-bold">Usuario Local</td>
+                            <td class="p-2 text-center"><span class="${nota.C} font-bold px-2 rounded bg-slate-100">${nota.L}</span></td>
+                            <td class="p-2 text-center text-xs text-gray-500">${correctCount}/${totalCount}</td>
+                        </tr>`;
+                }
+            },
+
+            deleteLocalExam: (id, event) => {
+                event.stopPropagation();
+                if(!confirm("¿Borrar de memoria local?")) return;
+                const localData = JSON.parse(localStorage.getItem('examHistory') || '[]');
+                const newData = localData.filter(e => e.id !== id);
+                localStorage.setItem('examHistory', JSON.stringify(newData));
+                app.loadExams();
+            },
+
             deleteExam: async (id, type, event) => {
                 event.stopPropagation();
                 if(!confirm("¿Eliminar examen?")) return;
@@ -651,6 +758,7 @@
                 const tbody = document.getElementById('res-table');
                 const repBody = document.getElementById('rep-body');
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
+                document.getElementById('btn-lock').style.display = 'block';
                 
                 try {
                     let collectionPath;
