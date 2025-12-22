@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGen AI - I.E. JN ANDREWS (Public Fix)</title>
+    <title>EduGen AI - I.E. JN ANDREWS (Universal Fix)</title>
     
     <!-- LIBRERÍAS EXTERNAS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -49,7 +49,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm font-bold leading-tight">I.E. J.N. ANDREWS</h1>
-                    <p class="text-[10px] text-blue-200">EduGen AI v7.8 (Public Architecture)</p>
+                    <p class="text-[10px] text-blue-200">EduGen AI v7.9 (Buscador Universal)</p>
                     <p class="text-[9px] text-yellow-300 font-medium flex items-center gap-1">
                         <i class="fas fa-chalkboard-teacher"></i> Prof. Manuel Polar Carnero
                     </p>
@@ -88,7 +88,8 @@
             </div>
 
             <div id="exam-list-container" class="hidden">
-                <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Historial</h3>
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Historial Completo</h3>
+                <div id="exam-debug-info" class="text-[10px] text-red-400 mb-2 hidden"></div>
                 <div id="exam-list" class="space-y-2"></div>
             </div>
         </div>
@@ -346,9 +347,10 @@
         };
         
         // --- CONSTANTES ---
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : "1:701752375464:web:eaab256668b869d026aa9d";
+        // IMPORTANTE: USAMOS EL ID FIJO ORIGINAL
+        const FIXED_APP_ID = "1:701752375464:web:eaab256668b869d026aa9d"; 
         const BASE_URL = "https://usmanuelpolarcarnero-byte.github.io/REGISTRO-JN-ANDREWS-2025/EduGen.html";
-        const LEGACY_USER_ID = "PROFESOR_MANUEL"; // Para recuperar datos antiguos
+        const LEGACY_USER_ID = "PROFESOR_MANUEL"; 
 
         const database = {
             primaria: { "1": ["BOLIVAR HILARIO, Jazmin", "ESTRADA ANCASI, Alisson", "GASPAR VIZCARDO, Alessandro", "HUITTOCCOLLO HUARACCONE, Tania", "LEGUIA VEGA Jairo Isai", "LOZANO COAQUIRA, Jerry Matt", "MAMANI VILLAFUERTE, Estrellita Luz Celeste", "MESCCO OLMEDA, Lucia Camila", "MIRAMIRA GUTIERREZ Emily Valeria", "MOLLEAPAZA VALERIANO, Isabella Romina", "MONTEZA FLORIAN, Jheyli Katherine", "MORAN GOZME, Brenda Nicol", "MOROCHARA HUACCHA, Arthur Dylan", "PUERTAS AGUILAR Kalet Gael", "QUISPE MARIN, Stefano Fabián", "RAMOS TICONA, Liam Caleb", "TORRES CHISI, Luciana Michelle", "ZEGARA ANDRADE Maritza Noemí"], "2": ["CALCINA QUISPE Nicole Kiara", "CHAMBI CHAMBI Lucy Cristel", "CHOQUEPATA MAMANI Ayddam Mateo", "DIAZ CAPACOILA, Greissy Camila", "GUZMAN CCAMA Dorud Emir", "HUAMANI HUALLA Sofía Guadalupe", "HUAYCHO HUACANI, Lucero Krissia", "MAMANI APAZA Leonard Josías", "MONTEZA RIVAS Geral Mihael", "OCSA LLANQUIRE Thiago Hernán", "ORTEGA QUISPE Kaleb Richard", "PONCE CARDENAS Lía Antonella", "RAVELO PACCO, Arjen Thyago", "SACSI QUISPE Yelina Maite", "SALAZAR PÉREZ Juan David", "TAIPE DE LA CRUZ Vasthy Andrea", "TORRES PAUCCARA Marcos Sebastián", "VILLAFUERTE TICONA Luis Ángel"], "3": ["AMANQUI YANARICO, Ana Divora", "ARIZA CASTRO Antonela Kendall", "AROCUTIPA MAMANI, Roció Yamileth", "CALCINA MURILLO, Thiago Jhunior", "CCANCHILLO TORRES, Jesús Franco", "CHAMBI VILCA Nicol Abigail", "CONDORI QUISPE, Raquel Amira", "HUITTOCCOLLO HUARACCONE, Jhans Roly", "MAMANI QUISPE, Dayana Nicol", "MAMANI QUISPE, Shirley Abigail", "MAMANI RAMOS, Lesly Abigail", "MAQUERA ROMERO, Esteyci Alejandra", "MELENDEZ PEÑAFIEL, Dayiro Albert", "MELENDEZ PEÑAFIEL, Moisés Leonel", "MOLLEAPAZA VALERIANO, Evangelina Shamara", "OSORIO IMATA, Keyla", "PACCO LOPE, Lionard Griezmann", "QUELLCA CHOQUEPATA, Thiago Luan", "QUISPE CAMALA, José Manuel", "QUISPE CAMALA, Juan Manuel", "QUISPE CHAUPI, Misael Matías"], "4": ["ANCCALLE MERMA, Jesús", "APAZA GIRALDO NICOLAS NEYMAR", "CHOQUENAIRA PONTECIL, Neymar", "CORDERO MONTEZ, Williannys Anabella", "CUTIMBO TACUMA, Esaú Alvaro", "GUZMAN SEVILLANO, Sebastián Lian", "HUARICCALLO HUACHO Clhoe Allison", "MAMANI PAUCCAR, Zaza Jeison", "PHALA TORRES, Israel José", "QUISPE HUAMANI, Angie Medeley", "QUISPE QUISPE, Luz Kiara", "VALDEZ SUNI, Evelyn Adaluz", "YAULI QUISPE, Zebasthian Luis"], "5": ["ANCASI VILLAFUETE Andrea Edith", "APAZA MAMANI Mateo Jacob", "AROCUTIPA MAMANI Dayiro Jheampol", "BATALLANOS SALHUA Alía Luz", "BELÓN AQUINO Joaquín Jhared", "CAPRISTANO AYNAYA Yamilett lucero", "CHORA COAQUIRA Tiago Mateo", "CRUZ ROJAS Nicole", "GUZMAN CCAMA Sebastián Rodrigo", "HUITTOCCOLLO HUARACCONE Leydi Nicol", "LAURA SUPA Hebert Antony", "LIZARRAGA TICONA Dylan Caleb", "MACHUCA CRUZ Ghislaine", "MAMANI ROJAS Alejandra Celeste", "MANCHA COAQUIRA Wilmar Junior", "MIRAMIRA GUTIERREZ Elías Samuel", "OCSA LLANQUIRE Brianna jazmin", "PACCO LOPE Naydelyn Candy", "QUISPE MARAS Eymi Alondra", "QUISPE QUISPE Eduardo Sebastián", "RUIZ TITO Arjen Brenner", "SACSI QUISPE Romina Yamilet", "TAIPE DE LA CRUZ Nerina", "YNOFUENTE CANAHUIRI Sheyla Nicole", "YUCRA SULLA Ian Luis Eidan"], "6": ["BARRIONUEVO CASTRO, Jeyko Paul", "BRINGAS JUAREZ, Bryams Jhamilth", "CALCINA MURILLO, Nicol Nataly", "CALDERON CARDENAS, Kiara Samira", "CAMI VILLAVICENCIO, Yhojan Yoset", "COAQUIRA CONDO, Briseth Ashlee", "DE LA CRUZ CONDORI, Jorvic Steeven", "ESTRADA ANCASI, Joshemir Anthony", "GASPAR VIZCARDO, Randy Oscar", "LIPA CASCAMAYTA, Rouse Perla Nicole", "LLANQUE ALMIRON, Hassiel Brigitte", "MANCHA MAMANI, Yidda Abigail", "MANCHA ROJAS, Dheivy Maycol", "OSORIO IMATA, Liz", "PALOMINO REYES, Naomi Eliana", "PEÑA ARANIBAR, Rihana Franshesca", "QUISPE CAMALA, Ana Gabriela", "SANTILLAN NEYRA, Cristhoper Luis Ángel", "TICONA RIOS, Jhon Joshiro", "VARGAS CHOQUE, Patrick Rodrigo", "YAULI QUISPE, Juan Diego"] },
@@ -527,7 +529,7 @@
             publishExam: async () => {
                 try {
                     // CAMBIO CRÍTICO: GUARDAR EN RUTA PÚBLICA PARA QUE EL ALUMNO PUEDA LEERLO
-                    const docRef = await addDoc(collection(state.db, `artifacts/${APP_ID}/public/data/examenes_creados`), {
+                    const docRef = await addDoc(collection(state.db, `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`), {
                         config: state.config,
                         questions: state.questions,
                         active: true,
@@ -550,50 +552,66 @@
 
             loadExams: async () => {
                 const list = document.getElementById('exam-list');
+                const debug = document.getElementById('exam-debug-info');
                 list.innerHTML = '<div class="flex justify-center p-4"><div class="loader"></div></div>'; 
                 document.getElementById('exam-list-container').classList.remove('hidden');
                 
                 try {
                     let allExams = [];
+                    let errors = [];
+
+                    // ESTRATEGIA DE BÚSQUEDA TRIPLE (PÚBLICA, LEGADO, PRIVADA)
 
                     // 1. CARGAR EXAMENES PÚBLICOS (NUEVOS)
                     try {
-                        const qPublic = collection(state.db, `artifacts/${APP_ID}/public/data/examenes_creados`);
-                        // Filtramos solo los creados por este profesor
+                        const qPublic = collection(state.db, `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`);
                         const q = query(qPublic, where("creatorId", "==", state.userId));
                         const snapPublic = await getDocs(q);
                         snapPublic.forEach(doc => allExams.push({ id: doc.id, ...doc.data(), type: 'public' }));
-                    } catch(e) { console.warn("No public exams yet", e); }
+                    } catch(e) { console.warn("Public err", e); errors.push("Public: " + e.code); }
 
-                    // 2. INTENTAR RECUPERAR EXÁMENES ANTIGUOS (LEGACY)
-                    // Esto intenta leer la ruta antigua por si las reglas lo permiten
+                    // 2. INTENTAR RECUPERAR EXÁMENES ANTIGUOS (LEGACY PROFESOR_MANUEL)
                     try {
-                        const qLegacy = collection(state.db, `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`);
+                        const qLegacy = collection(state.db, `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`);
                         const snapLegacy = await getDocs(qLegacy);
                         snapLegacy.forEach(doc => allExams.push({ id: doc.id, ...doc.data(), type: 'legacy' }));
-                    } catch(e) { console.warn("Legacy access denied", e); }
+                    } catch(e) { console.warn("Legacy err", e); errors.push("Legacy: " + e.code); }
 
-                    if (allExams.length === 0) {
-                        list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No hay exámenes. Crea uno nuevo.</p>';
+                    // 3. INTENTAR CARPETA PRIVADA ACTUAL (Por si acaso)
+                    try {
+                        const qPrivate = collection(state.db, `artifacts/${FIXED_APP_ID}/users/${state.userId}/examenes_creados`);
+                        const snapPrivate = await getDocs(qPrivate);
+                        snapPrivate.forEach(doc => allExams.push({ id: doc.id, ...doc.data(), type: 'private' }));
+                    } catch(e) { console.warn("Private err", e); }
+
+                    // ELIMINAR DUPLICADOS POR ID
+                    const uniqueExams = Array.from(new Map(allExams.map(item => [item.id, item])).values());
+
+                    if (uniqueExams.length === 0) {
+                        list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No se encontraron exámenes.</p>';
+                        debug.classList.remove('hidden');
+                        debug.innerText = "Diagnóstico: " + errors.join(", ");
                         return;
                     }
 
                     // ORDENAR POR FECHA
-                    allExams.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    uniqueExams.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
                     list.innerHTML = "";
-                    allExams.forEach(d => {
+                    uniqueExams.forEach(d => {
                         if (!d.config) return;
 
                         const date = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString() : 'Sin fecha';
                         const status = d.active ? '<span class="text-green-500">Activo</span>' : '<span class="text-red-500">Cerrado</span>';
                         const titleDisplay = d.config.title ? d.config.title : `${d.config.area ? d.config.area.toUpperCase() : 'SIN AREA'} - ${d.config.grado}°`;
-                        const typeLabel = d.type === 'legacy' ? '<span class="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded">Antiguo</span>' : '';
-
+                        
+                        let typeLabel = "";
+                        if (d.type === 'legacy') typeLabel = '<span class="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded ml-1">Recuperado</span>';
+                        
                         list.innerHTML += `
                         <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center hover:bg-slate-50 transition">
                             <div onclick="app.loadResults('${d.id}', '${d.type}')" class="flex-1 cursor-pointer">
-                                <p class="text-xs font-bold text-blue-900 flex items-center gap-2">${titleDisplay} ${typeLabel}</p>
+                                <p class="text-xs font-bold text-blue-900 flex items-center">${titleDisplay} ${typeLabel}</p>
                                 <p class="text-[10px] text-slate-400">${d.config.area ? d.config.area.toUpperCase() : ''} ${d.config.grado}° • ${date} • ${status}</p>
                             </div>
                             <div class="flex items-center gap-2">
@@ -604,7 +622,7 @@
                     });
                 } catch (e) { 
                     console.error(e); 
-                    list.innerHTML = `<div class="bg-red-50 p-4 rounded-lg text-center"><p class="text-red-600 text-xs">Error cargando lista: ${e.message}</p></div>`;
+                    list.innerHTML = `<div class="bg-red-50 p-4 rounded-lg text-center"><p class="text-red-600 text-xs">Error general: ${e.message}</p></div>`;
                 }
             },
             
@@ -613,9 +631,10 @@
                 if(!confirm("¿Eliminar examen?")) return;
                 
                 try {
-                    const path = type === 'legacy' 
-                        ? `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`
-                        : `artifacts/${APP_ID}/public/data/examenes_creados`;
+                    let path;
+                    if(type === 'legacy') path = `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`;
+                    else if(type === 'public') path = `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`;
+                    else path = `artifacts/${FIXED_APP_ID}/users/${state.userId}/examenes_creados`;
                         
                     await deleteDoc(doc(state.db, path, id));
                     alert("Eliminado.");
@@ -627,17 +646,17 @@
 
             loadResults: async (id, type = 'public') => {
                 state.currentExamId = id;
-                state.currentType = type; // Guardamos el tipo para saber dónde buscar
+                state.currentType = type; 
                 navTo('view-results-teacher');
                 const tbody = document.getElementById('res-table');
                 const repBody = document.getElementById('rep-body');
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando...</td></tr>';
                 
                 try {
-                    // DETERMINAR RUTA SEGÚN TIPO
-                    const collectionPath = type === 'legacy' 
-                        ? `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`
-                        : `artifacts/${APP_ID}/public/data/examenes_creados`;
+                    let collectionPath;
+                    if(type === 'legacy') collectionPath = `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`;
+                    else if(type === 'public') collectionPath = `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`;
+                    else collectionPath = `artifacts/${FIXED_APP_ID}/users/${state.userId}/examenes_creados`;
 
                     const examSnap = await getDoc(doc(state.db, collectionPath, id));
                     
@@ -656,7 +675,6 @@
                     const btn = document.getElementById('btn-lock');
                     btn.innerText = examData.active ? "Bloquear" : "Abrir";
                     
-                    // CARGAR RESPUESTAS
                     const resSnap = await getDocs(collection(state.db, `${collectionPath}/${id}/respuestas`));
                     
                     const responsesMap = {};
@@ -665,7 +683,6 @@
                         responsesMap[r.studentIndex] = r;
                     });
 
-                    // RENDERIZAR TABLA (Lógica idéntica a la anterior)
                     const levelData = database[state.config.nivel];
                     if (!levelData) throw new Error("Error de datos en Nivel");
                     const fullClassList = levelData[state.config.grado];
@@ -769,14 +786,14 @@
 
             syncOfficial: async () => {
                 if(!confirm("¿Sincronizar notas?")) return;
-                // Lógica de sincronización omitida por brevedad, usa la misma estructura anterior pero con state.studentResults
                 alert("Función disponible en versión completa.");
             },
 
             toggleLock: async () => {
-                const collectionPath = state.currentType === 'legacy' 
-                        ? `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`
-                        : `artifacts/${APP_ID}/public/data/examenes_creados`;
+                let collectionPath;
+                if(state.currentType === 'legacy') collectionPath = `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`;
+                else if(state.currentType === 'public') collectionPath = `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`;
+                else collectionPath = `artifacts/${FIXED_APP_ID}/users/${state.userId}/examenes_creados`;
                 
                 const ref = doc(state.db, collectionPath, state.currentExamId);
                 const snap = await getDoc(ref);
@@ -792,19 +809,19 @@
                 state.currentExamId = examId;
                 
                 // INTENTO 1: Buscar en ruta PÚBLICA (NUEVO ESTÁNDAR)
-                let snap = await getDoc(doc(state.db, `artifacts/${APP_ID}/public/data/examenes_creados`, examId));
-                let collectionPath = `artifacts/${APP_ID}/public/data/examenes_creados`;
+                let snap = await getDoc(doc(state.db, `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`, examId));
+                let collectionPath = `artifacts/${FIXED_APP_ID}/public/data/examenes_creados`;
 
                 // INTENTO 2: Si falla, buscar en ruta LEGACY
                 if (!snap.exists()) {
                     console.log("No encontrado en público, buscando en legacy...");
-                    snap = await getDoc(doc(state.db, `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`, examId));
-                    collectionPath = `artifacts/${APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`;
+                    snap = await getDoc(doc(state.db, `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`, examId));
+                    collectionPath = `artifacts/${FIXED_APP_ID}/users/${LEGACY_USER_ID}/examenes_creados`;
                 }
                 
                 if (!snap.exists()) return document.body.innerHTML = "<h1 class='p-10 text-red-600'>Examen no encontrado.</h1>";
                 
-                state.currentCollectionPath = collectionPath; // Guardar ruta para guardar respuesta
+                state.currentCollectionPath = collectionPath; 
                 const data = snap.data();
                 state.config = data.config;
 
@@ -866,7 +883,6 @@
                 const idx = document.getElementById('student-select').value;
                 if (!idx || !state.selfie) return alert("Completa los datos.");
                 
-                // Usamos la ruta dinámica descubierta en startStudentMode
                 const resRef = doc(state.db, `${state.currentCollectionPath}/${state.currentExamId}/respuestas`, `res_${idx}`);
                 const snap = await getDoc(resRef);
                 if(snap.exists()) return alert("Ya existe un registro.");
@@ -944,6 +960,7 @@
                         studentIndex: state.currentStudent.idx,
                         score: state.score,
                         total: total,
+                        percentage: (state.score/total)*100,
                         timestamp: Timestamp.now(),
                         answers: state.userAnswers,
                         selfie: state.selfie 
