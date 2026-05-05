@@ -1,0 +1,3089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Auxiliar v8.2 - Sistema Completo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        @media print {
+            body { font-family: 'Arial', sans-serif; background: white; }
+            #controles, #header-titulo, #footer, #seccion-ia, #seccion-reportes, .btn-reporte, #seccion-conclusiones-ui, #custom-modal-ui, #seccion-sesion-sugerida, .delete-btn, #panel-gestion-temas, #status-bar, #modal-gestion-alumnos, #modal-grupos, #seccion-modalidad, #modal-individual, #selector-año, .indicador-carga, .btn-descargar, .btn-editar-evidencia, #modal-borrar-fecha { display: none !important; }
+            #tabla-registro { display: block !important; width: 100%; margin: 0; padding: 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 9px; }
+            th, td { border: 1px solid #000; padding: 2px; text-align: center; }
+            select { display: none; }
+            .print-value { display: inline !important; font-size: 10px; color: #000; }
+            th { -webkit-print-color-adjust: exact; }
+            .th-capacidad { height: auto !important; font-size: 8px !important; border-bottom: 1px solid #000 !important; }
+            .th-desempeno { min-height: 2em !important; font-size: 8px !important; border: none !important; background: none !important; font-style: italic; }
+        }
+        .print-value { display: none; }
+        
+        select.nota-cuali { font-weight: bold; border: 1px solid transparent; border-radius: 4px; padding: 2px; width: 100%; min-width: 40px; text-align: center; cursor: pointer; }
+        select.nota-cuali:focus { outline: 2px solid #2563eb; }
+        .ad { background: #dbeafe; color: #1e3a8a; } .a { background: #dcfce7; color: #166534; }
+        .b { background: #fef9c3; color: #854d0e; } .c { background: #fee2e2; color: #991b1b; }
+        .empty { background: #f3f4f6; color: #6b7280; }
+        
+        .nota-asistencia { font-weight: bold; border-radius: 4px; width: 100%; min-width: 35px; text-align: center; }
+        
+        .sticky-col { position: sticky; z-index: 10; background: white; }
+        .sticky-col.nro { left: 0; width: 2rem; }
+        .sticky-col.nombre { left: 2rem; width: 14rem; }
+        .sticky-col.asistencia { left: 16rem; width: 3.5rem; }
+        .sticky-col.evidencia { left: 19.5rem; width: 12rem; }
+        
+        .th-capacidad { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 600; line-height: 1.1; padding-bottom: 2px; border-bottom: 1px solid #e2e8f0; margin-bottom: 2px; height: 3em; overflow: hidden; }
+        .th-desempeno { font-size: 10px; font-weight: 700; color: #1e3a8a; background: #eff6ff; border: 1px dashed #bfdbfe; border-radius: 3px; padding: 3px; min-height: 3.5em; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        
+        #toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #333; color: white; border-radius: 5px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; }
+
+        .estandar-badge {
+            background-color: #fef9c3;
+            border: 1px solid #facc15;
+            color: #854d0e;
+        }
+        
+        .grupo-opcion {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .grupo-opcion:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .grupo-opcion.seleccionada {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+        
+        .individual-opcion {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .individual-opcion:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .individual-opcion.seleccionada {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+        
+        .btn-accion {
+            transition: all 0.2s;
+        }
+        .btn-accion:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .guia-docente {
+            background-color: #f3e8ff;
+            border-left: 4px solid #9333ea;
+        }
+        .guia-estudiante {
+            background-color: #dcfce7;
+            border-left: 4px solid #16a34a;
+        }
+        .guia-contenido {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .guia-contenido h4 {
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .guia-contenido ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .guia-contenido li {
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .fecha-sesion {
+            display: inline-block;
+            background: #e0f2fe;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        /* Indicador de carga mejorado */
+        .indicador-carga {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+        .spinner-grande {
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top: 6px solid #ffffff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .mensaje-carga {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .btn-descargar {
+            background-color: #10b981;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            margin-left: 10px;
+        }
+        .btn-descargar:hover {
+            background-color: #059669;
+            transform: scale(1.05);
+        }
+
+        /* Estilo para el botón editar evidencia */
+        .btn-editar-evidencia {
+            background-color: #8b5cf6;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            margin-left: 10px;
+        }
+        .btn-editar-evidencia:hover {
+            background-color: #7c3aed;
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 text-slate-800">
+    <!-- Indicador de carga global -->
+    <div id="indicador-carga" class="indicador-carga hidden">
+        <div class="spinner-grande"></div>
+        <div id="mensaje-carga" class="mensaje-carga">Generando guías, por favor espera...</div>
+    </div>
+
+    <div id="toast">Notificación</div>
+    
+    <!-- Modal Confirmación Borrado Sesión -->
+    <div id="custom-modal-ui" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center border border-gray-200">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">¿Estás seguro?</h3>
+            <p class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer.</p>
+            <div class="flex justify-center gap-3">
+                <button id="modal-cancel-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 font-medium">Cancelar</button>
+                <button id="modal-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold">Sí, Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para borrar fechas específicas -->
+    <div id="modal-borrar-fecha" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+            <h3 class="font-bold text-lg mb-4">Eliminar fechas de la sesión</h3>
+            <p class="text-sm text-gray-600 mb-3">Selecciona las fechas que deseas eliminar:</p>
+            <div id="lista-fechas-borrar" class="max-h-60 overflow-y-auto mb-4 space-y-2"></div>
+            <div class="flex justify-end gap-3">
+                <button onclick="cerrarModalBorrarFechas()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
+                <button onclick="eliminarFechasSeleccionadas()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar seleccionadas</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestión Alumnos (con carga de archivos) -->
+    <div id="modal-gestion-alumnos" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span>👥</span> Gestión de Alumnos - Año 2026
+                </h3>
+                <button onclick="document.getElementById('modal-gestion-alumnos').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <!-- SECCIÓN DE CARGA DE ARCHIVOS -->
+            <div id="seccion-carga-listas" class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                <p class="text-xs text-blue-700 mb-3 font-semibold">📁 CARGAR LISTA NUEVA PARA 2026:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Área de carga Excel -->
+                    <div class="upload-area" id="excel-upload-area" onclick="document.getElementById('excel-file-input').click()">
+                        <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="procesarArchivoExcel(this.files[0])">
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-2xl">📊</span>
+                            <span class="text-sm font-medium text-slate-700">Excel / CSV</span>
+                            <span class="text-xs text-slate-500">Haz clic o arrastra</span>
+                        </div>
+                    </div>
+                    <!-- Área de carga Word -->
+                    <div class="upload-area" id="word-upload-area" onclick="document.getElementById('word-file-input').click()">
+                        <input type="file" id="word-file-input" accept=".docx,.doc" class="hidden" onchange="procesarArchivoWord(this.files[0])">
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-2xl">📝</span>
+                            <span class="text-sm font-medium text-slate-700">Word</span>
+                            <span class="text-xs text-slate-500">Haz clic o arrastra</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-2 text-center">
+                    Formatos aceptados: Una columna con nombres completos (Apellidos, Nombres)
+                </p>
+            </div>
+
+            <div class="p-4 bg-blue-50 border-b border-blue-100">
+                <p class="text-xs text-blue-700 mb-2">Editando lista para: <strong id="gestion-contexto">...</strong></p>
+                <div class="flex gap-2">
+                    <input type="text" id="input-nuevo-alumno" placeholder="Apellidos y Nombres..." class="flex-1 p-2 rounded border border-blue-200 text-sm focus:ring-2 focus:ring-blue-500 uppercase">
+                    <button onclick="agregarAlumno()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold shadow-sm">Añadir</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-2 bg-slate-50" id="lista-gestion-container"></div>
+
+            <div class="p-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3">
+                <button onclick="document.getElementById('modal-gestion-alumnos').classList.add('hidden')" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-3">Cancelar</button>
+                <button onclick="guardarCambiosAlumnos()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm font-bold shadow-md flex items-center gap-2">
+                    <span>💾</span> Guardar Lista 2026
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA ORGANIZAR GRUPOS (2 OPCIONES) -->
+    <div id="modal-grupos" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span>🎯</span> Organizar Trabajo en Grupos
+                </h3>
+                <button onclick="document.getElementById('modal-grupos').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-4 bg-blue-50 border-b border-blue-100">
+                <p class="text-sm text-blue-800 mb-2">
+                    <strong>Tema:</strong> <span id="grupos-tema">Historia de los derechos humanos</span>
+                </p>
+                <p class="text-xs text-blue-600">
+                    DeepSeek te propondrá 2 formas diferentes de organizar los grupos (ahorro de créditos).
+                </p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 bg-slate-50" id="grupos-opciones-container">
+                <div class="text-center py-8 text-slate-400" id="grupos-loading">
+                    Generando opciones con DeepSeek...
+                    <div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-8 h-8 mx-auto mt-4 animate-spin"></div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3">
+                <button onclick="document.getElementById('modal-grupos').classList.add('hidden')" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-3">Cancelar</button>
+                <button onclick="aplicarGruposSeleccionados()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm font-bold shadow-md flex items-center gap-2">
+                    <span>✅</span> Aplicar esta organización
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA TRABAJO INDIVIDUAL -->
+    <div id="modal-individual" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span>👤</span> Organizar Trabajo Individual
+                </h3>
+                <button onclick="document.getElementById('modal-individual').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-4 bg-blue-50 border-b border-blue-100">
+                <p class="text-sm text-blue-800 mb-2">
+                    <strong>Tema:</strong> <span id="individual-tema">Historia de los derechos humanos</span>
+                </p>
+                <p class="text-xs text-blue-600">
+                    DeepSeek te propondrá 2 opciones de actividades individuales.
+                </p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 bg-slate-50" id="individual-opciones-container">
+                <div class="text-center py-8 text-slate-400" id="individual-loading">
+                    Generando opciones con DeepSeek...
+                    <div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-8 h-8 mx-auto mt-4 animate-spin"></div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3">
+                <button onclick="document.getElementById('modal-individual').classList.add('hidden')" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-3">Cancelar</button>
+                <button onclick="aplicarIndividualSeleccionado()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm font-bold shadow-md flex items-center gap-2">
+                    <span>✅</span> Aplicar esta actividad
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA AÑADIR FECHA A SESIÓN EXISTENTE -->
+    <div id="modal-agregar-fecha" class="modal-overlay hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+            <h3 class="font-bold text-lg mb-4">Agregar fecha a la sesión</h3>
+            <p class="text-sm mb-4" id="sesion-actual-info">Tema: <span class="font-bold" id="sesion-actual-tema"></span></p>
+            <label class="block text-sm font-medium mb-2">Selecciona nueva fecha:</label>
+            <input type="date" id="nueva-fecha-sesion" class="w-full p-2 border rounded mb-4">
+            <div class="flex justify-end gap-3">
+                <button onclick="document.getElementById('modal-agregar-fecha').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+                <button onclick="agregarFechaASesion()" class="px-4 py-2 bg-blue-600 text-white rounded">Agregar fecha</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-[1800px] mx-auto bg-white rounded-xl shadow-lg border border-slate-200 p-4 md:p-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-900 tracking-tight">I.E. JN ANDREWS</h1>
+                <p class="text-sm text-slate-500 font-medium">Registro Auxiliar v8.2 - Año 2026</p>
+            </div>
+            <div class="text-right mt-2 md:mt-0 flex flex-col items-end">
+                <p class="font-semibold text-slate-700">Prof. Manuel Polar Carnero</p>
+                <div class="flex gap-2 mt-1">
+                    <div id="connection-status" class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded inline-flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span> Iniciando...
+                    </div>
+                    <button onclick="window.configurarIA()" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 hover:bg-purple-200 font-bold flex items-center gap-1">
+                        🔑 Configurar DeepSeek
+                    </button>
+                </div>
+                <div id="user-id-display" class="text-[9px] text-slate-400 mt-1 font-mono">ID: PROFESOR_MANUEL</div>
+            </div>
+        </header>
+        
+        <!-- Controles con selector de año -->
+        <section id="controles" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-9 gap-3 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <select id="select-bimestre" class="p-2 rounded border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                <option value="">Bimestre...</option>
+                <option value="B1">I Bimestre</option>
+                <option value="B2">II Bimestre</option>
+                <option value="B3">III Bimestre</option>
+                <option value="B4">IV Bimestre</option>
+            </select>
+            <select id="select-nivel" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled>
+                <option value="">Nivel...</option>
+                <option value="primaria">Primaria</option>
+                <option value="secundaria">Secundaria</option>
+            </select>
+            <select id="select-grado" class="p-2 rounded border border-slate-300 text-sm disabled:opacity-50" disabled>
+                <option value="">Grado...</option>
+            </select>
+            <select id="select-area" class="p-2 rounded border text-sm lg:col-span-1 disabled:opacity-50" disabled>
+                <option value="">Área...</option>
+            </select>
+            <select id="select-ano" class="p-2 rounded border border-slate-300 text-sm">
+                <option value="2026">2026</option>
+                <option value="2025">2025 (histórico)</option>
+            </select>
+            <input type="date" id="fecha" class="p-2 rounded border border-slate-300 text-sm text-gray-600">
+            
+            <button id="btn-gestion-alumnos" onclick="abrirGestionAlumnos()" class="bg-white text-slate-700 border border-slate-300 text-sm font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <span>👥</span> Alumnos 2026
+            </button>
+
+            <button onclick="window.print()" class="bg-slate-800 text-white text-sm font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2 shadow transition-all">
+                Imprimir
+            </button>
+        </section>
+
+        <!-- ESTÁNDAR ESPERADO -->
+        <div id="estandar-info" class="hidden mb-4 text-xs estandar-badge px-3 py-2 rounded-lg flex items-center gap-2">
+            <span class="font-bold">🎯 META DEL GRADO:</span>
+            <span id="estandar-texto" class="font-medium">Cargando estándar...</span>
+        </div>
+
+        <!-- PASO 1: Definir Desempeños -->
+        <section class="mb-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div id="seccion-ia" class="lg:col-span-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-lg border border-blue-100 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-blue-800 uppercase flex items-center gap-2"><span> 📝 </span> PASO 1: Definir Desempeños</h2>
+                    <span class="text-xs text-blue-600 bg-white px-2 py-1 rounded border border-blue-200">DeepSeek</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Actividad / Tema del día:</label>
+                        <textarea id="ia-prompt" rows="3" class="w-full p-3 rounded border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 transition-all resize-none" placeholder="Ej: Historia de los derechos humanos..."></textarea>
+                        <button id="btn-consultar-ia" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm shadow transition-colors flex items-center justify-center gap-2 btn-accion">
+                            <span>⚡</span> 1. GENERAR DESEMPEÑOS
+                        </button>
+                    </div>
+                    
+                    <div class="relative bg-white rounded border border-slate-200 p-3 min-h-[200px]">
+                        <div id="ia-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs p-4 text-center">
+                            <p>DeepSeek sugerirá aquí los desempeños precisados.</p>
+                        </div>
+                        <div id="ia-spinner" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
+                            <div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-6 h-6 animate-spin mb-2"></div>
+                            <p class="text-xs text-blue-600 font-bold">DeepSeek analizando...</p>
+                        </div>
+                        <div id="ia-respuesta-container" class="hidden h-full overflow-y-auto text-xs leading-relaxed">
+                            <div class="font-bold text-green-700 mb-1"> ✅  Análisis Pedagógico:</div>
+                            <div id="ia-respuesta-texto" class="text-slate-700"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-4 bg-slate-50 p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col">
+                <h2 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
+                    <span> 📂 </span> Historial y Gestión
+                </h2>
+                
+                <div class="flex-1 bg-white rounded border border-slate-300 overflow-hidden flex flex-col">
+                    <div class="bg-slate-100 p-2 border-b border-slate-200 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-600" id="contador-sesiones">0 Sesiones</span>
+                        <button id="btn-mostrar-sesiones" class="text-xs text-blue-600 hover:underline font-medium"> 🔄  Actualizar</button>
+                    </div>
+                    <div id="lista-sesiones" class="flex-1 overflow-y-auto p-2 space-y-2 max-h-40">
+                        <p class="text-xs text-gray-400 text-center py-4">Seleccione los filtros para ver historial.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PASO 2: Elegir modalidad de trabajo -->
+        <section id="seccion-modalidad" class="hidden mb-6 bg-white p-5 rounded-lg border border-green-200 shadow-sm">
+            <h2 class="text-sm font-bold text-green-800 uppercase mb-4 flex items-center gap-2">
+                <span> 🎯 </span> PASO 2: Elegir modalidad de trabajo
+            </h2>
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button id="btn-trabajo-grupo" class="flex-1 min-w-[250px] bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg text-sm shadow-lg flex items-center justify-center gap-3 btn-accion">
+                    <span class="text-2xl">👥</span>
+                    <div class="text-left">
+                        <div class="font-bold">TRABAJO EN GRUPO</div>
+                        <div class="text-xs opacity-90">2 opciones (ahorro créditos)</div>
+                    </div>
+                </button>
+                <button id="btn-trabajo-individual" class="flex-1 min-w-[250px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-sm shadow-lg flex items-center justify-center gap-3 btn-accion">
+                    <span class="text-2xl">👤</span>
+                    <div class="text-left">
+                        <div class="font-bold">TRABAJO INDIVIDUAL</div>
+                        <div class="text-xs opacity-90">Cada estudiante trabaja solo</div>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- GUÍAS COMPLETAS con botones de descarga y edición de evidencia -->
+        <div id="seccion-guias" class="hidden mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Guía del Docente -->
+                <div class="guia-docente p-5 rounded-lg shadow-md border border-purple-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">🍎</span>
+                            <h3 class="font-bold text-purple-900 text-lg">GUÍA DEL DOCENTE</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editarEvidenciaGuia('docente')" class="btn-editar-evidencia">✏️ Editar evidencia</button>
+                            <button onclick="descargarGuia('docente')" class="btn-descargar">📥 Descargar</button>
+                        </div>
+                    </div>
+                    <div id="guia-docente-contenido" class="guia-contenido text-slate-700 bg-white p-4 rounded border border-purple-100">
+                        <!-- Aquí se generará la guía completa -->
+                    </div>
+                </div>
+                
+                <!-- Guía del Estudiante -->
+                <div class="guia-estudiante p-5 rounded-lg shadow-md border border-green-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">📝</span>
+                            <h3 class="font-bold text-green-900 text-lg">GUÍA DEL ESTUDIANTE</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editarEvidenciaGuia('estudiante')" class="btn-editar-evidencia">✏️ Editar evidencia</button>
+                            <button onclick="descargarGuia('estudiante')" class="btn-descargar">📥 Descargar</button>
+                        </div>
+                    </div>
+                    <div id="guia-estudiante-contenido" class="guia-contenido text-slate-700 bg-white p-4 rounded border border-green-100">
+                        <!-- Aquí se generará la guía -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones Acción -->
+        <section class="flex flex-wrap gap-3 mb-6">
+            <button id="btn-reporte-general" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 whitespace-nowrap">
+                <span> 📄 </span> Sábana de Notas (solo 2026)
+            </button>
+            
+            <div class="flex-[2] flex flex-col sm:flex-row gap-2 min-w-[300px]">
+                <select id="select-reporte-alumno" class="w-full sm:flex-1 border-slate-300 border rounded-lg text-sm px-3 py-2" disabled>
+                    <option>Seleccione Alumno...</option>
+                </select>
+                <button id="btn-reporte-individual" class="sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-6 py-2 rounded-lg text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2"> 
+                    👤 Ficha
+                </button>
+            </div>
+
+            <button id="btn-generar-conclusiones-bimestrales" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 whitespace-nowrap">
+                <span> 📊 </span> Conclusiones del Bimestre
+            </button>
+        </section>
+
+        <!-- Conclusiones UI -->
+        <section id="seccion-conclusiones-ui" class="hidden mb-6 bg-white border border-slate-200 rounded-lg p-5 shadow-lg">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-slate-800 text-lg"> 📊  Conclusiones Descriptivas del Bimestre</h3>
+                <button onclick="this.closest('section').classList.add('hidden')" class="text-slate-400 hover:text-red-500 text-xl font-bold">&times;</button>
+            </div>
+            <div id="conclusiones-metadata" class="text-xs text-slate-500 mb-4 font-medium"></div>
+            <div id="conclusiones-ia-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2"></div>
+        </section>
+
+        <!-- Tabla -->
+        <section id="tabla-registro" class="overflow-x-auto border rounded-lg shadow-sm bg-white min-h-[200px]">
+            <div class="p-12 text-center text-slate-400 flex flex-col items-center justify-center h-full">
+                <p class="text-sm font-medium">Seleccione los filtros superiores para cargar el registro.</p>
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        // ============================================
+        // IMPORTACIONES FIREBASE
+        // ============================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // ============================================
+        // CONFIGURACIÓN FIREBASE
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyClWwYzro_avn1pK0DvD4x1r4v1grSAoE0",
+            authDomain: "registro-jn-andrews-mpc.firebaseapp.com",
+            projectId: "registro-jn-andrews-mpc",
+            storageBucket: "registro-jn-andrews-mpc.firebasestorage.app",
+            messagingSenderId: "701752375464",
+            appId: "1:701752375464:web:eaab256668b869d026aa9d"
+        };
+        
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let db, auth, userId;
+        let currentHeaders = {}; 
+        let sesionABorrar = null; 
+        let useLocalStorage = false; 
+        let customLists = {}; 
+        let tempGestionList = []; 
+        let currentEvidencias = {};
+        let gruposActuales = null;
+        let individualActual = null;
+        let guiaDocenteActual = null;
+        let guiaEstudianteActual = null;
+        let anoActual = "2026";
+
+        // Variables para el modal de borrar fechas
+        let fechasPendientes = []; // array de { fecha, id }
+
+        // ============================================
+        // FUNCIONES DE INDICADOR DE CARGA
+        // ============================================
+        function mostrarCarga(mensaje = "Generando guías, por favor espera...") {
+            document.getElementById('mensaje-carga').textContent = mensaje;
+            document.getElementById('indicador-carga').classList.remove('hidden');
+        }
+
+        function ocultarCarga() {
+            document.getElementById('indicador-carga').classList.add('hidden');
+        }
+
+        // ============================================
+        // FUNCIÓN PARA DESCARGAR GUÍAS
+        // ============================================
+        window.descargarGuia = (tipo) => {
+            let contenido = '';
+            let nombreArchivo = '';
+            let titulo = '';
+            
+            if (tipo === 'docente') {
+                contenido = document.getElementById('guia-docente-contenido').innerHTML;
+                nombreArchivo = `Guia_Docente_${document.getElementById('ia-prompt').value.substring(0,30)}.html`;
+                titulo = 'GUÍA DEL DOCENTE';
+            } else {
+                contenido = document.getElementById('guia-estudiante-contenido').innerHTML;
+                nombreArchivo = `Guia_Estudiante_${document.getElementById('ia-prompt').value.substring(0,30)}.html`;
+                titulo = 'GUÍA DEL ESTUDIANTE';
+            }
+            
+            const estilo = `
+                <style>
+                    body { font-family: 'Arial', sans-serif; padding: 30px; max-width: 800px; margin: 0 auto; }
+                    h1 { color: #1e3a8a; border-bottom: 2px solid #9333ea; padding-bottom: 10px; }
+                    h4 { color: #1e3a8a; margin-top: 20px; }
+                    ul { margin-bottom: 20px; }
+                    .fecha { color: #666; font-size: 14px; margin-bottom: 20px; }
+                </style>
+            `;
+            
+            const htmlCompleto = `
+                <html>
+                <head><meta charset="UTF-8"><title>${titulo}</title>${estilo}</head>
+                <body>
+                    <h1>${titulo}</h1>
+                    <div class="fecha">Generado el: ${new Date().toLocaleDateString()} - Prof. Manuel Polar Carnero</div>
+                    ${contenido}
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob([htmlCompleto], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // ============================================
+        // FUNCIÓN PARA EDITAR EVIDENCIA EN GUÍAS
+        // ============================================
+        window.editarEvidenciaGuia = async (tipo) => {
+            let contenedor, variableActual;
+            if (tipo === 'docente') {
+                contenedor = document.getElementById('guia-docente-contenido');
+                variableActual = guiaDocenteActual;
+            } else {
+                contenedor = document.getElementById('guia-estudiante-contenido');
+                variableActual = guiaEstudianteActual;
+            }
+            
+            if (!variableActual) {
+                showToast("No hay una guía generada aún.");
+                return;
+            }
+            
+            // Buscar en el HTML de la guía el texto que contiene "Evidencia" o "Producto"
+            let textoActual = "";
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = variableActual;
+            const elementosConEvidencia = tempDiv.querySelectorAll('p, li, div');
+            for (let el of elementosConEvidencia) {
+                if (el.innerText.toLowerCase().includes('evidencia') || el.innerText.toLowerCase().includes('producto')) {
+                    textoActual = el.innerText;
+                    break;
+                }
+            }
+            if (!textoActual) textoActual = "No se encontró texto de evidencia en la guía.";
+            
+            const nuevaEvidencia = prompt("Editar evidencia (puede ser el producto, actividad o instrumento):", textoActual);
+            if (nuevaEvidencia && nuevaEvidencia !== textoActual) {
+                let nuevoHtml = variableActual;
+                if (textoActual !== "No se encontró texto de evidencia en la guía.") {
+                    nuevoHtml = nuevoHtml.replace(textoActual, nuevaEvidencia);
+                } else {
+                    nuevoHtml = `<p><strong>📌 Evidencia editada:</strong> ${nuevaEvidencia}</p>` + nuevoHtml;
+                }
+                
+                if (tipo === 'docente') {
+                    guiaDocenteActual = nuevoHtml;
+                    document.getElementById('guia-docente-contenido').innerHTML = guiaDocenteActual;
+                } else {
+                    guiaEstudianteActual = nuevoHtml;
+                    document.getElementById('guia-estudiante-contenido').innerHTML = guiaEstudianteActual;
+                }
+                await saveData();
+                showToast("✅ Evidencia actualizada y guardada");
+                // Forzar recarga completa de la sesión actual para actualizar tabla y todo
+                renderTable(true);
+            }
+        };
+
+        // ============================================
+        // CONFIGURACIÓN DEEPSEEK
+        // ============================================
+        window.configurarIA = () => {
+            const currentKey = localStorage.getItem('deepseek_api_key') || "sk-70c41d62b6114a6d85b700e27a3c7534";
+            const newKey = prompt("Ingresa tu API Key de DeepSeek:", currentKey);
+            if(newKey !== null) {
+                localStorage.setItem('deepseek_api_key', newKey.trim());
+                showToast(newKey ? "✅ Llave DeepSeek Guardada" : "🗑️ Llave Eliminada");
+            }
+        };
+
+        function getAIKey() {
+            return localStorage.getItem('deepseek_api_key') || "sk-70c41d62b6114a6d85b700e27a3c7534";
+        }
+
+        // ============================================
+        // DATOS ACTUALIZADOS 2026 (SEGÚN LISTAS PROPORCIONADAS)
+        // ============================================
+        const database = {
+            primaria: {
+                "1": [
+                    "BATALLANOS SACSI, Flor de Liz",
+                    "CCANCHILLO TORRES, Mayté Shantal",
+                    "CHIPA PAUCCARA Ariana Crystell",
+                    "GAMARRA OCSA Gael Valentino",
+                    "HUAMAN CRUZ Danna Celeste",
+                    "HUAMANI CHUPA, Sebastián Ludwing",
+                    "HUILLCA CONDO, Cristian David",
+                    "MALLCO LOPEZ, Aitana Alessandra",
+                    "OSORIO IMATA, Lian Stheven",
+                    "PAUCCAR AMANQUI Karely",
+                    "ROMERO INCACUTIPA, Gael Widmar",
+                    "TICLLAHUANACO HUILLCA Alexa Meritshe",
+                    "VARGAS MENDOZA, Héctor Adriano"
+                ],
+                "2": [
+                    "BOLIVAR HILARIO, Jazmin Elisa",
+                    "GASPAR VIZCARDO, Alessandro José",
+                    "HUITTOCCOLLO HUARACCONE, Tania",
+                    "LOZANO COAQUIRA, Jerry Matt Arnold",
+                    "MACHACA VELARDE Lucas Nathan",
+                    "MAMANI VILLAFUERTE, Estrellita Luz Celeste",
+                    "MESCCO OLMEDA, Lucia Camila",
+                    "MIRAMIRA GUTIERREZ Emily Valeria",
+                    "MOLLEAPAZA VALERIANO, Isabella Romina",
+                    "MONTEZA FLORIAN, Jheyli Katherine",
+                    "MOROCHARA HUACCHA, Arthur Dylan",
+                    "PUERTAS AGUILAR Kalet Gael",
+                    "QUISPE MARIN, Stefano Fabián",
+                    "RAMOS QUISPE Keren Hapuc Milca",
+                    "RAMOS TICONA, Liam Caleb"
+                ],
+                "3": [
+                    "ARUCUTIPA ROMERO Karen Alondra",
+                    "ARUCUTIPA ROMERO Shirley Alondra",
+                    "CASTILLO FLORES, Micaela Nihan",
+                    "CCANAHUIRE PFOCCORI, Liam Yordano",
+                    "CHAMBI CHAMBI Lucy Kristel",
+                    "CONDORI JORDAN Britney Brisayda Leyka",
+                    "DIAZ CAPACOILA, Greissy Camila",
+                    "GUZMAN CCAMA Dorud Emir",
+                    "HUAMAN CRUZ Sefora Lady",
+                    "HUAMANI HUALLA Sofía Guadalupe",
+                    "MAMANI APAZA Leonard Josías",
+                    "MERMA COLUNCHE Natali Brissette",
+                    "MONTEZA RIVAS Geral Mihael",
+                    "OCSA LLANQUIRE Thiago Hernán",
+                    "ORTEGA QUISPE Kaleb Richard",
+                    "PONCE CARDENAS Lía Antonella",
+                    "QUISPE QUISPE José Abrahan",
+                    "SACSI QUISPE Yelina Maite",
+                    "SALAZAR PEREZ, Juan David",
+                    "TAIPE DE LA CRUZ Vasthy Andrea",
+                    "VILLAFUERTE TICONA Luis Ángel"
+                ],
+                "4": [
+                    "AMANQUI YANARICO, Ana Divora",
+                    "APAZA PAUCCARA Miguel Axel",
+                    "CALCINA MURILLO, Thiago Jhunior",
+                    "CCANCHILLO TORRES, Jesús Franko",
+                    "CHAMBI VILCA Nikol Abigail",
+                    "CONDORI QUISPE, Raquel Amira",
+                    "DE LA CRUZ ALTAMIRANO Juan Felipe",
+                    "HUITTOCCOLLO HUARACCONE, Jhans Roly",
+                    "MAMANI QUISPE, Dayana Nicol",
+                    "MAMANI QUISPE, Shirley Abigail",
+                    "MAMANI RAMOS, Lesly Abigail",
+                    "MAQUERA ROMERO, Esteyci Alejandra",
+                    "MELENDEZ PEÑAFIEL, Alberth Dayiro",
+                    "MELENDEZ PEÑAFIEL, Moisés Leonel",
+                    "MOLLEAPAZA VALERIANO, Evangeline Samara",
+                    "OSORIO IMATA, Keyla Grisel",
+                    "PACCO LOPE, Lionard Griezmann",
+                    "QUISPE CAMALA, José Manuel",
+                    "QUISPE CAMALA, Juan Manuel",
+                    "QUISPE CAYLLAHUA Lya Shanara",
+                    "QUISPE CHAUPI, Misael Matías"
+                ],
+                "5": [
+                    "ANCCALLE MERMA, Jesús",
+                    "CHOQUENAIRA PONTECIL, Neymar Felix",
+                    "GUZMAN SEVILLANO, Sebastián Lian",
+                    "HUANCA MAMANI, Aurora Samay",
+                    "MAMANI PAUCCAR, Zaza Jeison",
+                    "MERMA COLUNCHE Danitza Margot",
+                    "PHALA TORRES, Israel José",
+                    "QUISPE HUAMANI, Angie Madeley",
+                    "QUISPE QUISPE, Luz Kiara",
+                    "VALDEZ SUNI, Evelin Adaluz",
+                    "YAULI QUISPE, Zebasthian Luis"
+                ],
+                "6": [
+                    "ANCASI VILLAFUERTE, Andrea Edith",
+                    "APAZA MAMANI Mateo Jacob",
+                    "BATALLANOS SALHUA Alía Luz",
+                    "BELÓN AQUINO Joaquín Jhared",
+                    "CAPRISTANO AYNAYA Yamilett Lucero",
+                    "CHORA COAQUIRA Thiago Mateo",
+                    "GUZMAN CCAMA Sebastián Rodrigo",
+                    "HUAMAN CHOQUE Neyson Orlando",
+                    "HUITTOCCOLLO HUARACCONE Leydi Nicol",
+                    "LAURA SUPA Heber Antony",
+                    "LIZARRAGA TICONA Dylan Caled",
+                    "MACHUCA CRUZ Ghislaine",
+                    "MANCHA COAQUIRA Wilmar Junior",
+                    "MIRAMIRA GUTIERREZ Elías Samuel",
+                    "OCSA LLANQUIRE Brianna Jazmin",
+                    "PACCO LOPE Naydelyn Candy",
+                    "PUERTAS AGUILAR Samai Sumac Tika",
+                    "QUISPE MARAS Eimy Alondra",
+                    "QUISPE QUISPE Eduard Sebastián",
+                    "RUIZ TITO Arjen Brenner",
+                    "SACSI QUISPE Romina Yamilet",
+                    "TAIPE DE LA CRUZ Nerina Beverly",
+                    "YNOFUENTE CANAHUIRI Sheyla Nicole",
+                    "YUCRA SULLA Ian Luis Eidan"
+                ]
+            },
+            secundaria: {
+                "1": [
+                    "BARRIONUEVO CASTRO, Jeyko Paul",
+                    "BRINGAS JUAREZ, Bryams Jhamilth",
+                    "BUSTAMANTE CARRASCO Edwin",
+                    "CALDERON CARDENAS, Kiara Samira",
+                    "CAMI VILLAVICENCIO, Yhojan Yoset",
+                    "DE LA CRUZ CONDORI, Jorvic Steeven",
+                    "GASPAR VIZCARDO, Randy Oscar",
+                    "LLANQUE ALMIRON, Hassiel Brigitte",
+                    "MANCHA MAMANI, Yidda Abigail",
+                    "MANCHA ROJAS, Dheivy Maycol",
+                    "MERMA COLUNCHE Paola Katerine",
+                    "OSORIO IMATA, Liz Esperanza",
+                    "PALOMINO REYES, Naomi Eliana",
+                    "PEÑA ARANIBAR, Rihana Franshesca",
+                    "QUISPE CAMALA, Ana Gabriela",
+                    "SANTILLAN SANCHEZ, Cristhoper Luis Ángel",
+                    "VARGAS CHOQUE, Patrick Rodrigo",
+                    "YAULI QUISPE, Juan Diego",
+                    "ZEA HERRERA Xavier Alonso"
+                ],
+                "2": [
+                    "ARUCUTIPA CALISAYA Yuliet Luanna",
+                    "CISA SAHUANAY Miguel Ángel",
+                    "COLQUE CHAMBI Jhems Kevin",
+                    "CUYO CHOQUE Will Adriano",
+                    "GALLEGOS ZEA, James Jamir",
+                    "MENDOZA MAMANI, Víctor Manuel",
+                    "MONTEZA RIVAS Yair Alexander",
+                    "SANGUINO MARQUEZ Carlos Santiago",
+                    "SONCCO CACERES Victoria Carolina",
+                    "TICONA CONDORI Heidy Milena",
+                    "VIÑA HUAMAN Esteban Andreus Caleb",
+                    "ZAMATA VILLASANTE Midwar Josue",
+                    "ZEVALLOS MAMANI Alison Kimberly"
+                ],
+                "3": [
+                    "ARMAS PEÑA, Moisés Jubal",
+                    "ARUCUTIPA CALISAYA, Emerson Gary",
+                    "BELÓN AQUINO, Dayiro Andree",
+                    "CALDERON LEANDRO, Yhong Puyol.",
+                    "CARNERO MORALES Oscar Yohani",
+                    "CCALLOCSA TACCA Joel Daniel",
+                    "CCANCHILLO TORRES, Yulissam Priyanka",
+                    "CCORIMANYA ARISACA, Branco Adriano",
+                    "CHOQUE LIZARRAGA, Piero Valentino",
+                    "CHOQUEHUANCA CARI, Nicole Mia Marey",
+                    "COAQUIRA CONDO, Llandhel Roberto Leonel",
+                    "CONDORI QUISPE, Mayli Yasu",
+                    "DEL AGUILA SILVA Carlos Anthony",
+                    "DIAZ CAPACOILA, Anely Yesica",
+                    "ETENE PAREDES Dariana Ayshlin",
+                    "LUNA QUISPE, Jimmy Noé",
+                    "LUQUE VILCAPAZA, Eva Luz",
+                    "MANCHA COAQUIRA, Gorge Luis",
+                    "PALOMINO CHALLCO Cinthya Kaori",
+                    "PEREZ LUPO, Gerald Abdías",
+                    "PHALA TORRES, Benjamín Franco",
+                    "QUISPE CAMALA, José Daniel",
+                    "QUISPE GUTIERREZ, Ana Cristina",
+                    "QUISPE QUISPE, Mario Gabriel",
+                    "QUISPE QUISPE, Thalía Úrsula",
+                    "RIVEROS SUPA, Mathias Leonardo",
+                    "SUAREZ LOPINTA, Damalith Darline",
+                    "VILCA GUTIERREZ, Jandy Betzabe"
+                ],
+                "4": [
+                    "AMANQUI YANARICO, Jean Paul",
+                    "ANCCALLE MERMA, Danna Magdiell",
+                    "AROCUTIPA ROMERO, Zamir Yhonncy",
+                    "BELÓN AQUINO, Fabrizio André",
+                    "BUSTAMANTE CARRASCO Darlin Jhair",
+                    "CHOQUEHUANCA CARI, David Yair",
+                    "CHOQUEPATA BUENO Nadine Cristina",
+                    "DE LA CRUZ ALTAMIRANO Santiago",
+                    "FERNANDEZ SANCHEZ, Christofer Dayiro",
+                    "GARCIA CISA Santiago Benjamin",
+                    "HANAMPA QUISPE, Erick Jonathan",
+                    "HUANCA MAMANI, Anderson Jesus",
+                    "MACHUCA CRUZ Baurulet",
+                    "MAMANI ANAYA Sebastián Mateo",
+                    "MARQUEZ TACURI, Jesús Wilbert",
+                    "MIRAMIRA GUTIERREZ, Josías Daniel",
+                    "ORTEGA BENAVENTE, Nill Antony",
+                    "PUERTAS AGUILAR Nadyn Hurphy Maria",
+                    "QUISPE CUELA AARON IVAN",
+                    "QUISPE QUISPE Luz Shenely",
+                    "ROQUE HUARCA, Dianeth Nicol",
+                    "TOTORA CUCHO Yiuliana Nery",
+                    "VALDEZ SUNI, Luz Maricielo",
+                    "VARGAS CARI Marylin Elena Josenit"
+                ],
+                "5": [
+                    "BRINGAS JUAREZ Brandon Jhalith",
+                    "CANAZA QUISPE Luis Eduardo",
+                    "CARDENAS CARDENAS Vivian Maryel",
+                    "JANAMPA LIMA Jeff Dacio",
+                    "LLANQUE ALMIRON Yader Jocsan",
+                    "MOLLEAPAZA VALERIANO Yesybell Analia",
+                    "SANGUINO MARQUEZ Daylen Alejandra",
+                    "SONCCO CHOQUE Anthony Leonel",
+                    "VILCA ALVAREZ Rodrigo Alejandro",
+                    "VIÑA HUAMAN Brayan Andrés"
+                ]
+            }
+        };
+        
+        const estandaresPorGrado = {
+            "5-secundaria": "Delibera sobre asuntos públicos considerando procesos históricos, argumenta su posición y propone acciones colectivas para defender derechos",
+            "4-secundaria": "Explica procesos históricos y su relación con problemas actuales, proponiendo alternativas de solución",
+            "3-secundaria": "Analiza procesos históricos y reconoce su influencia en la actualidad",
+            "2-secundaria": "Identifica hechos históricos y los relaciona con su contexto",
+            "1-secundaria": "Reconoce hechos históricos importantes y los describe"
+        };
+
+        // CURRÍCULUM ACTUALIZADO: Primaria solo COMPUTO, Secundaria ARTE y EPT
+        const curriculum = {
+            "computo": { label: "CÓMPUTO", competencias: [ { id: "C1", nombre: "Gestiona proyectos tecnológicos", criterios: ["Planifica", "Ejecuta", "Evalúa"] }, { id: "C2", nombre: "Comprende y aplica herramientas digitales", criterios: ["Identifica", "Utiliza", "Reflexiona"] } ] },
+            "arte": { label: "Arte y Cultura", competencias: [ { id: "C1", nombre: "Aprecia de manera crítica...", criterios: ["Percibe", "Contextualiza", "Reflexiona"] }, { id: "C2", nombre: "Crea proyectos...", criterios: ["Explora", "Aplica", "Evalúa"] } ] },
+            "ept": { label: "E.P.T.", competencias: [ { id: "C1", nombre: "Gestiona proyectos...", criterios: ["Propone", "Habilidades", "Trabaja Coop.", "Evalúa"] } ] }
+        };
+        
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+        function getStudentsList(n, g) {
+            const key = `${n}-${g}`;
+            if (customLists[key] && Array.isArray(customLists[key]) && customLists[key].length > 0) {
+                return customLists[key];
+            }
+            return database[n] && database[n][g] ? [...database[n][g]] : [];
+        }
+
+        function updateStatus(msg) {
+            const st = document.getElementById('connection-status');
+            st.textContent = msg;
+            if(msg.includes("Conectado")) st.className = "text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded inline-block";
+            else st.className = "text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded inline-block";
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 2000);
+        }
+
+        function getId() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value, f=document.getElementById('fecha').value;
+            return (b&&n&&g&&a&&f) ? `sesion-${b}-${n}-${g}-${a}-${f}` : null;
+        }
+
+        function getPath() { return `artifacts/${appId}/users/${userId}/registros_auxiliares`; }
+
+        // ============================================
+        // FUNCIONES DE FILTROS
+        // ============================================
+        function saveFilters() {
+            const filters = {
+                bimestre: document.getElementById('select-bimestre').value,
+                nivel: document.getElementById('select-nivel').value,
+                grado: document.getElementById('select-grado').value,
+                area: document.getElementById('select-area').value,
+                ano: document.getElementById('select-ano').value
+            };
+            localStorage.setItem('filters_state', JSON.stringify(filters));
+        }
+
+        function restoreFilters() {
+            const savedFilters = JSON.parse(localStorage.getItem('filters_state') || '{}');
+            if(savedFilters.bimestre) document.getElementById('select-bimestre').value = savedFilters.bimestre;
+            if(savedFilters.ano) {
+                document.getElementById('select-ano').value = savedFilters.ano;
+                anoActual = savedFilters.ano;
+            }
+            
+            if(savedFilters.nivel) {
+                const n = document.getElementById('select-nivel');
+                n.value = savedFilters.nivel;
+                n.disabled = false;
+                const g = document.getElementById('select-grado');
+                g.innerHTML='<option value="">...</option>';
+                const max = savedFilters.nivel==='primaria'?6:5; 
+                for(let i=1;i<=max;i++) g.add(new Option(i+'°', i));
+                g.disabled = false;
+            }
+            
+            if(savedFilters.grado) {
+                document.getElementById('select-grado').value = savedFilters.grado;
+                const ar = document.getElementById('select-area');
+                const nivel = document.getElementById('select-nivel').value;
+                if (nivel === 'primaria') {
+                    ar.innerHTML = '<option value="computo">CÓMPUTO</option>';
+                } else {
+                    ar.innerHTML = '<option value="arte">Arte y Cultura</option><option value="ept">E.P.T.</option>';
+                }
+                ar.disabled = false;
+                document.getElementById('btn-gestion-alumnos').disabled = false;
+
+                const estandarDiv = document.getElementById('estandar-info');
+                const estandarTexto = document.getElementById('estandar-texto');
+                const gradoKey = `${savedFilters.grado}-${savedFilters.nivel}`;
+                estandarTexto.textContent = estandaresPorGrado[gradoKey] || "Estándar no definido para este grado";
+                estandarDiv.classList.remove('hidden');
+            }
+            
+            if(savedFilters.area) document.getElementById('select-area').value = savedFilters.area;
+            
+            if(savedFilters.bimestre && savedFilters.nivel && savedFilters.grado && savedFilters.area) {
+                renderTable();
+                cargarListaSesiones();
+            }
+        }
+
+        // ============================================
+        // FUNCIONES DE FIREBASE
+        // ============================================
+        async function loadCustomListsCloud() {
+            if(!db || !userId) return;
+            try {
+                const docRef = doc(db, `configuracion/${userId}/listas/${anoActual}`);
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    customLists = snap.data();
+                }
+            } catch (e) { console.error("Error cargando listas", e); }
+        }
+
+        async function saveCustomLists() {
+            if (db && userId) {
+                try {
+                    const docRef = doc(db, `configuracion/${userId}/listas/${anoActual}`);
+                    await setDoc(docRef, customLists);
+                } catch(e) { console.error("Error guardando listas", e); }
+            }
+        }
+
+        // ============================================
+        // FUNCIONES PARA EL MODAL DE BORRAR FECHAS
+        // ============================================
+        window.mostrarModalBorrarFechas = (fechasList) => {
+            fechasPendientes = fechasList;
+            const container = document.getElementById('lista-fechas-borrar');
+            container.innerHTML = '';
+            fechasList.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2';
+                div.innerHTML = `
+                    <input type="checkbox" id="fecha-check-${idx}" value="${item.id}" class="w-4 h-4">
+                    <label for="fecha-check-${idx}" class="text-sm">${item.fecha}</label>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('modal-borrar-fecha').classList.remove('hidden');
+            document.getElementById('modal-borrar-fecha').classList.add('flex');
+        };
+
+        window.cerrarModalBorrarFechas = () => {
+            document.getElementById('modal-borrar-fecha').classList.add('hidden');
+            document.getElementById('modal-borrar-fecha').classList.remove('flex');
+            fechasPendientes = [];
+        };
+
+        window.eliminarFechasSeleccionadas = async () => {
+            const checkboxes = document.querySelectorAll('#lista-fechas-borrar input[type="checkbox"]');
+            const idsAEliminar = [];
+            checkboxes.forEach((cb, idx) => {
+                if (cb.checked) {
+                    idsAEliminar.push(fechasPendientes[idx].id);
+                }
+            });
+            if (idsAEliminar.length === 0) {
+                showToast("No seleccionaste ninguna fecha para eliminar.");
+                return;
+            }
+            if (confirm(`¿Eliminar ${idsAEliminar.length} fecha(s) seleccionada(s)? Esta acción no se puede deshacer.`)) {
+                for (const id of idsAEliminar) {
+                    try {
+                        if (db) {
+                            await deleteDoc(doc(db, getPath(), id));
+                        }
+                    } catch(e) { console.error(e); }
+                }
+                showToast(`${idsAEliminar.length} fecha(s) eliminada(s)`);
+                cerrarModalBorrarFechas();
+                
+                // Verificar si la fecha actual está entre las eliminadas
+                const fechaActual = document.getElementById('fecha').value;
+                const fechaActualId = getId();
+                if (fechaActualId && idsAEliminar.includes(fechaActualId)) {
+                    // Limpiar la tabla y mostrar mensaje
+                    document.getElementById('tabla-registro').innerHTML = `
+                        <div class="p-12 text-center text-slate-400 flex flex-col items-center justify-center h-full">
+                            <p class="text-sm font-medium">La sesión actual fue eliminada. Seleccione otra fecha para cargar el registro.</p>
+                        </div>`;
+                    document.getElementById('seccion-guias').classList.add('hidden');
+                    document.getElementById('seccion-modalidad').classList.add('hidden');
+                    document.getElementById('ia-prompt').value = "";
+                    currentHeaders = {};
+                    gruposActuales = null;
+                    individualActual = null;
+                    guiaDocenteActual = null;
+                    guiaEstudianteActual = null;
+                }
+                cargarListaSesiones();
+            }
+        };
+
+        window.confirmarBorradoSimple = (id) => {
+            const modalSimple = document.getElementById('custom-modal-ui');
+            sesionABorrar = id;
+            modalSimple.classList.remove('hidden');
+            modalSimple.classList.add('flex');
+        };
+
+        // ============================================
+        // CARGA DE LISTA DE SESIONES
+        // ============================================
+        async function cargarListaSesiones() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            const listDiv = document.getElementById('lista-sesiones');
+            const countSpan = document.getElementById('contador-sesiones');
+            
+            if(!b||!n||!g||!a) {
+                listDiv.innerHTML = '<p class="text-xs text-gray-400 text-center p-2">Seleccione filtros...</p>';
+                countSpan.textContent = "0 Sesiones";
+                return;
+            }
+            
+            const prefix = `sesion-${b}-${n}-${g}-${a}-`;
+            let sessions = [];
+            
+            if (db && userId) {
+                try {
+                    const q = query(collection(db, getPath()));
+                    const snaps = await getDocs(q);
+                    
+                    snaps.forEach(doc => {
+                        if(doc.id.startsWith(prefix)) {
+                            const fecha = doc.id.replace(prefix, '');
+                            if (fecha.startsWith(anoActual)) {
+                                sessions.push({ 
+                                    id: doc.id, 
+                                    fecha: fecha, 
+                                    data: doc.data() 
+                                });
+                            }
+                        }
+                    });
+                } catch (e) { console.error("Error fetch sessions", e); }
+            }
+            
+            const temasMap = new Map();
+            sessions.forEach(s => {
+                const tema = s.data.prompt || 'Sin tema';
+                if (!temasMap.has(tema)) {
+                    temasMap.set(tema, {
+                        tema: tema,
+                        fechas: [],
+                        data: s.data,
+                        ids: []
+                    });
+                }
+                temasMap.get(tema).fechas.push(s.fecha);
+                temasMap.get(tema).ids.push(s.id);
+            });
+
+            let html = '';
+            temasMap.forEach((temaInfo, tema) => {
+                const fechasHtml = temaInfo.fechas.map(f => `<span class="fecha-sesion">${f}</span>`).join('');
+                const modalidad = temaInfo.data.grupos ? '🎯 Grupos' : (temaInfo.data.individual ? '👤 Individual' : '');
+                const hasMultipleFechas = temaInfo.fechas.length > 1;
+                
+                html += `
+                <div class="bg-white border border-slate-200 rounded p-2 hover:bg-blue-50 transition-colors group relative">
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <span class="text-xs font-bold text-blue-800 bg-blue-100 px-1 rounded">${temaInfo.fechas.length} fechas</span>
+                            <div class="mt-1">${fechasHtml}</div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="window.cargarSesion('${temaInfo.fechas[0]}')" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 border border-green-200">Abrir</button>
+                            <button onclick="window.mostrarModalAgregarFecha('${tema}', '${temaInfo.fechas[0]}')" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-200 border border-blue-200">+ Fecha</button>`;
+                
+                if (hasMultipleFechas) {
+                    const fechasArray = temaInfo.fechas.map((f, idx) => ({ fecha: f, id: temaInfo.ids[idx] }));
+                    const fechasJson = JSON.stringify(fechasArray).replace(/"/g, '&quot;');
+                    html += `<button onclick="window.mostrarModalBorrarFechas(${fechasJson})" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded hover:bg-red-200 border border-red-200">🗑️</button>`;
+                } else {
+                    html += `<button onclick="window.confirmarBorradoSimple('${temaInfo.ids[0]}')" class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded hover:bg-red-200 border border-red-200">🗑️</button>`;
+                }
+                
+                html += `</div>
+                    </div>
+                    <div class="text-[10px] text-slate-600 truncate" title="${tema}">${tema}</div>
+                    ${modalidad ? `<span class="text-[8px] bg-purple-100 text-purple-700 px-1 rounded">${modalidad}</span>` : ''}
+                </div>`;
+            });
+            
+            listDiv.innerHTML = sessions.length > 0 ? html : '<p class="text-xs text-gray-400 text-center p-2">No hay sesiones en ' + anoActual + '</p>';
+            countSpan.textContent = `${sessions.length} Sesiones`;
+        }
+
+        window.cargarListaSesiones = cargarListaSesiones;
+        
+        window.cargarSesion = (fecha) => {
+            document.getElementById('fecha').value = fecha;
+            renderTable(true);
+        }
+
+        window.mostrarModalAgregarFecha = (tema, fechaBase) => {
+            document.getElementById('sesion-actual-tema').textContent = tema;
+            document.getElementById('sesion-actual-tema').dataset.fechaBase = fechaBase;
+            document.getElementById('modal-agregar-fecha').classList.remove('hidden');
+            document.getElementById('modal-agregar-fecha').classList.add('flex');
+        }
+
+        window.agregarFechaASesion = async () => {
+            const nuevaFecha = document.getElementById('nueva-fecha-sesion').value;
+            const tema = document.getElementById('sesion-actual-tema').textContent;
+            const fechaBase = document.getElementById('sesion-actual-tema').dataset.fechaBase;
+            
+            if (!nuevaFecha) {
+                showToast("Selecciona una fecha");
+                return;
+            }
+
+            const idBase = `sesion-${document.getElementById('select-bimestre').value}-${document.getElementById('select-nivel').value}-${document.getElementById('select-grado').value}-${document.getElementById('select-area').value}-${fechaBase}`;
+            
+            try {
+                const snap = await getDoc(doc(db, getPath(), idBase));
+                if (snap.exists()) {
+                    const datosBase = snap.data();
+                    const nuevoId = `sesion-${document.getElementById('select-bimestre').value}-${document.getElementById('select-nivel').value}-${document.getElementById('select-grado').value}-${document.getElementById('select-area').value}-${nuevaFecha}`;
+                    
+                    await setDoc(doc(db, getPath(), nuevoId), {
+                        ...datosBase,
+                        fechaOriginal: fechaBase,
+                        esFechaAdicional: true
+                    });
+                    
+                    showToast("✅ Fecha agregada");
+                    document.getElementById('modal-agregar-fecha').classList.add('hidden');
+                    document.getElementById('fecha').value = nuevaFecha;
+                    renderTable(true);
+                    cargarListaSesiones();
+                } else {
+                    showToast("No se encontró la sesión base");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Error al agregar fecha");
+            }
+        }
+
+        // ============================================
+        // MODAL DE CONFIRMACIÓN SIMPLE (para una fecha)
+        // ============================================
+        const modalSimple = document.getElementById('custom-modal-ui');
+        const confirmBtnSimple = document.getElementById('modal-confirm-btn');
+        const cancelBtnSimple = document.getElementById('modal-cancel-btn');
+        
+        window.confirmarBorrado = (docId) => {
+            sesionABorrar = docId;
+            modalSimple.classList.remove('hidden');
+            modalSimple.classList.add('flex');
+            
+            cancelBtnSimple.onclick = () => {
+                 modalSimple.classList.add('hidden');
+                 modalSimple.classList.remove('flex');
+                 sesionABorrar = null;
+            };
+        }
+        
+        confirmBtnSimple.onclick = async () => {
+            if(!sesionABorrar) return;
+            try {
+                if (db) {
+                    await deleteDoc(doc(db, getPath(), sesionABorrar));
+                }
+                showToast("Sesión eliminada");
+                cargarListaSesiones();
+                const fechaActualId = getId();
+                if (fechaActualId === sesionABorrar) {
+                    // Limpiar la tabla y mostrar mensaje
+                    document.getElementById('tabla-registro').innerHTML = `
+                        <div class="p-12 text-center text-slate-400 flex flex-col items-center justify-center h-full">
+                            <p class="text-sm font-medium">La sesión actual fue eliminada. Seleccione otra fecha para cargar el registro.</p>
+                        </div>`;
+                    document.getElementById('seccion-guias').classList.add('hidden');
+                    document.getElementById('seccion-modalidad').classList.add('hidden');
+                    document.getElementById('ia-prompt').value = "";
+                    currentHeaders = {};
+                    gruposActuales = null;
+                    individualActual = null;
+                    guiaDocenteActual = null;
+                    guiaEstudianteActual = null;
+                }
+                sesionABorrar = null;
+            } catch(e) { console.error(e); }
+            modalSimple.classList.add('hidden');
+            modalSimple.classList.remove('flex');
+        }
+
+        // ============================================
+        // GESTIÓN DE ALUMNOS (CON CARGA DE ARCHIVOS)
+        // ============================================
+        window.procesarArchivoExcel = async (file) => {
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    const nombres = [];
+                    rows.forEach(row => {
+                        if (row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '') {
+                            let nombre = row[0].toString().trim().toUpperCase();
+                            nombre = nombre.replace(/^[0-9\s\.\-]+/, '').trim();
+                            if (nombre && nombre.length > 3) {
+                                nombres.push(nombre);
+                            }
+                        }
+                    });
+                    
+                    if (nombres.length > 0) {
+                        tempGestionList = nombres;
+                        tempGestionList.sort();
+                        renderGestionList();
+                        showToast(`✅ ${nombres.length} alumnos cargados desde Excel`);
+                    } else {
+                        showToast("❌ No se encontraron nombres válidos");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showToast("❌ Error al procesar el archivo Excel");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.procesarArchivoWord = async (file) => {
+            if (!file) return;
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                const text = result.value;
+                
+                const lines = text.split('\n');
+                const nombres = [];
+                
+                lines.forEach(line => {
+                    line = line.trim().toUpperCase();
+                    if (line && line.length > 3 && !line.match(/^\d+$/)) {
+                        let nombre = line.replace(/^[0-9\s\.\-]+/, '').trim();
+                        if (nombre && nombre.length > 3) {
+                            nombres.push(nombre);
+                        }
+                    }
+                });
+                
+                if (nombres.length > 0) {
+                    tempGestionList = nombres;
+                    tempGestionList.sort();
+                    renderGestionList();
+                    showToast(`✅ ${nombres.length} alumnos cargados desde Word`);
+                } else {
+                    showToast("❌ No se encontraron nombres válidos");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("❌ Error al procesar el archivo Word");
+            }
+        };
+
+        window.abrirGestionAlumnos = () => {
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            if (!n || !g) return showToast("Seleccione Nivel y Grado primero");
+            const modalGestion = document.getElementById('modal-gestion-alumnos');
+            document.getElementById('gestion-contexto').textContent = `${g}° ${n.toUpperCase()} - Año ${anoActual}`;
+            tempGestionList = getStudentsList(n, g);
+            renderGestionList();
+            modalGestion.classList.remove('hidden');
+            modalGestion.classList.add('flex');
+        }
+
+        window.renderGestionList = () => {
+            const container = document.getElementById('lista-gestion-container');
+            container.innerHTML = '';
+            tempGestionList.forEach((nombre, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center bg-white border border-slate-200 p-2 mb-2 rounded shadow-sm';
+                div.innerHTML = `
+                    <span class="text-xs font-bold text-slate-700">${index + 1}. ${nombre}</span>
+                    <button onclick="eliminarAlumno(${index})" class="text-red-500 hover:bg-red-50 p-1 rounded">🗑️</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.agregarAlumno = () => {
+            const input = document.getElementById('input-nuevo-alumno');
+            const val = input.value.trim().toUpperCase();
+            if (!val) return showToast("Escriba un nombre");
+            tempGestionList.push(val);
+            tempGestionList.sort(); 
+            renderGestionList();
+            input.value = '';
+            input.focus();
+        }
+
+        window.eliminarAlumno = (index) => {
+            if (confirm("¿Eliminar de la lista?")) {
+                tempGestionList.splice(index, 1);
+                renderGestionList();
+            }
+        }
+
+        window.guardarCambiosAlumnos = async () => {
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const key = `${n}-${g}`;
+            customLists[key] = [...tempGestionList];
+            await saveCustomLists();
+            document.getElementById('modal-gestion-alumnos').classList.add('hidden');
+            showToast("Lista 2026 actualizada");
+            renderTable();
+        }
+
+        // ============================================
+        // RENDERIZADO DE TABLA
+        // ============================================
+        function renderTable(desdeCarga = false) {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            
+            const list = getStudentsList(n, g);
+            const curr = curriculum[a];
+            
+            if(!list || list.length === 0) { 
+                document.getElementById('tabla-registro').innerHTML = `
+                    <div class="p-10 text-center flex flex-col items-center justify-center gap-4">
+                        <p class="text-slate-500">No hay alumnos registrados para este grado en ${anoActual}.</p>
+                        <button onclick="abrirGestionAlumnos()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200 text-sm font-bold">
+                            ➕ Cargar lista 2026
+                        </button>
+                    </div>`; 
+                return; 
+            }
+
+            const sel = document.getElementById('select-reporte-alumno');
+            sel.innerHTML = '<option>Seleccione Alumno...</option>'; sel.disabled = false;
+            list.forEach((nm,i) => sel.add(new Option(nm, i)));
+            
+            let html = `<table class="min-w-full border-collapse bg-white text-sm shadow-sm"><thead class="bg-slate-100 sticky top-0 z-20 shadow-sm"><tr>
+                <th rowspan="2" class="border p-2 sticky-col nro bg-slate-100">#</th>
+                <th rowspan="2" class="border p-2 sticky-col nombre bg-slate-100 text-left">Estudiante</th>
+                <th rowspan="2" class="border p-2 sticky-col asistencia text-center bg-slate-100">Asis</th>
+                <th rowspan="2" class="border p-2 sticky-col evidencia text-left bg-slate-100">Evidencia</th>`;
+            
+            curr.competencias.forEach(c => html += `<th colspan="${c.criterios.length+1}" class="border p-2 bg-blue-50 text-blue-900 text-[10px] leading-tight">${c.nombre}</th>`);
+            html += `<th rowspan="2" class="border bg-indigo-100 w-10">FIN</th></tr></tr>`;
+            
+            curr.competencias.forEach(c => {
+                c.criterios.forEach((crit, i) => {
+                    const hId = `header-${c.id}-${i}`;
+                    html += `<th class="border bg-white align-top p-0 min-w-[110px]">
+                        <div class="th-capacidad p-1 bg-slate-50 border-b" title="${crit}">${crit}</div>
+                        <div id="${hId}" class="th-desempeno" title="Desempeño precisado por DeepSeek">Cap. ${i+1}</div>
+                    </th>`;
+                });
+                html += `<th class="border bg-blue-100 w-10 text-[9px]">PROM</th>`;
+            });
+            
+            html += `</tr></thead><tbody class="divide-y divide-slate-200">`;
+            
+            list.forEach((est, i) => {
+                const names = est.split(',');
+                const displayName = `<span class="font-bold text-slate-800">${names[0]}</span> ${names[1] || ''}`;
+                
+                html += `<tr class="hover:bg-blue-50">
+                    <td class="border p-1 text-center sticky-col nro bg-white text-xs text-slate-400">${i+1}</td>
+                    <td class="border p-1 sticky-col nombre truncate text-xs pl-2" title="${est}">${displayName}</td>
+                    <td class="border p-1 sticky-col asistencia"><select id="asistencia-${i}" class="nota-asistencia a" onchange="handleInput(this)"><option value="A">A</option><option value="F" class="f">F</option><option value="J">J</option></select></td>
+                    <td class="border p-1 sticky-col evidencia">
+                        <input type="text" id="evidencia-${i}" placeholder="Ej: Línea de tiempo, ensayo, debate..." class="w-full text-xs p-1 border border-slate-200 rounded focus:ring-1 focus:ring-blue-500" value="${currentEvidencias[`evidencia-${i}`] || ''}">
+                    </div>
+                `;
+                
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => html += `<td class="border p-1"><select id="nota-${i}-${c.id}-${ci}" class="nota-cuali empty" onchange="handleInput(this)"><option value="">-</option><option value="AD" class="ad">AD</option><option value="A" class="a">A</option><option value="B" class="b">B</option><option value="C" class="c">C</option></select></td>`);
+                    html += `<td id="prom-${i}-${c.id}" class="border p-1 text-center font-bold bg-slate-50 text-xs text-slate-300">-</td>`;
+                });
+                html += `<td id="prom-final-${i}" class="border p-1 text-center font-bold bg-indigo-50 text-indigo-700">-</td>`;
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            document.getElementById('tabla-registro').innerHTML = html;
+            
+            if (desdeCarga) {
+                loadData(true);
+            } else {
+                loadData();
+            }
+        }
+
+        function renderTableWithGroups(opcion) {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            
+            const list = getStudentsList(n, g);
+            const curr = curriculum[a];
+            
+            const evidenciasMap = {};
+            opcion.grupos.forEach(grupo => {
+                grupo.integrantes.forEach(est => {
+                    evidenciasMap[est] = {
+                        grupo: grupo.nombre,
+                        evidencia: grupo.evidencia,
+                        tema: grupo.tema
+                    };
+                });
+            });
+
+            const sel = document.getElementById('select-reporte-alumno');
+            sel.innerHTML = '<option>Seleccione Alumno...</option>'; sel.disabled = false;
+            list.forEach((nm,i) => sel.add(new Option(nm, i)));
+            
+            let html = `<table class="min-w-full border-collapse bg-white text-sm shadow-sm"><thead class="bg-slate-100 sticky top-0 z-20 shadow-sm"><tr>
+                <th rowspan="2" class="border p-2 sticky-col nro bg-slate-100">#</th>
+                <th rowspan="2" class="border p-2 sticky-col nombre bg-slate-100 text-left">Estudiante</th>
+                <th rowspan="2" class="border p-2 sticky-col asistencia text-center bg-slate-100">Asis</th>
+                <th rowspan="2" class="border p-2 sticky-col evidencia text-left bg-slate-100">Evidencia / Grupo</th>`;
+            
+            curr.competencias.forEach(c => html += `<th colspan="${c.criterios.length+1}" class="border p-2 bg-blue-50 text-blue-900 text-[10px] leading-tight">${c.nombre}</th>`);
+            html += `<th rowspan="2" class="border bg-indigo-100 w-10">FIN</th></tr></tr>`;
+            
+            curr.competencias.forEach(c => {
+                c.criterios.forEach((crit, i) => {
+                    const hId = `header-${c.id}-${i}`;
+                    const desempeno = currentHeaders[hId] || `Cap. ${i+1}`;
+                    html += `<th class="border bg-white align-top p-0 min-w-[110px]">
+                        <div class="th-capacidad p-1 bg-slate-50 border-b" title="${crit}">${crit}</div>
+                        <div id="${hId}" class="th-desempeno">${desempeno}</div>
+                    </th>`;
+                });
+                html += `<th class="border bg-blue-100 w-10 text-[9px]">PROM</th>`;
+            });
+            
+            html += `<tr></thead><tbody class="divide-y divide-slate-200">`;
+            
+            list.forEach((est, i) => {
+                const names = est.split(',');
+                const displayName = `<span class="font-bold text-slate-800">${names[0]}</span> ${names[1] || ''}`;
+                const ev = evidenciasMap[est] || { grupo: 'Sin grupo', evidencia: 'Por definir' };
+                
+                html += `<tr class="hover:bg-blue-50">
+                    <td class="border p-1 text-center sticky-col nro bg-white text-xs text-slate-400">${i+1}</td>
+                    <td class="border p-1 sticky-col nombre truncate text-xs pl-2" title="${est}">${displayName}</td>
+                    <td class="border p-1 sticky-col asistencia"><select id="asistencia-${i}" class="nota-asistencia a" onchange="handleInput(this)"><option value="A">A</option><option value="F" class="f">F</option><option value="J">J</option></select></td>
+                    <td class="border p-1 sticky-col evidencia bg-purple-50 text-[10px]">
+                        <span class="font-bold text-purple-700">${ev.grupo}</span><br>
+                        <span class="text-slate-600">${ev.evidencia}</span>
+                        <input type="hidden" id="evidencia-${i}" value="${ev.evidencia}">
+                    </div>
+                `;
+                
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => html += `<td class="border p-1"><select id="nota-${i}-${c.id}-${ci}" class="nota-cuali empty" onchange="handleInput(this)"><option value="">-</option><option value="AD" class="ad">AD</option><option value="A" class="a">A</option><option value="B" class="b">B</option><option value="C" class="c">C</option></select></td>`);
+                    html += `<td id="prom-${i}-${c.id}" class="border p-1 text-center font-bold bg-slate-50 text-xs text-slate-300">-</td>`;
+                });
+                html += `<td id="prom-final-${i}" class="border p-1 text-center font-bold bg-indigo-50 text-indigo-700">-</td>`;
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            document.getElementById('tabla-registro').innerHTML = html;
+            
+            loadData();
+        }
+
+        function renderTableWithIndividual(opcion) {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            
+            const list = getStudentsList(n, g);
+            const curr = curriculum[a];
+
+            const sel = document.getElementById('select-reporte-alumno');
+            sel.innerHTML = '<option>Seleccione Alumno...</option>'; sel.disabled = false;
+            list.forEach((nm,i) => sel.add(new Option(nm, i)));
+            
+            let html = `<table class="min-w-full border-collapse bg-white text-sm shadow-sm"><thead class="bg-slate-100 sticky top-0 z-20 shadow-sm"><tr>
+                <th rowspan="2" class="border p-2 sticky-col nro bg-slate-100">#</th>
+                <th rowspan="2" class="border p-2 sticky-col nombre bg-slate-100 text-left">Estudiante</th>
+                <th rowspan="2" class="border p-2 sticky-col asistencia text-center bg-slate-100">Asis</th>
+                <th rowspan="2" class="border p-2 sticky-col evidencia text-left bg-slate-100">Evidencia</th>`;
+            
+            curr.competencias.forEach(c => html += `<th colspan="${c.criterios.length+1}" class="border p-2 bg-blue-50 text-blue-900 text-[10px] leading-tight">${c.nombre}</th>`);
+            html += `<th rowspan="2" class="border bg-indigo-100 w-10">FIN</th></tr></tr>`;
+            
+            curr.competencias.forEach(c => {
+                c.criterios.forEach((crit, i) => {
+                    const hId = `header-${c.id}-${i}`;
+                    const desempeno = currentHeaders[hId] || `Cap. ${i+1}`;
+                    html += `<th class="border bg-white align-top p-0 min-w-[110px]">
+                        <div class="th-capacidad p-1 bg-slate-50 border-b" title="${crit}">${crit}</div>
+                        <div id="${hId}" class="th-desempeno">${desempeno}</div>
+                    </th>`;
+                });
+                html += `<th class="border bg-blue-100 w-10 text-[9px]">PROM</th>`;
+            });
+            
+            html += `<tr></thead><tbody class="divide-y divide-slate-200">`;
+            
+            list.forEach((est, i) => {
+                const names = est.split(',');
+                const displayName = `<span class="font-bold text-slate-800">${names[0]}</span> ${names[1] || ''}`;
+                
+                html += `<tr class="hover:bg-blue-50">
+                    <td class="border p-1 text-center sticky-col nro bg-white text-xs text-slate-400">${i+1}</td>
+                    <td class="border p-1 sticky-col nombre truncate text-xs pl-2" title="${est}">${displayName}</td>
+                    <td class="border p-1 sticky-col asistencia"><select id="asistencia-${i}" class="nota-asistencia a" onchange="handleInput(this)"><option value="A">A</option><option value="F" class="f">F</option><option value="J">J</option></select></td>
+                    <td class="border p-1 sticky-col evidencia">
+                        <input type="text" id="evidencia-${i}" placeholder="${opcion.evidencia}" class="w-full text-xs p-1 border border-slate-200 rounded focus:ring-1 focus:ring-blue-500" value="${opcion.evidencia}">
+                    </div>
+                `;
+                
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((_, ci) => html += `<td class="border p-1"><select id="nota-${i}-${c.id}-${ci}" class="nota-cuali empty" onchange="handleInput(this)"><option value="">-</option><option value="AD" class="ad">AD</option><option value="A" class="a">A</option><option value="B" class="b">B</option><option value="C" class="c">C</option></select></td>`);
+                    html += `<td id="prom-${i}-${c.id}" class="border p-1 text-center font-bold bg-slate-50 text-xs text-slate-300">-</td>`;
+                });
+                html += `<td id="prom-final-${i}" class="border p-1 text-center font-bold bg-indigo-50 text-indigo-700">-</td>`;
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            document.getElementById('tabla-registro').innerHTML = html;
+            
+            loadData();
+        }
+
+        // ============================================
+        // MANEJO DE INPUTS
+        // ============================================
+        window.handleInput = async function(el) {
+            updateColor(el);
+            calcProms();
+            await saveData();
+        }
+
+        function updateColor(el) {
+            if(el.classList.contains('nota-cuali')) el.className = `nota-cuali ${el.value.toLowerCase()||'empty'}`;
+            if(el.classList.contains('nota-asistencia')) el.className = `nota-asistencia ${el.value.toLowerCase()}`;
+        }
+
+        // ============================================
+        // CÁLCULO DE PROMEDIOS
+        // ============================================
+        const valMap = { "AD": 4, "A": 3, "B": 2, "C": 1, "": 0 };
+        const toL = n => n>3.4?"AD":n>2.4?"A":n>1.4?"B":n>0?"C":"-";
+        
+        function calcProms() {
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!n||!g||!a) return;
+            const st=getStudentsList(n, g), cp=curriculum[a].competencias;
+            
+            st.forEach((_, i) => {
+                let fs=0, fc=0;
+                cp.forEach(c => {
+                    let s=0, co=0;
+                    c.criterios.forEach((_, ci) => {
+                        const v = valMap[document.getElementById(`nota-${i}-${c.id}-${ci}`)?.value]||0;
+                        if(v>0){s+=v;co++}
+                    });
+                    const p=co>0?s/co:0;
+                    const el=document.getElementById(`prom-${i}-${c.id}`);
+                    if(el) {
+                        el.innerText = toL(p);
+                        el.className=`border p-1 text-center font-bold text-xs bg-slate-50 ${p>3.4?'text-blue-700':p>2.4?'text-green-700':p>1.4?'text-yellow-600':'text-red-600'}`;
+                    }
+                    if(p>0){fs+=p;fc++}
+                });
+                const fe=document.getElementById(`prom-final-${i}`);
+                const fp=fc>0?fs/fc:0;
+                if(fe) {
+                    fe.innerText=toL(fp);
+                    fe.className=`border p-1 text-center font-bold text-xs bg-indigo-50 ${fp>3.4?'text-blue-700':fp>2.4?'text-green-700':fp>1.4?'text-yellow-600':'text-red-600'}`;
+                }
+            });
+        }
+
+        // ============================================
+        // GUARDAR EN FIREBASE
+        // ============================================
+        async function saveData() {
+            const id=getId(); if(!id) return;
+            
+            const evidencias = {};
+            const n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value;
+            const list = getStudentsList(n, g);
+            list.forEach((_, i) => {
+                const evInput = document.getElementById(`evidencia-${i}`);
+                if (evInput) evidencias[`evidencia-${i}`] = evInput.value;
+            });
+            currentEvidencias = evidencias;
+
+            const d={ 
+                notas:{}, 
+                headers:currentHeaders, 
+                prompt:document.getElementById('ia-prompt').value,
+                evidencias: evidencias,
+                grupos: gruposActuales,
+                individual: individualActual,
+                guiaDocente: guiaDocenteActual,
+                guiaEstudiante: guiaEstudianteActual,
+                fechaActualizacion: new Date().toISOString(),
+                ano: anoActual,
+                profesor: "Manuel Polar Carnero"
+            };
+            
+            document.querySelectorAll('select').forEach(s => { if(s.id) d.notas[s.id]=s.value; });
+            
+            if (db && userId) {
+                await setDoc(doc(db, getPath(), id), d).catch(e => console.error("Error nube", e));
+            }
+            showToast("Guardado");
+            cargarListaSesiones();
+        }
+
+        // ============================================
+        // CARGAR DESDE FIREBASE
+        // ============================================
+        async function loadData(desdeCarga = false) {
+            const id = getId(); 
+            if(!id) return;
+            
+            if (!desdeCarga) {
+                return;
+            }
+            
+            document.getElementById('seccion-guias').classList.add('hidden');
+            
+            let d = null;
+            
+            if(db && userId) {
+                try {
+                    const snap = await getDoc(doc(db, getPath(), id));
+                    if(snap.exists()) d = snap.data();
+                } catch(e) { console.error(e); }
+            }
+            
+            if(d) {
+                if(d.prompt) {
+                    document.getElementById('ia-prompt').value = d.prompt;
+                }
+                
+                if(d.headers) {
+                    currentHeaders = d.headers;
+                    Object.keys(d.headers).forEach(k => {
+                        const el = document.getElementById(k);
+                        if(el) { 
+                            el.innerText = d.headers[k]; 
+                            el.classList.add('text-blue-700'); 
+                        }
+                    });
+                    
+                    document.getElementById('seccion-modalidad').classList.remove('hidden');
+                }
+                
+                if(d.notas) {
+                    Object.keys(d.notas).forEach(k => {
+                        const el = document.getElementById(k);
+                        if(el) { 
+                            el.value = d.notas[k]; 
+                            updateColor(el); 
+                        }
+                    });
+                }
+                
+                if(d.evidencias) {
+                    currentEvidencias = d.evidencias;
+                    Object.keys(d.evidencias).forEach(k => {
+                        const el = document.getElementById(k);
+                        if(el) el.value = d.evidencias[k];
+                    });
+                }
+                
+                if(d.grupos) {
+                    gruposActuales = d.grupos;
+                    if (d.guiaDocente && d.guiaEstudiante) {
+                        guiaDocenteActual = d.guiaDocente;
+                        guiaEstudianteActual = d.guiaEstudiante;
+                        document.getElementById('guia-docente-contenido').innerHTML = d.guiaDocente;
+                        document.getElementById('guia-estudiante-contenido').innerHTML = d.guiaEstudiante;
+                        document.getElementById('seccion-guias').classList.remove('hidden');
+                    }
+                } else if (d.individual) {
+                    individualActual = d.individual;
+                    if (d.guiaDocente && d.guiaEstudiante) {
+                        guiaDocenteActual = d.guiaDocente;
+                        guiaEstudianteActual = d.guiaEstudiante;
+                        document.getElementById('guia-docente-contenido').innerHTML = d.guiaDocente;
+                        document.getElementById('guia-estudiante-contenido').innerHTML = d.guiaEstudiante;
+                        document.getElementById('seccion-guias').classList.remove('hidden');
+                    }
+                }
+                
+                calcProms();
+                showToast("✅ Sesión cargada correctamente");
+            }
+        }
+
+        // ============================================
+        // FUNCIÓN PRINCIPAL: CONSULTAR DEEPSEEK (sin cambios)
+        // ============================================
+        async function consultarIA() {
+            const p=document.getElementById('ia-prompt').value;
+            const a=document.getElementById('select-area').value;
+            const n=document.getElementById('select-nivel').value;
+            const g=document.getElementById('select-grado').value;
+            
+            if(!p||!a||!n||!g) return showToast("Faltan datos: completa todos los filtros y el tema");
+            
+            let key = getAIKey();
+            if(!key) {
+                alert("⚠️ Para usar DeepSeek, primero debes configurar tu llave.");
+                window.configurarIA();
+                return;
+            }
+
+            const ui={spin:document.getElementById('ia-spinner'), ph:document.getElementById('ia-placeholder'), res:document.getElementById('ia-respuesta-container')};
+            ui.spin.classList.remove('hidden'); ui.ph.classList.add('hidden'); ui.res.classList.add('hidden');
+            
+            const ad=curriculum[a];
+            if (!ad) {
+                showToast("Área no válida");
+                ui.spin.classList.add('hidden');
+                return;
+            }
+            
+            const criteriosParaPrompt = [];
+            ad.competencias.forEach(c => {
+                c.criterios.forEach((cr, i) => {
+                    criteriosParaPrompt.push({
+                        id: `header-${c.id}-${i}`,
+                        criterio: cr
+                    });
+                });
+            });
+
+            const pr = `Eres un docente peruano experto en el Currículo Nacional (CNEB).
+
+Tema: "${p}"
+Grado: ${g}° ${n}
+Área: ${ad.label}
+
+Para CADA UNO de los siguientes criterios, genera un DESEMPEÑO PRECISO (máximo 10 palabras) observable y relacionado con el tema:
+
+${JSON.stringify(criteriosParaPrompt.map(c => c.criterio), null, 2)}
+
+Además, escribe una JUSTIFICACIÓN PEDAGÓGICA breve (3-4 líneas) explicando la importancia de esta sesión.
+
+Los IDs para los desempeños deben ser: ${criteriosParaPrompt.map(c => c.id).join(', ')}.
+
+Responde SOLO con un JSON con esta estructura exacta:
+{
+  "justificacion": "texto de justificación",
+  "desempenos": {
+    ${criteriosParaPrompt.map(c => `"${c.id}": "desempeño"`).join(',\n    ')}
+  }
+}`;
+            
+            try {
+                const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un asistente experto en educación y currículo peruano. Siempre respondes en formato JSON válido."
+                            },
+                            {
+                                role: "user",
+                                content: pr
+                            }
+                        ],
+                        temperature: 0.7,
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                if(!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Error DeepSeek:", errorText);
+                    showToast(`Error ${response.status}: Verifica tu API Key`);
+                    return;
+                }
+                
+                const data = await response.json();
+                const res = JSON.parse(data.choices[0].message.content);
+                
+                document.getElementById('ia-respuesta-texto').innerText = res.justificacion;
+                currentHeaders = res.desempenos;
+                
+                Object.keys(currentHeaders).forEach(k => { 
+                    const e = document.getElementById(k); 
+                    if(e) {
+                        e.innerText = currentHeaders[k]; 
+                        e.classList.add('text-blue-700');
+                    }
+                });
+                
+                ui.res.classList.remove('hidden');
+                
+                document.getElementById('seccion-modalidad').classList.remove('hidden');
+                
+                await saveData();
+                showToast("✅ Desempeños generados con DeepSeek");
+            } catch(e) { 
+                console.error(e); 
+                showToast("Error de conexión con DeepSeek"); 
+            } finally { 
+                ui.spin.classList.add('hidden'); 
+            }
+        }
+
+        // ============================================
+        // FUNCIÓN: ABRIR MODAL DE GRUPOS (sin cambios)
+        // ============================================
+        document.getElementById('btn-trabajo-grupo').onclick = abrirModalGrupos;
+        
+        async function abrirModalGrupos() {
+            const tema = document.getElementById('ia-prompt').value;
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const a = document.getElementById('select-area').value;
+            
+            if (!tema || !n || !g || !a) return showToast("Complete todos los datos");
+            
+            const key = getAIKey();
+            const estudiantes = getStudentsList(n, g);
+            
+            const modal = document.getElementById('modal-grupos');
+            document.getElementById('grupos-tema').textContent = tema;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            const container = document.getElementById('grupos-opciones-container');
+            container.innerHTML = '<div class="text-center py-8 text-slate-400">Generando 2 opciones con DeepSeek...<div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-8 h-8 mx-auto mt-4 animate-spin"></div></div>';
+            
+            const desempenosList = Object.values(currentHeaders).join(', ');
+            
+            const prompt = `Eres un especialista en trabajo cooperativo. Para el tema "${tema}" con estudiantes de ${g}° ${n} en el área ${a}, propón 2 formas diferentes de organizar grupos de trabajo.
+
+Los desempeños a evaluar son: ${desempenosList}
+
+Lista de estudiantes: ${JSON.stringify(estudiantes)}
+
+Para CADA OPCIÓN, debes incluir:
+- "nombre": Nombre de la opción (ej: "Por períodos históricos")
+- "descripcion": Breve descripción de la dinámica
+- "grupos": Un array donde cada grupo tiene:
+   - "nombre": Nombre del grupo
+   - "tema": Subtema que investigará (relacionado con los desempeños)
+   - "evidencia": Qué producto deben entregar (debe evidenciar los desempeños)
+   - "integrantes": Array con los nombres de los estudiantes asignados (DEBEN SER EQUILIBRADOS, mezcla estudiantes)
+
+Responde SOLO con un JSON válido con esta estructura:
+{
+  "opciones": [
+    {
+      "nombre": "Opción 1",
+      "descripcion": "Descripción",
+      "grupos": [
+        {
+          "nombre": "Grupo A",
+          "tema": "Subtema",
+          "evidencia": "Producto",
+          "integrantes": ["Nombre1", "Nombre2"]
+        }
+      ]
+    }
+  ]
+}`;
+
+            try {
+                const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un experto en trabajo cooperativo y diseño de actividades grupales."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                if (!response.ok) throw new Error("Error API");
+                
+                const data = await response.json();
+                const res = JSON.parse(data.choices[0].message.content);
+                
+                let html = '<div class="space-y-4">';
+                res.opciones.forEach((opcion, idx) => {
+                    html += `
+                    <div class="grupo-opcion p-4 border rounded-lg" data-opcion-idx="${idx}" onclick="seleccionarOpcion(this)">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-blue-800">${opcion.nombre}</h4>
+                                <p class="text-xs text-slate-600 mb-2">${opcion.descripcion}</p>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    ${opcion.grupos.map((g, i) => `
+                                        <div class="bg-slate-50 p-2 rounded border text-xs">
+                                            <span class="font-bold text-purple-700">${g.nombre}</span>
+                                            <p class="text-slate-500 mt-1">📌 ${g.tema}</p>
+                                            <p class="text-green-600 mt-1">📝 ${g.evidencia}</p>
+                                            <p class="text-slate-400 text-[9px] mt-1">${g.integrantes.length} integrantes</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0" id="check-opcion-${idx}"></div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+                
+                window.opcionesGrupos = res.opciones;
+                
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<p class="text-center text-red-600">Error al generar opciones. Intenta de nuevo.</p>';
+            }
+        }
+
+        window.seleccionarOpcion = (element) => {
+            document.querySelectorAll('.grupo-opcion').forEach(el => {
+                el.classList.remove('seleccionada');
+                const check = el.querySelector('[id^="check-opcion"]');
+                if (check) check.innerHTML = '';
+            });
+            element.classList.add('seleccionada');
+            const check = element.querySelector('[id^="check-opcion"]');
+            if (check) check.innerHTML = '✓';
+            window.opcionSeleccionadaIdx = element.dataset.opcionIdx;
+        };
+
+        window.aplicarGruposSeleccionados = async () => {
+            if (window.opcionSeleccionadaIdx === undefined) {
+                return showToast("Selecciona una opción de organización");
+            }
+            
+            const opcion = window.opcionesGrupos[window.opcionSeleccionadaIdx];
+            gruposActuales = opcion;
+            individualActual = null;
+            
+            document.getElementById('modal-grupos').classList.add('hidden');
+            document.getElementById('seccion-modalidad').classList.add('hidden');
+            
+            mostrarCarga("Generando guías docentes y de estudiante...");
+            
+            const key = getAIKey();
+            const p = document.getElementById('ia-prompt').value;
+            const a = document.getElementById('select-area').value;
+            const g = document.getElementById('select-grado').value;
+            const n = document.getElementById('select-nivel').value;
+            const estandarTexto = document.getElementById('estandar-texto').textContent;
+            
+            const desempenosList = Object.values(currentHeaders).map((d, i) => `${i+1}. ${d}`).join('\n');
+            
+            let gruposInfo = '';
+            opcion.grupos.forEach((grupo, i) => {
+                gruposInfo += `\n\nGRUPO ${i+1}: ${grupo.nombre}\n`;
+                gruposInfo += `Tema: ${grupo.tema}\n`;
+                gruposInfo += `Evidencia: ${grupo.evidencia}\n`;
+                gruposInfo += `Integrantes: ${grupo.integrantes.join(', ')}\n`;
+            });
+
+            const promptDocente = `Actúa como un docente peruano experto en el Currículo Nacional (CNEB). 
+Genera una GUÍA DE SESIÓN DE APRENDIZAJE COMPLETA Y DETALLADA para el docente, que pueda ser presentada como plan de clase oficial.
+
+DATOS:
+- Tema: "${p}"
+- Grado: ${g}° ${n}
+- Área: ${curriculum[a].label}
+- Estándar esperado: ${estandarTexto}
+- Docente: Manuel Polar Carnero
+- Desempeños a evaluar: 
+${desempenosList}
+
+ORGANIZACIÓN DE LA CLASE:
+- Modalidad: TRABAJO EN GRUPOS COOPERATIVOS
+- Distribución de grupos:
+${gruposInfo}
+
+La guía debe incluir (estructura clara con títulos):
+
+1. DATOS INFORMATIVOS (incluir nombre del docente, área, grado, fecha, bimestre)
+
+2. PROPÓSITO DE LA SESIÓN (aprendizaje esperado, redactado de forma clara)
+
+3. SECUENCIA DIDÁCTICA (con tiempos sugeridos):
+   - INICIO (15-20 min): Motivación, recuperación de saberes previos, conflicto cognitivo
+   - DESARROLLO (50-60 min): Actividades principales organizadas, describiendo qué hace el docente y qué hacen los estudiantes, incluyendo el trabajo en grupos según la distribución propuesta
+   - CIERRE (15 min): Metacognición, sistematización, conclusiones
+
+4. EVALUACIÓN:
+   - Criterios de evaluación (relacionados con los desempeños)
+   - Técnicas e instrumentos (lista de cotejo, rúbrica, etc.)
+   - Evidencias a recoger (los productos que entregarán los grupos)
+
+5. RECURSOS Y MATERIALES (lista detallada)
+
+Responde SOLO con el HTML del contenido, usando <h4> para títulos y <ul> para listas.`;
+
+            try {
+                const responseDocente = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un especialista en planificación curricular y diseño de sesiones de aprendizaje alineadas al CNEB."
+                            },
+                            {
+                                role: "user",
+                                content: promptDocente
+                            }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+                
+                const dataDocente = await responseDocente.json();
+                guiaDocenteActual = dataDocente.choices[0].message.content;
+                document.getElementById('guia-docente-contenido').innerHTML = guiaDocenteActual;
+
+                let guiaEstudianteHTML = `<h4>Instrucciones para el trabajo en grupos</h4>`;
+                guiaEstudianteHTML += `<p><strong>Tema:</strong> ${p}</p>`;
+                guiaEstudianteHTML += `<p><strong>Modalidad:</strong> Trabajo cooperativo en grupos</p>`;
+                guiaEstudianteHTML += `<h4>Distribución de grupos y tareas:</h4><ul>`;
+                
+                opcion.grupos.forEach(grupo => {
+                    guiaEstudianteHTML += `<li><strong>${grupo.nombre}:</strong><br>`;
+                    guiaEstudianteHTML += `- Tema a investigar: ${grupo.tema}<br>`;
+                    guiaEstudianteHTML += `- Evidencia a entregar: ${grupo.evidencia}<br>`;
+                    guiaEstudianteHTML += `- Integrantes: ${grupo.integrantes.join(', ')}</li>`;
+                });
+                
+                guiaEstudianteHTML += `</ul>`;
+                guiaEstudianteHTML += `<h4>Recomendaciones:</h4><ul>`;
+                guiaEstudianteHTML += `<li>Organicen roles dentro del grupo (coordinador, secretario, relator)</li>`;
+                guiaEstudianteHTML += `<li>Distribuyan las tareas equitativamente</li>`;
+                guiaEstudianteHTML += `<li>Utilicen fuentes confiables para la investigación</li>`;
+                guiaEstudianteHTML += `<li>Todos los integrantes deben participar en la presentación final</li>`;
+                guiaEstudianteHTML += `</ul>`;
+                
+                guiaEstudianteActual = guiaEstudianteHTML;
+                document.getElementById('guia-estudiante-contenido').innerHTML = guiaEstudianteActual;
+                
+                document.getElementById('seccion-guias').classList.remove('hidden');
+                
+                renderTableWithGroups(opcion);
+                await saveData();
+                
+                ocultarCarga();
+                showToast("✅ Guías generadas correctamente");
+            } catch (e) {
+                console.error(e);
+                ocultarCarga();
+                showToast("Error al generar las guías");
+            }
+        };
+
+        // ============================================
+        // FUNCIÓN: ABRIR MODAL INDIVIDUAL (sin cambios)
+        // ============================================
+        document.getElementById('btn-trabajo-individual').onclick = abrirModalIndividual;
+        
+        async function abrirModalIndividual() {
+            const tema = document.getElementById('ia-prompt').value;
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const a = document.getElementById('select-area').value;
+            
+            if (!tema || !n || !g || !a) return showToast("Complete todos los datos");
+            
+            const key = getAIKey();
+            
+            const modal = document.getElementById('modal-individual');
+            document.getElementById('individual-tema').textContent = tema;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            const container = document.getElementById('individual-opciones-container');
+            container.innerHTML = '<div class="text-center py-8 text-slate-400">Generando opciones con DeepSeek...<div class="spinner border-4 border-blue-500 border-t-transparent rounded-full w-8 h-8 mx-auto mt-4 animate-spin"></div></div>';
+            
+            const desempenosList = Object.values(currentHeaders).join(', ');
+            
+            const prompt = `Eres un especialista en diseño de actividades de aprendizaje. Para el tema "${tema}" con estudiantes de ${g}° ${n} en el área ${a}, propón 2 opciones de trabajo INDIVIDUAL.
+
+Los desempeños a evaluar son: ${desempenosList}
+
+Para CADA OPCIÓN, debes incluir:
+- "nombre": Nombre de la opción (ej: "Ensayo reflexivo")
+- "descripcion": Breve descripción de la actividad
+- "evidencia": Qué producto debe entregar cada estudiante (debe evidenciar los desempeños)
+
+Responde SOLO con un JSON válido con esta estructura:
+{
+  "opciones": [
+    {
+      "nombre": "Opción 1",
+      "descripcion": "Descripción de la actividad",
+      "evidencia": "Producto a entregar"
+    }
+  ]
+}`;
+
+            try {
+                const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un experto en diseño de actividades de aprendizaje individual."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                if (!response.ok) throw new Error("Error API");
+                
+                const data = await response.json();
+                const res = JSON.parse(data.choices[0].message.content);
+                
+                let html = '<div class="space-y-4">';
+                res.opciones.forEach((opcion, idx) => {
+                    html += `
+                    <div class="individual-opcion p-4 border rounded-lg" data-individual-idx="${idx}" onclick="seleccionarIndividual(this)">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-blue-800">${opcion.nombre}</h4>
+                                <p class="text-xs text-slate-600 mb-2">${opcion.descripcion}</p>
+                                <p class="text-green-600 text-xs font-bold mt-2">📝 Evidencia: ${opcion.evidencia}</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0" id="check-individual-${idx}"></div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+                
+                window.opcionesIndividual = res.opciones;
+                
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<p class="text-center text-red-600">Error al generar opciones. Intenta de nuevo.</p>';
+            }
+        }
+
+        window.seleccionarIndividual = (element) => {
+            document.querySelectorAll('.individual-opcion').forEach(el => {
+                el.classList.remove('seleccionada');
+                const check = el.querySelector('[id^="check-individual"]');
+                if (check) check.innerHTML = '';
+            });
+            element.classList.add('seleccionada');
+            const check = element.querySelector('[id^="check-individual"]');
+            if (check) check.innerHTML = '✓';
+            window.individualSeleccionadaIdx = element.dataset.individualIdx;
+        };
+
+        window.aplicarIndividualSeleccionado = async () => {
+            if (window.individualSeleccionadaIdx === undefined) {
+                return showToast("Selecciona una opción de trabajo");
+            }
+            
+            const opcion = window.opcionesIndividual[window.individualSeleccionadaIdx];
+            individualActual = opcion;
+            gruposActuales = null;
+            
+            document.getElementById('modal-individual').classList.add('hidden');
+            document.getElementById('seccion-modalidad').classList.add('hidden');
+            
+            mostrarCarga("Generando guías...");
+            
+            const key = getAIKey();
+            const p = document.getElementById('ia-prompt').value;
+            const a = document.getElementById('select-area').value;
+            const g = document.getElementById('select-grado').value;
+            const n = document.getElementById('select-nivel').value;
+            const estandarTexto = document.getElementById('estandar-texto').textContent;
+            
+            const desempenosList = Object.values(currentHeaders).map((d, i) => `${i+1}. ${d}`).join('\n');
+
+            const promptDocente = `Actúa como un docente peruano experto en el Currículo Nacional (CNEB). 
+Genera una GUÍA DE SESIÓN DE APRENDIZAJE COMPLETA Y DETALLADA para el docente, que pueda ser presentada como plan de clase oficial.
+
+DATOS:
+- Tema: "${p}"
+- Grado: ${g}° ${n}
+- Área: ${curriculum[a].label}
+- Estándar esperado: ${estandarTexto}
+- Docente: Manuel Polar Carnero
+- Desempeños a evaluar: 
+${desempenosList}
+
+ORGANIZACIÓN DE LA CLASE:
+- Modalidad: TRABAJO INDIVIDUAL
+- Actividad: ${opcion.nombre}
+- Descripción: ${opcion.descripcion}
+- Evidencia a entregar por cada estudiante: ${opcion.evidencia}
+
+La guía debe incluir (estructura clara con títulos):
+
+1. DATOS INFORMATIVOS (incluir nombre del docente, área, grado, fecha, bimestre)
+
+2. PROPÓSITO DE LA SESIÓN
+
+3. SECUENCIA DIDÁCTICA (con tiempos):
+   - INICIO (15-20 min)
+   - DESARROLLO (50-60 min) detallando la actividad individual
+   - CIERRE (15 min)
+
+4. EVALUACIÓN:
+   - Criterios de evaluación (relacionados con los desempeños)
+   - Técnicas e instrumentos (lista de cotejo, rúbrica, etc.)
+   - Evidencias a recoger (el producto individual)
+
+5. RECURSOS Y MATERIALES
+
+Responde SOLO con el HTML del contenido.`;
+
+            try {
+                const responseDocente = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un especialista en planificación curricular."
+                            },
+                            {
+                                role: "user",
+                                content: promptDocente
+                            }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+                
+                const dataDocente = await responseDocente.json();
+                guiaDocenteActual = dataDocente.choices[0].message.content;
+                document.getElementById('guia-docente-contenido').innerHTML = guiaDocenteActual;
+
+                let guiaEstudianteHTML = `<h4>Instrucciones para el trabajo individual</h4>`;
+                guiaEstudianteHTML += `<p><strong>Tema:</strong> ${p}</p>`;
+                guiaEstudianteHTML += `<p><strong>Actividad:</strong> ${opcion.nombre}</p>`;
+                guiaEstudianteHTML += `<p><strong>Descripción:</strong> ${opcion.descripcion}</p>`;
+                guiaEstudianteHTML += `<p><strong>Evidencia a entregar:</strong> ${opcion.evidencia}</p>`;
+                guiaEstudianteHTML += `<h4>Recomendaciones:</h4><ul>`;
+                guiaEstudianteHTML += `<li>Organiza tu tiempo para completar la actividad</li>`;
+                guiaEstudianteHTML += `<li>Utiliza fuentes confiables para tu investigación</li>`;
+                guiaEstudianteHTML += `<li>La evidencia debe ser entregada al final de la sesión</li>`;
+                guiaEstudianteHTML += `<li>Puedes consultar al docente si tienes dudas</li>`;
+                guiaEstudianteHTML += `</ul>`;
+                
+                guiaEstudianteActual = guiaEstudianteHTML;
+                document.getElementById('guia-estudiante-contenido').innerHTML = guiaEstudianteActual;
+                
+                document.getElementById('seccion-guias').classList.remove('hidden');
+                
+                renderTableWithIndividual(opcion);
+                await saveData();
+                
+                ocultarCarga();
+                showToast("✅ Guías generadas correctamente");
+            } catch (e) {
+                console.error(e);
+                ocultarCarga();
+                showToast("Error al generar las guías");
+            }
+        };
+
+        // ============================================
+        // FUNCIÓN: GENERAR CONCLUSIONES BIMESTRALES (sin cambios)
+        // ============================================
+        document.getElementById('btn-generar-conclusiones-bimestrales').onclick = generarConclusionesBimestrales;
+
+        async function generarConclusionesBimestrales() {
+            let key = getAIKey();
+            if(!key) { window.configurarIA(); return; }
+
+            const b = document.getElementById('select-bimestre').value;
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const a = document.getElementById('select-area').value;
+            
+            if(!b||!n||!g||!a) return showToast("Seleccione todos los filtros");
+
+            const div = document.getElementById('conclusiones-ia-container');
+            const metaDiv = document.getElementById('seccion-conclusiones-ui');
+            metaDiv.classList.remove('hidden');
+            div.innerHTML = '<div class="col-span-3 text-center p-4">Analizando todas las sesiones del bimestre...</div>';
+
+            const prefix = `sesion-${b}-${n}-${g}-${a}-`;
+            const estudiantesMap = new Map();
+            
+            if (db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) {
+                        const fecha = doc.id.replace(prefix, '');
+                        if (fecha.startsWith(anoActual)) {
+                            const data = doc.data();
+                            const list = getStudentsList(n, g);
+                            
+                            list.forEach((nm, i) => {
+                                if (!estudiantesMap.has(nm)) {
+                                    estudiantesMap.set(nm, {
+                                        nombre: nm,
+                                        notas: [],
+                                        evidencias: [],
+                                        asistencias: []
+                                    });
+                                }
+                                
+                                const estudiante = estudiantesMap.get(nm);
+                                const notaFinal = data.notas ? data.notas[`prom-final-${i}`] : '-';
+                                if (notaFinal && notaFinal !== '-') {
+                                    estudiante.notas.push(notaFinal);
+                                }
+                                
+                                const evidencia = data.evidencias ? data.evidencias[`evidencia-${i}`] : '';
+                                if (evidencia) estudiante.evidencias.push(evidencia);
+                                
+                                const asistencia = data.notas ? data.notas[`asistencia-${i}`] : 'A';
+                                estudiante.asistencias.push(asistencia);
+                            });
+                        }
+                    }
+                });
+            }
+
+            const estudiantes = [];
+            estudiantesMap.forEach((est, nombre) => {
+                const valMapNotas = { "AD": 4, "A": 3, "B": 2, "C": 1 };
+                let suma = 0;
+                let count = 0;
+                est.notas.forEach(nota => {
+                    if (valMapNotas[nota]) {
+                        suma += valMapNotas[nota];
+                        count++;
+                    }
+                });
+                
+                const promedioNumerico = count > 0 ? suma / count : 0;
+                const promedioLetra = promedioNumerico > 3.4 ? "AD" : promedioNumerico > 2.4 ? "A" : promedioNumerico > 1.4 ? "B" : promedioNumerico > 0 ? "C" : "-";
+                
+                const asistencias = est.asistencias.filter(a => a === 'A').length;
+                const totalSesiones = est.asistencias.length;
+                
+                estudiantes.push({
+                    nombre: nombre,
+                    nota: promedioLetra,
+                    promedioNumerico: promedioNumerico,
+                    sesionesTrabajadas: count,
+                    totalSesiones: est.asistencias.length,
+                    asistencias: asistencias,
+                    evidencias: est.evidencias.join('; ')
+                });
+            });
+
+            if (estudiantes.length === 0) {
+                div.innerHTML = "No hay datos suficientes para generar conclusiones.";
+                return;
+            }
+
+            const estandarTexto = document.getElementById('estandar-texto').textContent;
+            
+            const prompt = `Actúa como docente peruano. Genera conclusiones descriptivas BIMESTRALES en formato LOGRO-DIFICULTAD-RECOMENDACIÓN.
+
+Área: ${curriculum[a].label}
+Bimestre: ${b}
+Estándar esperado: ${estandarTexto}
+
+Para CADA estudiante, basado en su promedio del bimestre (${estudiantes.length} sesiones analizadas) y sus evidencias:
+- LOGRO: Qué logró durante el bimestre (relacionado con el estándar)
+- DIFICULTAD: Qué no logró o qué le falta (basado en su rendimiento general)
+- RECOMENDACIÓN: Acción concreta para mejorar el próximo bimestre
+
+Estudiantes (con promedio del bimestre):
+${JSON.stringify(estudiantes, null, 2)}
+
+Responde SOLO con un JSON Array con esta estructura:
+[{ "nombre": "...", "nota": "...", "logro": "...", "dificultad": "...", "recomendacion": "..." }]`;
+            
+            try {
+                const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Eres un asistente experto en educación. Siempre respondes en formato JSON válido."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                if(!response.ok) {
+                    div.innerHTML = "Error al conectar con DeepSeek";
+                    return;
+                }
+                
+                const data = await response.json();
+                const res = JSON.parse(data.choices[0].message.content);
+                
+                div.innerHTML = res.map(r => {
+                    let colorClass = r.nota === 'C' ? 'bg-red-50 border-red-200' : (r.nota === 'B' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200');
+                    let icon = r.nota === 'C' ? '🔴' : (r.nota === 'B' ? '🟠' : '🟢');
+                    
+                    return `
+                    <div class="border p-3 rounded-lg shadow-sm ${colorClass} transition-all hover:shadow-md">
+                        <div class="flex justify-between items-center mb-2 border-b border-black/5 pb-1">
+                            <h4 class="font-bold text-sm text-slate-800 truncate" title="${r.nombre}">${r.nombre}</h4>
+                            <div class="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-white rounded border">
+                                <span>${icon}</span> <span>${r.nota}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-2">
+                            <div><span class="font-bold text-green-700">✅ LOGRO:</span> ${r.logro}</div>
+                            <div><span class="font-bold text-orange-700">⚠️ DIFICULTAD:</span> ${r.dificultad}</div>
+                            <div><span class="font-bold text-blue-700">📝 RECOMENDACIÓN:</span> ${r.recomendacion}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                
+                document.getElementById('conclusiones-metadata').textContent = `Análisis BIMESTRAL para ${estudiantes.length} estudiantes basado en ${estudiantes[0]?.totalSesiones || 0} sesiones.`;
+            } catch(e) { 
+                console.error(e);
+                div.innerHTML = "Error al generar conclusiones bimestrales."; 
+            }
+        }
+
+        // ============================================
+        // FUNCIÓN: REPORTE GENERAL (SÁBANA DE NOTAS) - MODIFICADA PARA MOSTRAR TEMA COMPLETO Y MÚLTIPLES FECHAS
+        // ============================================
+        async function reporteGeneral() {
+            const b=document.getElementById('select-bimestre').value, n=document.getElementById('select-nivel').value, g=document.getElementById('select-grado').value, a=document.getElementById('select-area').value;
+            if(!b||!n||!g||!a) return showToast("Faltan datos");
+            
+            const win = window.open("", "_blank");
+            if (win) {
+                win.document.write('<html><head><title>Generando reporte...</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f0f9ff;color:#0369a1;}</style></head><body><h2>⏳ Generando Sábana de Notas ' + anoActual + '...</h2></body></html>');
+            }
+
+            let ses = [];
+            const prefix = `sesion-${b}-${n}-${g}-${a}-`;
+            
+            if (db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) {
+                        const fecha = doc.id.replace(prefix, '');
+                        if (fecha.startsWith(anoActual)) {
+                            ses.push({f: fecha, t: doc.data().prompt, n: doc.data().notas, h: doc.data().headers, e: doc.data().evidencias});
+                        }
+                    }
+                });
+            }
+            
+            ses.sort((x,y)=>x.f.localeCompare(y.f));
+            
+            const curr = curriculum[a];
+            if (!curr) return;
+            let colsPerSession = 2;
+            curr.competencias.forEach(c => colsPerSession += c.criterios.length + 1);
+            colsPerSession += 1;
+            
+            let h = `<html><head><style>
+                body{font-family:Arial;font-size:9px;padding:20px;margin:0} 
+                table{width:100%;border-collapse:collapse;margin-bottom:20px;table-layout:auto} 
+                th,td{border:1px solid #999;padding:4px 2px;text-align:center;font-size:9px}
+                .session-header{background:#e0e7ff;font-size:9px;padding:4px;border-bottom:1px solid #666;word-break:break-word;white-space:normal}
+                .comp-header{background:#dbeafe;color:#1e3a8a;font-weight:bold;font-size:8px}
+                .crit-header{background:#f1f5f9;font-style:italic;color:#475569;font-size:7px;height:40px;vertical-align:bottom}
+                .evidencia-cell { background: #f3e8ff; font-size: 7px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .vertical-text {writing-mode: vertical-rl; transform: rotate(180deg); max-height:60px; margin:0 auto; text-align:left; font-size:7px}
+                .prom-header{background:#f1f5f9;font-weight:bold;width:25px}
+                .final-header{background:#e0e7ff;font-weight:bold;width:25px}
+                .estudiante-cell{text-align:left;padding-left:4px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+                .asistencia-cell{width:25px}
+            </style></head><body>`;
+            
+            h += `<h3>REPORTE DETALLADO ${anoActual} | ${b} | ${g}° ${n} | ${curr.label}</h3>`;
+            
+            h += `<table><thead>`;
+            h += `<tr><th rowspan="3" style="width:25px">N°</th><th rowspan="3" style="width:120px">ESTUDIANTE</th>`;
+            ses.forEach(s => {
+                // Mostrar el tema completo (sin truncar)
+                let titulo = s.t ? s.t : 'Sin Tema';
+                h += `<th colspan="${colsPerSession}" class="session-header">${s.f}<br><span style="font-size:8px;font-weight:normal">${titulo}</span></th>`;
+            });
+            h += `</tr>`;
+            
+            h += `<tr>`;
+            ses.forEach(() => {
+                h += `<th rowspan="2" class="asistencia-cell">As</th><th rowspan="2" style="width:80px" class="evidencia-cell">Evidencia</th>`;
+                curr.competencias.forEach(c => {
+                    h += `<th colspan="${c.criterios.length + 1}" class="comp-header">${c.nombre.substring(0,12)}</th>`;
+                });
+                h += `<th rowspan="2" class="final-header">PF</th>`;
+            });
+            h += `</tr>`;
+            
+            h += `<tr>`;
+            ses.forEach(s => {
+                curr.competencias.forEach(c => {
+                    c.criterios.forEach((cr, ci) => {
+                        const hid = `header-${c.id}-${ci}`;
+                        const txt = (s.h && s.h[hid]) ? s.h[hid] : cr;
+                        h += `<th class="crit-header"><div class="vertical-text">${txt}</div></th>`;
+                    });
+                    h += `<th class="prom-header">P</th>`;
+                });
+            });
+            h += `</tr></thead><tbody>`;
+            
+            const estudiantesList = getStudentsList(n,g);
+            estudiantesList.forEach((nm, i) => {
+                const parts = nm.split(',');
+                h += `<tr>`;
+                h += `<td style="text-align:center">${i+1}</td>`;
+                h += `<td class="estudiante-cell" title="${nm}"><b>${parts[0]}</b> ${parts[1]||''}</td>`;
+                
+                ses.forEach(s => {
+                    const asis = s.n ? s.n[`asistencia-${i}`] || '-' : '-';
+                    let ev = (s.e && s.e[`evidencia-${i}`]) || '-';
+                    if (ev.length > 40) ev = ev.substring(0,37) + '...';
+                    h += `<td style="${asis === 'F' ? 'color:red' : ''}">${asis}</td>`;
+                    h += `<td class="evidencia-cell" title="${(s.e && s.e[`evidencia-${i}`]) ? s.e[`evidencia-${i}`].replace(/"/g, '&quot;') : '-'}">${ev}</td>`;
+                    
+                    let sumFinal = 0, countFinal = 0;
+                    
+                    curr.competencias.forEach(c => {
+                        let sumComp = 0, countComp = 0;
+                        c.criterios.forEach((_, ci) => {
+                            const val = s.n ? s.n[`nota-${i}-${c.id}-${ci}`] || '' : '';
+                            const num = valMap[val] || 0;
+                            if(num > 0) { sumComp += num; countComp++; }
+                            
+                            let color = val==='C'?'red':(val==='AD'?'blue':(val==='A'?'green':'#b45309'));
+                            if(val==='') color='black';
+                            h += `<td style="color:${color}">${val}</td>`;
+                        });
+                        
+                        const prom = countComp > 0 ? sumComp/countComp : 0;
+                        const promTxt = toL(prom);
+                        if(prom > 0) { sumFinal += prom; countFinal++; }
+                        
+                        let pColor = promTxt==='C'?'red':(promTxt==='AD'?'blue':(promTxt==='A'?'green':'#b45309'));
+                        if(promTxt==='-') pColor='#ccc';
+                        h += `<td style="font-weight:bold;background:#f8fafc;color:${pColor}">${promTxt}</td>`;
+                    });
+                    
+                    const pf = countFinal > 0 ? sumFinal/countFinal : 0;
+                    const pfTxt = toL(pf);
+                    let fColor = pfTxt==='C'?'red':(pfTxt==='AD'?'blue':(pfTxt==='A'?'green':'#b45309'));
+                    if(pfTxt==='-') fColor='#ccc';
+                    h += `<td style="font-weight:bold;background:#e0e7ff;color:${fColor}">${pfTxt}</td>`;
+                });
+                h += `</tr>`;
+            });
+            
+            h += `</tbody></table></body></html>`;
+            
+            if (win) {
+                win.document.open();
+                win.document.write(h);
+                win.document.close();
+            } else {
+                showToast("⚠️ Ventana bloqueada. Permite pop-ups.");
+            }
+        }
+
+        // ============================================
+        // FUNCIÓN: FICHA INDIVIDUAL (sin cambios)
+        // ============================================
+        async function fichaIndividual() {
+            const i = document.getElementById('select-reporte-alumno').value;
+            const b = document.getElementById('select-bimestre').value;
+            const n = document.getElementById('select-nivel').value;
+            const g = document.getElementById('select-grado').value;
+            const a = document.getElementById('select-area').value;
+            
+            if (i === 'Seleccione Alumno...') return showToast("Seleccione alumno");
+            if(!b||!n||!g||!a) return showToast("Faltan datos del filtro");
+
+            const win = window.open("", "_blank");
+            if (win) {
+                win.document.write('<html><head><title>Generando ficha...</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fefce8;color:#854d0e;}</style></head><body><h2>⏳ Generando Ficha del Alumno...</h2></body></html>');
+            }
+
+            const studentName = getStudentsList(n,g)[i];
+            
+            let ses = [];
+            const prefix = `sesion-${b}-${n}-${g}-${a}-`;
+
+            if (db && userId) {
+                const q = query(collection(db, getPath()));
+                const snaps = await getDocs(q);
+                snaps.forEach(doc => {
+                    if(doc.id.startsWith(prefix)) {
+                        const fecha = doc.id.replace(prefix, '');
+                        if (fecha.startsWith(anoActual)) {
+                            ses.push({f: fecha, t: doc.data().prompt, n: doc.data().notas, e: doc.data().evidencias});
+                        }
+                    }
+                });
+            }
+            ses.sort((x,y)=>x.f.localeCompare(y.f));
+
+            let totalAsistencias = 0;
+            let faltasDates = [];
+            let historyRows = '';
+
+            ses.forEach(s => {
+                const asis = s.n ? s.n[`asistencia-${i}`] || '-' : '-';
+                if (asis === 'A') totalAsistencias++;
+                if (asis === 'F') faltasDates.push(s.f);
+
+                const ev = (s.e && s.e[`evidencia-${i}`]) || 'No registrada';
+                
+                let notasDetalladas = [];
+                const curr = curriculum[a];
+                if (curr) {
+                    curr.competencias.forEach(c => {
+                        c.criterios.forEach((_, ci) => {
+                            const valStr = s.n ? s.n[`nota-${i}-${c.id}-${ci}`] : '';
+                            if(valStr) {
+                                notasDetalladas.push(valStr);
+                            }
+                        });
+                    });
+                }
+
+                historyRows += `
+                    <tr>
+                        <td>${s.f}</td>
+                        <td style="text-align:left">${s.t || 'Sin tema'}</td>
+                        <td>${asis}</td>
+                        <td class="evidencia-cell">${ev}</td>
+                        <td>${notasDetalladas.join(' ')}</div>
+                    </tr>
+                `;
+            });
+
+            let h = `<html><head><style>
+                body { font-family: 'Arial', sans-serif; color: #333; padding: 20px; }
+                h2 { color: #1e3a8a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                .info { margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+                .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+                .stat-box { background: #fff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 6px; }
+                .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: bold; }
+                .stat-val { font-size: 18px; font-weight: bold; color: #0f172a; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 20px; }
+                th { background: #1e3a8a; color: white; padding: 8px; text-align: center; }
+                td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+                .evidencia-cell { background: #f3e8ff; }
+                .falta-list { color: #dc2626; font-weight: bold; font-size: 11px; margin-top: 10px; }
+                .nota-individual { display: inline-block; padding: 2px 5px; margin: 2px; border-radius: 4px; font-weight: bold; }
+                .ad { background: #dbeafe; color: #1e3a8a; } .a { background: #dcfce7; color: #166534; }
+                .b { background: #fef9c3; color: #854d0e; } .c { background: #fee2e2; color: #991b1b; }
+            </style></head><body>`;
+
+            h += `<h2>Ficha Acumulativa del Estudiante - ${anoActual}</h2>`;
+            h += `<div class="info">
+                    <h3 style="margin:0 0 5px 0; font-size:18px">${studentName}</h3>
+                    <p style="margin:0; font-size:12px; color:#666">${g}° ${n} | ${curriculum[a]?.label || a.toUpperCase()} | ${b}</p>
+                  </div>`;
+                  
+            h += `<div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Asistencias</div>
+                        <div class="stat-val" style="color:green">${totalAsistencias}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Faltas</div>
+                        <div class="stat-val" style="color:red">${faltasDates.length}</div>
+                    </div>
+                  </div>`;
+            
+            if (faltasDates.length > 0) {
+                h += `<p class="falta-list">⚠️ Fechas de Inasistencia: ${faltasDates.join(', ')}</p>`;
+            }
+
+            h += `<table>
+                    <thead>
+                        <tr>
+                            <th width="80">Fecha</th>
+                            <th>Actividad / Tema</th>
+                            <th width="40">Asis</th>
+                            <th width="120">Evidencia</th>
+                            <th>Notas por Criterio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRows}
+                    </tbody>
+                  </table>`;
+                  
+            h += `</body></html>`;
+
+            if (win) {
+                win.document.open();
+                win.document.write(h);
+                win.document.close();
+            } else {
+                showToast("⚠️ Ventana bloqueada. Permite pop-ups.");
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN Y LISTENERS
+        // ============================================
+        async function initApp() { 
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                if(initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                else await signInAnonymously(auth);
+                
+                onAuthStateChanged(auth, async (u) => {
+                    if(u) { 
+                        userId = "PROFESOR_MANUEL";
+                        updateStatus(" 🟢  Conectado (Nube Privada)");
+                        
+                        await loadCustomListsCloud();
+                        restoreFilters();
+                        cargarListaSesiones();
+                    } else {
+                        updateStatus(" 🔴  Error de Autenticación");
+                    }
+                });
+            } catch(e) { 
+                console.error(e);
+                updateStatus(" 🔴  Error de Conexión");
+            }
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+        }
+
+        document.getElementById('btn-consultar-ia').onclick = consultarIA;
+        document.getElementById('btn-mostrar-sesiones').onclick = cargarListaSesiones;
+        document.getElementById('btn-reporte-general').onclick = reporteGeneral;
+        document.getElementById('btn-reporte-individual').onclick = fichaIndividual;
+        
+        document.getElementById('select-ano').addEventListener('change', (e) => {
+            anoActual = e.target.value;
+            saveFilters();
+            cargarListaSesiones();
+            renderTable();
+        });
+        
+        ['select-bimestre','select-nivel','select-grado','select-area','fecha'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                saveFilters();
+                const nxt = { 'select-bimestre':'select-nivel', 'select-nivel':'select-grado', 'select-grado':'select-area' }[id];
+                if(nxt) document.getElementById(nxt).disabled = !e.target.value;
+                
+                if(id==='select-nivel') {
+                    const g=document.getElementById('select-grado'); g.innerHTML='<option value="">...</option>';
+                    const max = e.target.value==='primaria'?6:5; for(let i=1;i<=max;i++) g.add(new Option(i+'°', i));
+                }
+                if(id==='select-grado') {
+                    const ar = document.getElementById('select-area');
+                    const nivel = document.getElementById('select-nivel').value;
+                    if (nivel === 'primaria') {
+                        ar.innerHTML = '<option value="computo">CÓMPUTO</option>';
+                    } else {
+                        ar.innerHTML = '<option value="arte">Arte y Cultura</option><option value="ept">E.P.T.</option>';
+                    }
+                    document.getElementById('btn-gestion-alumnos').disabled = !e.target.value;
+                    
+                    const estandarDiv = document.getElementById('estandar-info');
+                    const estandarTexto = document.getElementById('estandar-texto');
+                    const gradoKey = `${e.target.value}-${document.getElementById('select-nivel').value}`;
+                    estandarTexto.textContent = estandaresPorGrado[gradoKey] || "Estándar no definido para este grado";
+                    estandarDiv.classList.remove('hidden');
+                }
+                renderTable();
+                if(['select-bimestre','select-area'].includes(id)) cargarListaSesiones();
+            });
+        });
+
+        // Inicializar drag & drop
+        ['excel-upload-area', 'word-upload-area'].forEach(id => {
+            const area = document.getElementById(id);
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('dragover');
+            });
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    if (id === 'excel-upload-area') procesarArchivoExcel(files[0]);
+                    else procesarArchivoWord(files[0]);
+                }
+            });
+        });
+
+        initApp();
+    </script>
+</body>
+</html>
